@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.12.25 – 2026-10-25 (not released yet)
+
+### Fixed
+- A pasted picture lands on pixels that are seen whole, at least 12 screen pixels in from the top left corner of what is visible (zoomed far in, it used to start on a pixel that was cut off by the window's edge).
+
 ## 0.12.24 – 2026-10-25 (not released yet)
 
 ### Fixed
