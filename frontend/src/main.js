@@ -405,21 +405,26 @@ async function readPixel(clientX, clientY) {
 // In the pixelated view the selection snaps to whole pixels; in the smoothed view it follows the pointer, and what is copied is the
 // pixels it touches. The selection is kept in picture pixels, so it stays on its place when the picture is zoomed or moved.
 
-// The selection as whole pixels of the picture: {x, y, w, h}, or null.
+// view.sel is the frame, {x0, y0, x1, y1} in picture pixels, and its end is the edge of the frame, not a pixel: 3 to 6 is the pixels 3, 4 and 5.
+// With the mouse in the pixelated view it is made of the pixel under each end, both included (see dragFrame), so it is whole pixels already.
+
+// The selection as whole pixels of the picture: {x, y, w, h}, or null. In the smoothed view a frame that is not on whole pixels
+// covers every pixel it touches.
 function selectionRect() {
   const s = view.sel, nw = dispW(), nh = dispH();
   if (!s || !nw) return null;
-  const lo = (a, b) => Math.min(a, b), hi = (a, b) => Math.max(a, b);
-  let x0, x1, y0, y1;
-  if (view.pixelated) { // the pixel under each end, both included
-    x0 = Math.floor(lo(s.x0, s.x1)); x1 = Math.floor(hi(s.x0, s.x1)) + 1;
-    y0 = Math.floor(lo(s.y0, s.y1)); y1 = Math.floor(hi(s.y0, s.y1)) + 1;
-  } else { // every pixel the selection touches
-    x0 = Math.floor(lo(s.x0, s.x1)); x1 = Math.ceil(hi(s.x0, s.x1));
-    y0 = Math.floor(lo(s.y0, s.y1)); y1 = Math.ceil(hi(s.y0, s.y1));
-  }
+  let x0 = Math.floor(Math.min(s.x0, s.x1)), x1 = Math.ceil(Math.max(s.x0, s.x1));
+  let y0 = Math.floor(Math.min(s.y0, s.y1)), y1 = Math.ceil(Math.max(s.y0, s.y1));
   x0 = clamp(x0, 0, nw); x1 = clamp(x1, 0, nw); y0 = clamp(y0, 0, nh); y1 = clamp(y1, 0, nh);
   return x1 > x0 && y1 > y0 ? {x: x0, y: y0, w: x1 - x0, h: y1 - y0} : null;
+}
+
+// The frame that a drag from (ax, ay) to (bx, by), in picture pixels, makes: exactly where the pointer went when smoothed, and the pixel under each
+// end (both included) when pixelated.
+function dragFrame(ax, ay, bx, by) {
+  const x0 = Math.min(ax, bx), x1 = Math.max(ax, bx), y0 = Math.min(ay, by), y1 = Math.max(ay, by);
+  if (!view.pixelated) return {x0, y0, x1, y1};
+  return {x0: Math.floor(x0), y0: Math.floor(y0), x1: Math.floor(x1) + 1, y1: Math.floor(y1) + 1};
 }
 
 // The frame on the screen: on whole pixels when pixelated, exactly where the pointer went when smoothed.
@@ -903,7 +908,7 @@ function beginSelection(clientX, clientY, shift) {
   }
   const [x, y] = pointInPicture(clientX, clientY);
   view.selDrag = {x0: x, y0: y, from: [clientX, clientY]};
-  view.sel = {x0: x, y0: y, x1: x, y1: y};
+  view.sel = dragFrame(x, y, x, y);
   draw();
 }
 
@@ -960,13 +965,15 @@ function startViewer() {
     if (view.tdrag) { dragTransform(ev); return; }
     if (view.selDrag?.edge) {
       const [px, py] = pointInPicture(ev.clientX, ev.clientY), e = view.selDrag.edge;
-      if (e.l) view.sel.x0 = px; if (e.r) view.sel.x1 = px;
-      if (e.t) view.sel.y0 = py; if (e.b) view.sel.y1 = py;
+      const snap = view.pixelated ? Math.round : (v) => v; // (an edge of the frame is between two pixels)
+      if (e.l) view.sel.x0 = snap(px); if (e.r) view.sel.x1 = snap(px);
+      if (e.t) view.sel.y0 = snap(py); if (e.b) view.sel.y1 = snap(py);
       draw();
       return;
     }
     if (view.selDrag) {
-      [view.sel.x1, view.sel.y1] = pointInPicture(ev.clientX, ev.clientY);
+      const [px, py] = pointInPicture(ev.clientX, ev.clientY);
+      view.sel = dragFrame(view.selDrag.x0, view.selDrag.y0, px, py);
       draw();
       return;
     }

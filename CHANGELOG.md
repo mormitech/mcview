@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.12.24 – 2026-10-25 (not released yet)
+
+### Fixed
+- In the pixelated view a selection that mcView made itself (a pasted picture, a moved part, the selection after an undo) was one pixel too big on the right and the bottom: the end of a selection is now the edge of
+  the frame in both views, and only a drag with the mouse in the pixelated view takes the pixel under each end in.
+
 ## 0.12.23 – 2026-10-25 (not released yet)
 
 ### Fixed
