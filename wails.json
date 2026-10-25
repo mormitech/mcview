@@ -1,0 +1,35 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "mcview",
+  "outputfilename": "mcview",
+  "frontend:install": "npm install",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Peter Jenei",
+    "email": "peter.jenei@mormitech.com"
+  },
+  "info": {
+    "companyName": "Mormitech",
+    "productName": "mcView",
+    "productVersion": "0.11.2",
+    "copyright": "Copyright (c) 2026 mcView contributors",
+    "comments": "Picture viewer.",
+    "fileAssociations": [
+      {"ext": "jpg", "name": "JPEG picture", "description": "JPEG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "jpeg", "name": "JPEG picture", "description": "JPEG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "jpe", "name": "JPEG picture", "description": "JPEG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "jfif", "name": "JPEG picture", "description": "JPEG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "png", "name": "PNG picture", "description": "PNG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "gif", "name": "GIF picture", "description": "GIF picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "bmp", "name": "BMP picture", "description": "BMP picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "webp", "name": "WebP picture", "description": "WebP picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "ico", "name": "Icon", "description": "Icon", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "svg", "name": "SVG picture", "description": "SVG picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "avif", "name": "AVIF picture", "description": "AVIF picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "tif", "name": "TIFF picture", "description": "TIFF picture", "iconName": "iconfile", "role": "Viewer"},
+      {"ext": "tiff", "name": "TIFF picture", "description": "TIFF picture", "iconName": "iconfile", "role": "Viewer"}
+    ]
+  }
+}

@@ -1,0 +1,153 @@
+name: build
+
+# Every push builds and tests on the three systems. Pushing a tag like v0.0.1 also attaches the packages to a GitHub
+# release: a zipped .app (macOS arm64), an Inno Setup installer and a zip (Windows x64), a tar.gz (Linux x64).
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact: mcview-macos
+          - os: ubuntu-latest
+            artifact: mcview-linux
+          - os: windows-latest
+            artifact: mcview-windows
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Linux dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev
+      - run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+      # The Go code embeds the built frontend, so it has to exist before `go vet` and `go test`.
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - name: Tags
+        id: tags
+        shell: bash
+        run: echo "tags=${{ runner.os == 'Linux' && 'webkit2_41' || '' }}" >> "$GITHUB_OUTPUT"
+      - run: go vet -tags "${{ steps.tags.outputs.tags }}" ./...
+      - run: go test -tags "${{ steps.tags.outputs.tags }}" ./...
+      - run: wails build -tags "${{ steps.tags.outputs.tags }}"
+      - name: Version
+        id: version
+        shell: bash
+        run: |
+          v=$(node -p "require('./wails.json').info.productVersion")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          # a release tag has to match the version in wails.json
+          if [[ "$GITHUB_REF" == refs/tags/v* && "$GITHUB_REF_NAME" != "v$v" ]]; then
+            echo "tag $GITHUB_REF_NAME does not match wails.json version $v"; exit 1
+          fi
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          mkdir dist
+          # ad-hoc signature, so the bundle is at least internally consistent; it is not notarized
+          codesign --force --deep -s - build/bin/mcview.app
+          # the picture types in Info.plist are what makes Open With offer the app
+          n=$(plutil -extract CFBundleDocumentTypes raw build/bin/mcview.app/Contents/Info.plist)
+          [ "$n" -ge 13 ] || { echo "Info.plist lists only $n picture types"; exit 1; }
+          ditto -c -k --keepParent build/bin/mcview.app "dist/mcview-${{ steps.version.outputs.version }}-macos-arm64.zip"
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          mkdir dist
+          # install.sh makes mcView appear in Open With (see packaging/linux)
+          mkdir stage
+          cp build/bin/mcview LICENSE packaging/linux/install.sh packaging/linux/mcview.desktop stage/
+          cp build/appicon.png stage/
+          tar -czf "dist/mcview-${{ steps.version.outputs.version }}-linux-x64.tar.gz" -C stage .
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $v = '${{ steps.version.outputs.version }}'
+          New-Item -ItemType Directory dist | Out-Null
+          Compress-Archive -Path build\bin\mcview.exe, LICENSE -DestinationPath "dist\mcview-$v-windows-x64.zip"
+          choco install innosetup -y --no-progress
+          (Get-Content packaging\windows\installer.iss -Raw).Replace('__VERSION__', $v) | Set-Content packaging\windows\installer.generated.iss
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q packaging\windows\installer.generated.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed with $LASTEXITCODE" }
+          Get-ChildItem dist | Format-Table Name, Length
+      # The installer is what winget runs, so test it for real: silent install, Start menu entry, the app starts and
+      # stays up, silent uninstall, nothing left behind.
+      - name: Test the Windows installer
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist\mcview-setup-*.exe | Select-Object -First 1
+          if (-not $setup) { throw 'no installer in dist' }
+          $p = Start-Process $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
+          if (-not $p.WaitForExit(180000)) { throw 'installer did not finish in 3 minutes' }
+          if ($p.ExitCode -ne 0) { throw "installer exit code $($p.ExitCode)" }
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\mcview'
+          $exe = Join-Path $dir 'mcview.exe'
+          foreach ($f in 'mcview.exe', 'LICENSE') {
+            if (-not (Test-Path (Join-Path $dir $f))) { throw "missing $f after install" }
+          }
+          $lnk = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\mcView.lnk'
+          if (-not (Test-Path $lnk)) { throw 'no Start menu entry' }
+          Write-Host 'installed: files and Start menu entry are there'
+          # Open with... needs these keys
+          $open = 'HKCU:\Software\Classes\Applications\mcview.exe\shell\open\command'
+          if (-not (Test-Path $open)) { throw 'no Open with entry' }
+          if ((Get-Item 'HKCU:\Software\Classes\.jpg\OpenWithProgids').GetValueNames() -notcontains 'mcview.Picture') { throw 'jpg is not offered' }
+          Write-Host 'Open with entries are there'
+          # The app has to start and keep running (a missing WebView2 runtime, for one, makes it exit at once).
+          $app = Start-Process $exe -PassThru
+          Start-Sleep -Seconds 10
+          if ($app.HasExited) { throw "mcview exited right after starting (exit code $($app.ExitCode))" }
+          Write-Host 'mcview is running'
+          Stop-Process -Id $app.Id -Force
+          $uninstaller = Get-ChildItem (Join-Path $dir 'unins*.exe') | Select-Object -First 1
+          $u = Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
+          if (-not $u.WaitForExit(120000)) { throw 'uninstaller did not finish in 2 minutes' }
+          # The uninstaller hands over to a temporary copy of itself and exits, so wait for the files to go.
+          $deadline = (Get-Date).AddSeconds(60)
+          while ((Test-Path $exe) -and ((Get-Date) -lt $deadline)) { Start-Sleep -Seconds 2 }
+          if (Test-Path $exe) { throw 'files left after uninstall' }
+          if (Test-Path $lnk) { throw 'Start menu entry left after uninstall' }
+          if (Test-Path 'HKCU:\Software\Classes\Applications\mcview.exe') { throw 'Open with entry left after uninstall' }
+          Write-Host 'install, start and uninstall all work'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
+          if-no-files-found: error
+
+  # Pushing a tag like v0.0.1 attaches every package to a GitHub release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # the release notes are this version's section of CHANGELOG.md; without one GitHub writes its own
+          v="${GITHUB_REF_NAME#v}"
+          awk -v v="$v" '/^## /{on = index($0, "## " v " ") == 1; next} on' CHANGELOG.md > notes.md || true
+          if [ -s notes.md ]; then notes=(--notes-file notes.md); else notes=(--generate-notes); fi
+          gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" "${notes[@]}"
