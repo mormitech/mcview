@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.11.3 – 2026-10-25
+
+### Fixed
+- **Windows: "Open with…" did not list mcView.** The installer wrote the picture types as registry values of type "none", which Inno Setup does not
+  create at all; they are empty strings now. (Found by the installer test of the first GitHub build.)
+
 ## 0.11.2 – 2026-10-25
 
 ### Changed

@@ -40,19 +40,19 @@ Root: HKCU; Subkey: "Software\Classes\Applications\mcview.exe\shell\open\command
 Root: HKCU; Subkey: "Software\Mormitech\mcView\Capabilities"; ValueType: string; ValueName: "ApplicationName"; ValueData: "mcView"; Flags: uninsdeletekey
 Root: HKCU; Subkey: "Software\Mormitech\mcView\Capabilities"; ValueType: string; ValueName: "ApplicationDescription"; ValueData: "Picture viewer"
 Root: HKCU; Subkey: "Software\RegisteredApplications"; ValueType: string; ValueName: "mcView"; ValueData: "Software\Mormitech\mcView\Capabilities"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.jpg\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.jpeg\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.jpe\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.jfif\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.png\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.gif\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.bmp\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.webp\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.ico\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.svg\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.avif\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.tif\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
-Root: HKCU; Subkey: "Software\Classes\.tiff\OpenWithProgids"; ValueType: none; ValueName: "mcview.Picture"; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.jpg\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.jpeg\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.jpe\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.jfif\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.png\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.gif\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.bmp\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.webp\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.ico\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.svg\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.avif\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.tif\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCU; Subkey: "Software\Classes\.tiff\OpenWithProgids"; ValueType: string; ValueName: "mcview.Picture"; ValueData: ""; Flags: uninsdeletevalue
 Root: HKCU; Subkey: "Software\Classes\Applications\mcview.exe\SupportedTypes"; ValueType: string; ValueName: ".jpg"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\Applications\mcview.exe\SupportedTypes"; ValueType: string; ValueName: ".jpeg"; ValueData: ""
 Root: HKCU; Subkey: "Software\Classes\Applications\mcview.exe\SupportedTypes"; ValueType: string; ValueName: ".jpe"; ValueData: ""
