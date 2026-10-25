@@ -127,7 +127,7 @@ func TestPasteFromSystemClipboard(t *testing.T) {
 		t.Skip("cannot put a picture on the clipboard here: ", err)
 	}
 	a := NewApp()
-	if err := a.PasteImage(); err != nil {
+	if _, err := a.PasteLayer(0, 0, 0); err != nil {
 		t.Fatal(err)
 	}
 	if info := a.Image(); info.Name != "[clipboard image]" {
@@ -149,7 +149,7 @@ func TestSaveTo(t *testing.T) {
 		a.setClip(clipImage())
 		dir := t.TempDir()
 		target := filepath.Join(dir, c.name)
-		msg, err := a.saveTo(target)
+		msg, err := a.saveTo(target, 0)
 		if err != nil || !strings.Contains(msg, filepath.Base(target)) {
 			t.Fatalf("saveTo(%s) = %q, %v", c.name, msg, err)
 		}
@@ -176,7 +176,7 @@ func TestSaveTo(t *testing.T) {
 	a := NewApp()
 	a.setClip(clipImage())
 	dir := t.TempDir()
-	if _, err := a.saveTo(filepath.Join(dir, "noext")); err != nil {
+	if _, err := a.saveTo(filepath.Join(dir, "noext"), 0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(filepath.Join(dir, "noext.png")); err != nil {
@@ -184,7 +184,7 @@ func TestSaveTo(t *testing.T) {
 	}
 	b := NewApp()
 	b.setClip(clipImage())
-	if _, err := b.saveTo(filepath.Join(dir, "x.webp")); err == nil || b.clip == nil {
+	if _, err := b.saveTo(filepath.Join(dir, "x.webp"), 0); err == nil || b.clip == nil {
 		t.Errorf("saving as .webp must be refused and the paste kept, err %v", err)
 	}
 	if left, _ := filepath.Glob(filepath.Join(dir, "x.*")); len(left) != 0 {
@@ -203,14 +203,14 @@ func TestSaveFileToOtherFolder(t *testing.T) {
 	a := NewApp()
 	a.setImage(pic)
 	// the same folder under another name: the window stays on the picture, the file of the same type is a copy byte for byte
-	if msg, err := a.saveTo(filepath.Join(src, "copy.jpeg")); err != nil || a.current().Path != pic {
+	if msg, err := a.saveTo(filepath.Join(src, "copy.jpeg"), 0); err != nil || a.current().Path != pic {
 		t.Fatalf("same folder: %q, %v, picture %s", msg, err, a.current().Path)
 	}
 	if got, _ := os.ReadFile(filepath.Join(src, "copy.jpeg")); !bytes.Equal(got, b.Bytes()) {
 		t.Error("a JPEG saved as JPEG must be a copy of the file")
 	}
 	// itself: nothing happens, and the file is not damaged
-	if _, err := a.saveTo(pic); err != nil {
+	if _, err := a.saveTo(pic, 0); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := os.ReadFile(pic); !bytes.Equal(got, b.Bytes()) {
@@ -218,7 +218,7 @@ func TestSaveFileToOtherFolder(t *testing.T) {
 	}
 	// another folder: the new file is the picture now, and its folder the one the arrow keys go through
 	dst := t.TempDir()
-	if _, err := a.saveTo(filepath.Join(dst, "moved.png")); err != nil {
+	if _, err := a.saveTo(filepath.Join(dst, "moved.png"), 0); err != nil {
 		t.Fatal(err)
 	}
 	if info := a.Image(); info.Path != filepath.Join(dst, "moved.png") || info.Dir != dst || info.Count != 1 || info.Index != 1 {
@@ -238,7 +238,7 @@ func TestSaveTurnedPicture(t *testing.T) {
 	a := NewApp()
 	a.setImage(src)
 	out := filepath.Join(t.TempDir(), "turned.png")
-	if _, err := a.saveTo(out); err != nil {
+	if _, err := a.saveTo(out, 0); err != nil {
 		t.Fatal(err)
 	}
 	f, _ := os.Open(out)
@@ -254,7 +254,7 @@ func TestSaveWhatCannotBeConverted(t *testing.T) {
 	a := NewApp()
 	a.setImage(src)
 	out := filepath.Join(t.TempDir(), "v.png")
-	if _, err := a.saveTo(out); err == nil {
+	if _, err := a.saveTo(out, 0); err == nil {
 		t.Error("an SVG cannot be saved as PNG: want an error")
 	}
 	if _, err := os.Stat(out); err == nil {

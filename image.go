@@ -33,6 +33,15 @@ var imageTypes = map[string]string{
 	".tiff": "image/tiff",
 }
 
+// canAlpha is whether a picture of this file name can have transparent pixels (a picture without a file, from the clipboard, can).
+func canAlpha(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".jpg", ".jpeg", ".jpe", ".jfif", ".bmp":
+		return false
+	}
+	return true
+}
+
 func isImage(path string) bool {
 	_, ok := imageTypes[strings.ToLower(filepath.Ext(path))]
 	return ok
@@ -57,6 +66,12 @@ type ImageInfo struct {
 	Index int    `json:"index"`
 	Count int    `json:"count"`
 	State int    `json:"state"` // which picture state this is, for undo (see undo.go)
+	// Modified: what is shown is not what the file holds (something was pasted into it, or it is a picture from the clipboard that has no
+	// file yet); the name then has a * after it.
+	Modified bool `json:"modified"`
+	// CanAlpha: the type can have transparent pixels (PNG, GIF, WebP, TIFF, ICO, SVG, AVIF, or a picture from the clipboard); what a lifted part leaves
+	// behind is then transparent, not white.
+	CanAlpha bool `json:"canAlpha"`
 }
 
 // current is the picture of this window without its place in the folder, which needs the folder to be read.
@@ -67,9 +82,9 @@ func (a *App) current() ImageInfo {
 		if a.clip == nil {
 			return ImageInfo{}
 		}
-		return ImageInfo{Name: clipboardName, Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID}
+		return ImageInfo{Name: clipboardName, Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: true, CanAlpha: true}
 	}
-	return ImageInfo{Name: filepath.Base(a.image), Path: a.image, Dir: filepath.Dir(a.image), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID}
+	return ImageInfo{Name: filepath.Base(a.image), Path: a.image, Dir: filepath.Dir(a.image), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: a.clip != nil || a.fl.moved(), CanAlpha: canAlpha(a.image)}
 }
 
 // Image is the picture of this window, or an empty ImageInfo.
@@ -105,6 +120,7 @@ func (a *App) setImage(path string) error {
 	a.clip, a.clipPNG = nil, nil
 	a.imgSeq++
 	a.pix = pixelCache{} // the decoded picture of the one before is not needed any more
+	a.fl = nil
 	a.newStateLocked()
 	a.mu.Unlock()
 	if a.ctx != nil { // not yet during startup: the window asks for the picture itself
@@ -139,6 +155,14 @@ func (a *App) onFileOpen(path string) {
 	switch {
 	case abs == current: // the picture this window shows already
 	case (current == "" && !pasted) || started: // an empty window takes it; a pasted picture, which has no file, is not thrown away
+		if pasted { // a window started for a picture, with changes in it: ask first (not on this thread: the alert waits for an answer)
+			go func() {
+				if a.discardOK("open " + filepath.Base(abs)) {
+					a.setImage(abs)
+				}
+			}()
+			return
+		}
 		a.setImage(abs)
 	default:
 		a.openWindow(abs)
@@ -155,7 +179,7 @@ func (a *App) imageHandler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		if path == "" { // a picture pasted from the clipboard
+		if pasted != nil { // a picture from the clipboard, or a file with something pasted into it: the pixels are in memory
 			w.Header().Set("Cache-Control", "no-store")
 			w.Header().Set("Content-Type", "image/png")
 			http.ServeContent(w, r, "", time.Time{}, bytes.NewReader(pasted))

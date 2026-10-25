@@ -212,3 +212,28 @@ func tiffOrientation(seg []byte) int {
 	}
 	return 0
 }
+
+// HasTransparency tells whether the picture has a pixel that is not opaque: the UI then shows a chequered background, as Gimp does. It is
+// worked out after the picture is shown (it decodes the file, which the pixel readout needs anyway). JPEG and BMP have none; SVG and ICO
+// are taken to have (their background is empty); AVIF is not looked into.
+func (a *App) HasTransparency() bool {
+	cur := a.current()
+	switch ext := strings.ToLower(filepath.Ext(cur.Path)); {
+	case cur.URL == "":
+		return false
+	case cur.Path != "" && !canAlpha(cur.Path):
+		return false
+	case ext == ".svg" || ext == ".ico":
+		return true
+	case ext == ".avif":
+		return false
+	}
+	pc, source, err := a.decoded()
+	if err != nil || source != "go" {
+		return false
+	}
+	if o, ok := pc.img.(interface{ Opaque() bool }); ok {
+		return !o.Opaque()
+	}
+	return false
+}

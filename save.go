@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"image/color/palette"
+
 	"golang.org/x/image/bmp"
 	"golang.org/x/image/tiff"
 
@@ -29,7 +31,7 @@ var saveFormats = map[string]string{
 // (PNG, JPEG, GIF, BMP or TIFF; a name without one gets .png). A picture that was pasted becomes the file it was saved to. Saving to
 // another folder makes that folder the one this window works in: the arrow keys go through its pictures from then on. The text
 // returned is for the UI to show; it is empty when the dialog was cancelled.
-func (a *App) SaveAs() (string, error) {
+func (a *App) SaveAs(rot int) (string, error) {
 	a.mu.Lock()
 	if a.saving {
 		a.mu.Unlock()
@@ -46,6 +48,14 @@ func (a *App) SaveAs() (string, error) {
 	name := cur.Name
 	if cur.Path == "" {
 		name = "clipboard-" + time.Now().Format("20060102-150405") + ".png"
+	} else if _, ok := saveFormats[strings.ToLower(filepath.Ext(name))]; !ok { // a type that is not written (WebP, SVG…): PNG
+		name = strings.TrimSuffix(name, filepath.Ext(name)) + ".png"
+	}
+	// a picture with transparent parts is offered as PNG, which keeps them (JPEG cannot; Save As to JPEG still works, with white)
+	if ext := strings.ToLower(filepath.Ext(name)); saveFormats[ext] == "jpeg" || saveFormats[ext] == "bmp" {
+		if a.HasTransparency() {
+			name = strings.TrimSuffix(name, filepath.Ext(name)) + ".png"
+		}
 	}
 	target, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
 		Title:                "Save picture as",
@@ -57,27 +67,20 @@ func (a *App) SaveAs() (string, error) {
 	if err != nil || target == "" {
 		return "", err
 	}
-	return a.saveTo(target)
+	return a.saveTo(target, rot)
 }
 
-// saveAs is File → Save As…: the same as SaveAs, with the result shown by the UI.
-func (a *App) saveAs() {
-	msg, err := a.SaveAs()
-	switch {
-	case err != nil:
-		a.emit("problem", err.Error())
-	case msg != "":
-		a.emit("note", msg)
-	}
-}
+// saveAs is File → Save As…: the UI knows how the picture is turned, so the menu only tells it to save.
+func (a *App) saveAs() { a.emit("menu-save") }
 
 func samePath(a, b string) bool {
 	return filepath.Clean(a) == filepath.Clean(b) // two names for one file are not told apart; saving over it is then refused by the rename check
 }
 
-// saveTo writes the picture of this window to target and, when that is a new folder (or the picture had no file), makes the saved file
-// the picture of the window.
-func (a *App) saveTo(target string) (string, error) {
+// saveTo writes the picture of this window to target, turned rot quarters clockwise as the view shows it, with whatever was pasted into
+// it. When that is a new folder, or the picture had no file, was changed or is turned, the saved file becomes the picture of the window
+// (and is not modified or turned any more).
+func (a *App) saveTo(target string, rot int) (string, error) {
 	ext := strings.ToLower(filepath.Ext(target))
 	if ext == "" {
 		target, ext = target+".png", ".png"
@@ -86,19 +89,27 @@ func (a *App) saveTo(target string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("mcView saves PNG, JPEG, GIF, BMP and TIFF; %s is none of them", ext)
 	}
+	if a.floating() { // the lifted part is part of what is saved; the picture it makes is turned for good
+		if err := a.bakeFloat(false); err != nil {
+			return "", err
+		}
+		rot = 0
+	}
 	cur := a.current()
 	if cur.URL == "" {
 		return "", nil
 	}
-	if cur.Path != "" && samePath(cur.Path, target) {
+	rot = (rot%4 + 4) % 4
+	if cur.Path != "" && samePath(cur.Path, target) && !cur.Modified && rot == 0 {
 		return cur.Name + " is this picture already", nil
 	}
+	transparent := a.HasTransparency() // asked now: the file that is saved is what is shown at this moment
 	tmp, err := os.CreateTemp(filepath.Dir(target), ".mcview-save-*")
 	if err != nil {
 		return "", err
 	}
 	defer os.Remove(tmp.Name()) // nothing is left behind when it did not work, and nothing when it is renamed
-	err = a.writePicture(tmp, cur, format)
+	err = a.writePicture(tmp, cur, format, rot)
 	if cerr := tmp.Close(); err == nil {
 		err = cerr
 	}
@@ -108,25 +119,33 @@ func (a *App) saveTo(target string) (string, error) {
 	if err := os.Rename(tmp.Name(), target); err != nil {
 		return "", err
 	}
+	lost := ""
+	if format == "jpeg" && transparent {
+		lost = "; the transparent parts are white (JPEG has none)"
+	}
 	os.Chmod(target, 0o644)
 
 	dir := filepath.Dir(target)
-	if cur.Path == "" || !samePath(filepath.Dir(cur.Path), dir) {
+	if cur.Path == "" || cur.Modified || rot != 0 || !samePath(filepath.Dir(cur.Path), dir) {
 		a.mu.Lock()
 		a.workDir = dir
 		a.mu.Unlock()
+		newFolder := cur.Path == "" || !samePath(filepath.Dir(cur.Path), dir)
 		if err := a.setImage(target); err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("Saved %s; %s is the folder now", filepath.Base(target), dir), nil
+		if !newFolder { // changed or turned, saved next to where it came from
+			return "Saved " + filepath.Base(target) + lost, nil
+		}
+		return fmt.Sprintf("Saved %s; %s is the folder now%s", filepath.Base(target), dir, lost), nil
 	}
-	return "Saved " + filepath.Base(target), nil
+	return "Saved " + filepath.Base(target) + lost, nil
 }
 
 // writePicture writes the picture to f in the given format. A file that is of that type already is copied as it is, which keeps
 // everything in it (EXIF, profiles, animation); anything else is decoded and written again, turned the way it is shown.
-func (a *App) writePicture(f *os.File, cur ImageInfo, format string) error {
-	if cur.Path != "" && saveFormats[strings.ToLower(filepath.Ext(cur.Path))] == format {
+func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) error {
+	if cur.Path != "" && !cur.Modified && rot == 0 && saveFormats[strings.ToLower(filepath.Ext(cur.Path))] == format {
 		src, err := os.Open(cur.Path)
 		if err != nil {
 			return err
@@ -142,7 +161,7 @@ func (a *App) writePicture(f *os.File, cur ImageInfo, format string) error {
 	if source != "go" {
 		return fmt.Errorf("mcView cannot convert %s to another type", cur.Name)
 	}
-	return encodePicture(f, shownImage(pc), format)
+	return encodePicture(f, turnImage(shownImage(pc), rot), format)
 }
 
 // shownImage is the picture the way it is shown, with the EXIF orientation applied.
@@ -173,6 +192,9 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 		draw.Draw(flat, b, img, b.Min, draw.Over)
 		return jpeg.Encode(w, flat, &jpeg.Options{Quality: 95})
 	case "gif":
+		if o, ok := img.(interface{ Opaque() bool }); !ok || !o.Opaque() { // a transparent colour of its own, or the transparent parts would be black
+			return gif.Encode(w, img, &gif.Options{NumColors: 256, Quantizer: transparentPlan9{}, Drawer: draw.FloydSteinberg})
+		}
 		return gif.Encode(w, img, &gif.Options{NumColors: 256, Drawer: draw.FloydSteinberg})
 	case "bmp":
 		return bmp.Encode(w, img)
@@ -180,4 +202,11 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 		return tiff.Encode(w, img, &tiff.Options{Compression: tiff.Deflate, Predictor: true})
 	}
 	return fmt.Errorf("cannot write %s", format)
+}
+
+// transparentPlan9 is the 256 colour palette of Go with the first colour made transparent, for a GIF of a picture with transparent parts.
+type transparentPlan9 struct{}
+
+func (transparentPlan9) Quantize(p color.Palette, m image.Image) color.Palette {
+	return append(color.Palette{color.Transparent}, palette.Plan9[:255]...)
 }

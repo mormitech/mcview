@@ -8,6 +8,8 @@ export namespace main {
 	    index: number;
 	    count: number;
 	    state: number;
+	    modified: boolean;
+	    canAlpha: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new ImageInfo(source);
@@ -22,6 +24,28 @@ export namespace main {
 	        this.index = source["index"];
 	        this.count = source["count"];
 	        this.state = source["state"];
+	        this.modified = source["modified"];
+	        this.canAlpha = source["canAlpha"];
+	    }
+	}
+	export class PastedLayer {
+	    png: string;
+	    x: number;
+	    y: number;
+	    w: number;
+	    h: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PastedLayer(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.png = source["png"];
+	        this.x = source["x"];
+	        this.y = source["y"];
+	        this.w = source["w"];
+	        this.h = source["h"];
 	    }
 	}
 	export class Pixel {

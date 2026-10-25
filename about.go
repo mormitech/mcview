@@ -37,6 +37,7 @@ func fileMenu(app *App, m *menu.Menu) {
 	file.AddText("New Window", keys.CmdOrCtrl("n"), func(*menu.CallbackData) { app.newWindow() })
 	file.AddText("Open…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { app.chooseImage() })
 	file.AddText("Save As…", keys.CmdOrCtrl("s"), func(*menu.CallbackData) { app.saveAs() })
+	file.AddText("Close Image", keys.Combo("w", keys.CmdOrCtrlKey, keys.ShiftKey), func(*menu.CallbackData) { app.emit("menu-close-image") })
 	if runtime.GOOS == "darwin" {
 		file.AddSeparator()
 		file.AddText("Close Window", keys.CmdOrCtrl("w"), func(*menu.CallbackData) { app.CloseWindow() })

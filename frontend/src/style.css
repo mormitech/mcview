@@ -18,21 +18,21 @@ button { font:inherit; color:var(--text); background:var(--btn); border:1px soli
 button:hover { border-color:var(--accent); }
 
 #viewer { position:absolute; inset:0; background:var(--view); }
+#stage.checker { background:repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%) 0 0 / 16px 16px; }
 #stage { position:absolute; inset:0; overflow:hidden; touch-action:none; user-select:none; }
 
 #pic { position:absolute; left:0; top:0; transform-origin:50% 50%; max-width:none; image-rendering:auto; }
 #pic[hidden] { display:none; }
 #pic.turning { transition: transform .2s ease-out, width .2s ease-out, height .2s ease-out; }
-#sel { position:absolute; box-sizing:border-box; border:1px solid #fff; pointer-events:none; box-shadow:0 0 0 1px rgba(0,0,0,.55), 0 0 6px 2px rgba(0,0,0,.35); } #sel[hidden] { display:none; }
-#sel .ants { display:none; position:absolute; left:-1px; top:-1px; width:calc(100% + 2px); height:calc(100% + 2px); overflow:visible; pointer-events:none; }
-#sel.copied .ants { display:block; } #sel.copied { border-color:transparent; } /* the part that is on the clipboard: marching ants */
-#sel .ants rect { fill:none; stroke-width:1; stroke-dasharray:5 5; animation:ants .5s linear infinite; }
-#sel .ants .k { stroke:#000; } #sel .ants .w { stroke:#fff; stroke-dashoffset:5; animation-name:ants-w; }
-@keyframes ants { to { stroke-dashoffset:-10; } } @keyframes ants-w { from { stroke-dashoffset:5; } to { stroke-dashoffset:-5; } }
-#sel .edge { position:absolute; display:none; background:#2f9bff; box-shadow:0 0 0 1px rgba(255,255,255,.9), 0 0 6px 1px rgba(0,0,0,.5); }
-#sel .edge.on { display:block; }
-#sel .edge.t, #sel .edge.b { left:-2px; right:-2px; height:4px; } #sel .edge.t { top:-3px; } #sel .edge.b { bottom:-3px; }
-#sel .edge.l, #sel .edge.r { top:-2px; bottom:-2px; width:4px; } #sel .edge.l { left:-3px; } #sel .edge.r { right:-3px; } #pic.pixelated { image-rendering:pixelated; }
+#sel { position:absolute; box-sizing:border-box; pointer-events:none; background:rgba(255,255,255,.24); transform:translateZ(0); } #sel[hidden] { display:none; } /* the selected part a little lighter; the border is #sel .ants */
+#hole { position:absolute; background:#fff; pointer-events:none; } #hole[hidden] { display:none; }
+#float { position:absolute; max-width:none; pointer-events:none; image-rendering:auto; } #float[hidden] { display:none; } #float.pixelated { image-rendering:pixelated; }
+#sel .ants { position:absolute; left:0; top:0; overflow:hidden; pointer-events:none; } /* (its size and the size of its rectangles are set by the page, in numbers: sizes worked out by the style left traces of the dashes behind) */ /* the border: black and dirty white dashes, 2px wide, one after the other */
+#sel .ants rect { fill:none; stroke-width:2; stroke-dasharray:6 6; animation:ants .6s linear infinite; } /* set: long dashes that move */
+#sel.drawing .ants rect { stroke-dasharray:3 3; animation:none; } /* while the button is down: short dashes that stand still */
+#sel .ants .k { stroke:#000; } #sel .ants .w { stroke:#ececec; stroke-dashoffset:6; animation-name:ants-w; } #sel.drawing .ants .w { stroke-dashoffset:3; }
+@keyframes ants { to { stroke-dashoffset:-12; } } @keyframes ants-w { from { stroke-dashoffset:6; } to { stroke-dashoffset:-6; } }
+#pic.pixelated { image-rendering:pixelated; }
 #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:0 32px; pointer-events:none; }
 #empty[hidden] { display:none; } #empty button { pointer-events:auto; margin-top:8px; } #empty h1 { font-size:28px; margin:8px 0 0; }
 #status { position:absolute; left:0; right:0; bottom:0; padding:5px 12px; font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; gap:16px; }
@@ -56,3 +56,12 @@ body.about-mode #viewer { display:none; }
 
 .logo { filter:none; }
 @media (prefers-color-scheme: dark) { .logo { filter:invert(1); } }
+
+/* the edit bar (key E): a column of tools on the left; it slides in from the left and fades, like the bar at the bottom in full screen */
+#tools { position:absolute; left:0; top:0; bottom:0; width:56px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; gap:6px; z-index:4;
+  background:var(--bar); border-right:1px solid var(--line); backdrop-filter:blur(8px);
+  transform:translateX(-100%); opacity:0; pointer-events:none; transition:transform .12s ease-out, opacity .12s ease-out; }
+body.edit #tools { transform:none; opacity:1; pointer-events:auto; }
+#tools .tool { width:42px; height:42px; padding:0; display:flex; align-items:center; justify-content:center; }
+#tools .tool svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#status { z-index:5; }

@@ -5,6 +5,7 @@ import (
 	"image"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,7 +42,12 @@ type App struct {
 	stateID   int              // the number of the one it is in; 0 is the empty window
 	nextState int
 
-	openWindow func(path string) error // starts a window for a picture; spawn, except in the tests
+	openWindow     func(path string) error                 // starts a window for a picture; spawn, except in the tests
+	confirmDiscard func(name, action string) discardChoice // asks before unsaved changes are thrown away; the system's alert, except in the tests (see discard.go)
+	confirmLarge   func(w, h, pw, ph int) largeChoice      // asks what to do with a big clipboard picture; the system's alert, except in the tests (see discard.go)
+	fl             *floatSession                           // the part of the picture that is lifted and dropped somewhere else, not applied yet (see float.go)
+	saved          *winState                               // the place and size the window was left in, from the last run (see winstate.go)
+	turn           int                                     // how many quarter turns the view has (the UI tells), for the Save As that the alert can start
 }
 
 func NewApp() *App {
@@ -53,7 +59,10 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	trace("startup")
-	fitWindow(ctx, a.winW, a.winH)     // every window, the small ones too
+	fitWindow(ctx, a.winW, a.winH) // every window, the small ones too
+	if a.saved != nil && a.mode == "" {
+		restorePosition(ctx, *a.saved)
+	}
 	if a.cascade > 0 && a.mode == "" { // a window started by another one opens a little down and to the right of it, not on top of it
 		x, y := wruntime.WindowGetPosition(ctx)
 		wruntime.WindowSetPosition(ctx, x+28*a.cascade, y+28*a.cascade)
@@ -92,6 +101,9 @@ func (a *App) ToggleFullscreen() {
 	}
 }
 
+// SetTurn tells this side how many quarter turns clockwise the picture is shown with, for the Save As that an alert about unsaved changes can start.
+func (a *App) SetTurn(rot int) { a.mu.Lock(); a.turn = (rot%4 + 4) % 4; a.mu.Unlock() }
+
 // CloseWindow is Cmd+W (Ctrl+W): it closes the window the way its close button does, which ends this program (one window per process).
 func (a *App) CloseWindow() {
 	if a.ctx != nil {
@@ -115,12 +127,19 @@ func (a *App) Version() string { return version() }
 // Mode tells the UI which window it is in: "" for the viewer, "about" for the About window.
 func (a *App) Mode() string { return a.mode }
 
+// modifiedMark follows the name of a picture with unsaved changes, in the title and in the bottom bar (the UI has the same in main.js).
+const modifiedMark = " ●"
+
 // titleWindow names the window after its picture.
 func (a *App) titleWindow() {
 	if a.ctx == nil || a.mode != "" {
 		return
 	}
-	if name := a.current().Name; name != "" {
+	if cur := a.current(); cur.Name != "" {
+		name := cur.Name
+		if cur.Modified {
+			name += modifiedMark
+		}
 		wruntime.WindowSetTitle(a.ctx, name+" – mcView v"+version())
 	} else { // undo can take the window back to empty
 		wruntime.WindowSetTitle(a.ctx, "mcView v"+version())
@@ -151,7 +170,7 @@ func (a *App) ChooseImage() error {
 		DefaultDirectory: dir,
 		Filters:          []wruntime.FileFilter{imageFilter()},
 	})
-	if err != nil || path == "" {
+	if err != nil || path == "" || !a.discardOK("open "+filepath.Base(path)) {
 		return err
 	}
 	return a.setImage(path)

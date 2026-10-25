@@ -50,6 +50,10 @@ func (a *App) Step(delta int) (string, error) {
 		}
 		return "", nil
 	}
+	if !a.discardOK("go to " + map[bool]string{true: "the next", false: "the previous"}[delta > 0] + " picture") {
+		return "", nil
+	}
+	cur = a.current() // saving may have made the picture a file in another folder
 	names, err := listPictures(cur.Dir)
 	if err != nil {
 		return "", err

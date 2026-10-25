@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, RestoreState, KeepStates, CopyImageNative, PasteImage, SaveAs, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -30,6 +30,8 @@ async function showAbout() {
     <p class="links"><a href="${REPO}">Website and source code</a><a href="${REPO}/issues">Report a problem</a><a href="${REPO}/blob/main/LICENSE">License</a><a class="coffee" href="https://mormitech.com/support-us/">${COFFEE}Buy me a coffee</a></p>`;
 }
 
+window.addEventListener('error', (e) => Trace(`error: ${e.message} at ${e.lineno}:${e.colno}`)); // (with MCVIEW_TRACE set, a failure of the page shows in the trace)
+window.addEventListener('unhandledrejection', (e) => Trace(`rejection: ${e.reason}`));
 document.addEventListener('click', (ev) => {
   const a = ev.target.closest('a[href^="http"]');
   if (a) { ev.preventDefault(); BrowserOpenURL(a.href); }
@@ -49,8 +51,10 @@ document.addEventListener('click', (ev) => {
 
 const MODES = {'1': 'original', '2': 'large', '3': 'contain', '4': 'stretch'};
 const pic = $('pic');
-const view = {name: '', dir: '', index: 0, count: 0, mode: savedMode(), pixelated: false, state: 0, token: 0, sel: null, selDrag: null, rot: 0, angle: 0, free: false, ox: 0, oy: 0, sx: 1, sy: 1, x: 0, y: 0, drag: null};
+const view = {name: '', dir: '', index: 0, count: 0, mode: savedMode(), pixelated: false, state: 0, modified: false, canAlpha: false, fl: null, tdrag: null, hlMode: '', token: 0, sel: null, selDrag: null, rot: 0, angle: 0, free: false, ox: 0, oy: 0, sx: 1, sy: 1, x: 0, y: 0, drag: null};
+const CHECKER = 'repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%)'; // the squares of a picture with transparent parts, a bluish one and a white one
 let problemTimer = 0;
+let pointerDown = false;
 
 function savedMode() {
   try { const m = localStorage.getItem('mcview.mode'); if (Object.values(MODES).includes(m)) return m; } catch {}
@@ -91,7 +95,7 @@ function rotate(dir) {
   const b = stageSize(), W = dispW(), H = dispH();
   const X = (b.w / 2 - view.x) / view.sx, Y = (b.h / 2 - view.y) / view.sy; // the middle of the window, in the picture as shown
   const mid = dir > 0 ? [H - Y, X] : [Y, W - X]; // and where that point is in the picture after the turn
-  view.rot = (view.rot + dir + 4) % 4; view.angle += dir * 90;
+  view.rot = (view.rot + dir + 4) % 4; view.angle += dir * 90; SetTurn(view.rot);
   view.sel = null; view.selDrag = null; view.hl = null; clearPixel();
   if (view.free) {
     [view.sx, view.sy] = [view.sy, view.sx]; // what was the vertical scale is the horizontal one now
@@ -198,7 +202,8 @@ function draw() {
   const pct = (v) => `${Math.round(v * 100)}%`;
   const zoom = Math.abs(view.sx - view.sy) > 0.005 ? `${pct(view.sx)} × ${pct(view.sy)}` : pct(view.sx);
   const sel = selectionRect();
-  setStatus(view.dir, `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}`, view.name);
+  setStatus(view.dir, `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}`, view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''));
+  renderFloat();
   renderSelection();
   if (view.pixelated && lastPointer) readPixel(lastPointer.x, lastPointer.y); // the picture moved under the pointer
 }
@@ -238,27 +243,38 @@ function zoomTo100() {
 
 // opts.rot: the turn the picture is shown with (undo brings a picture back as it was turned); a new picture is not turned.
 function showImage(info, opts = {}) {
+  let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
   view.state = info?.state || 0;
-  clearTimeout(turnTimer); pic.classList.remove('turning'); view.rot = opts.rot || 0; view.angle = view.rot * 90;
+  view.fl = opts.fl || null; view.tdrag = null; if (!opts.keepView && !opts.fl) renderFloat(); // (the same picture with a change applied: what is lifted stays on the screen until the new one is there, so nothing flashes)
+  clearTimeout(turnTimer); pic.classList.remove('turning'); view.rot = opts.rot || 0; view.angle = view.rot * 90; SetTurn(view.rot);
   if (!info?.url) { // no picture: the window as it is when it starts
     stopBounce(); pic.onload = null; pic.removeAttribute('src');
-    view.name = ''; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
-    pic.hidden = true; $('empty').hidden = false; setStatus('');
-    return;
+    view.name = ''; view.modified = false; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
+    pic.hidden = true; $('empty').hidden = false; setStatus(''); renderSelection();
+    done();
+    return loaded;
   }
-  view.name = info.name; view.dir = info.dir; view.index = info.index; view.count = info.count; view.free = false;
+  view.name = info.name; view.modified = !!info.modified; view.canAlpha = !!info.canAlpha; view.dir = info.dir; view.index = info.index; view.count = info.count; if (!opts.keepView) view.free = false; // (a picture that is the same, with something applied, keeps its zoom)
   stopBounce();
-  view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
+  if (!opts.keepView) $('stage').classList.remove('checker');
+  view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = opts.sel ? rectSel(opts.sel) : null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
   pic.onload = () => {
     Trace(`img onload, visibility ${document.visibilityState}, focus ${document.hasFocus()}`);
     pic.hidden = false; $('empty').hidden = true; draw();
+    checkTransparency(view.token);
     if (view.pixelated) preparePixels();
     pic.decode().then(() => Trace('decoded'), () => {});
     requestAnimationFrame(() => Trace('first paint after load'));
+    done();
   };
-  pic.onerror = () => problem(`Cannot show ${info.name}`);
+  pic.onerror = () => { problem(`Cannot show ${info.name}`); done(); };
   Trace('img src set');
-  pic.src = info.url;
+  if (opts.keepView) { // the new one is decoded off screen first, and then it takes the place of the old one in a single step
+    const pre = document.createElement('img'), token = view.token; // (not new Image(): that name is the binding of Go's Image)
+    pre.src = info.url;
+    pre.decode().catch(() => {}).then(() => { if (token === view.token) pic.src = info.url; else done(); });
+  } else pic.src = info.url;
+  return loaded;
 }
 
 function problem(text, bad = true) {
@@ -426,11 +442,17 @@ const boxKey = (b) => `${view.state}:${view.rot}:${b.x0},${b.x1},${b.y0},${b.y1}
 function renderSelection() {
   const el = $('sel'), box = selectionBox();
   if (!box) { el.hidden = true; return; }
+  el.classList.toggle('drawing', !!(view.selDrag || view.tdrag)); // while the button is down the dashes stand still; set, they move
   el.classList.toggle('copied', copiedKey === boxKey(box));
+  el.classList.toggle('content', view.hlMode === 'content');
   const {x0, x1, y0, y1} = box;
   for (const e of ['t', 'b', 'l', 'r']) el.querySelector(`.edge.${e}`).classList.toggle('on', !!view.hl?.[e]);
   el.style.left = `${view.x + view.ox + x0 * view.sx}px`; el.style.top = `${view.y + view.oy + y0 * view.sy}px`;
-  el.style.width = `${(x1 - x0) * view.sx}px`; el.style.height = `${(y1 - y0) * view.sy}px`;
+  const w = Math.max(3, Math.round((x1 - x0) * view.sx)), h = Math.max(3, Math.round((y1 - y0) * view.sy));
+  el.style.width = `${w}px`; el.style.height = `${h}px`;
+  const svg = el.querySelector('.ants'); // the dashes: a rectangle of numbers, so that nothing of an earlier size is left on the screen
+  svg.setAttribute('width', w); svg.setAttribute('height', h);
+  for (const r of svg.querySelectorAll('rect')) { r.setAttribute('x', 1); r.setAttribute('y', 1); r.setAttribute('width', w - 2); r.setAttribute('height', h - 2); }
   el.hidden = false;
 }
 
@@ -438,7 +460,7 @@ function renderSelection() {
 const EDGE_GRAB = 6; // screen pixels
 
 // Which edges of the frame are within reach of a position of the window: {t, b, l, r} (corners have two), or null.
-function edgeAt(clientX, clientY) {
+function edgeAt(clientX, clientY, inside = false) {
   const box = selectionBox();
   if (!box) return null;
   const r = $('stage').getBoundingClientRect(), ox = r.left + view.x + view.ox, oy = r.top + view.y + view.oy;
@@ -449,26 +471,158 @@ function edgeAt(clientX, clientY) {
     l: inY && near(clientX, l, rt), r: inY && near(clientX, rt, l) && !(Math.abs(clientX - l) === Math.abs(clientX - rt)),
     t: inX && near(clientY, t, bt), b: inX && near(clientY, bt, t) && !(Math.abs(clientY - t) === Math.abs(clientY - bt)),
   };
-  return hit.l || hit.r || hit.t || hit.b ? hit : null;
+  if (hit.l || hit.r || hit.t || hit.b) return hit;
+  // inside the frame, away from the edges: where Paint moves the part (without Shift)
+  return inside && clientX > l && clientX < rt && clientY > t && clientY < bt ? {move: true} : null;
 }
 
 const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize'};
 
-// Lights the edge under the pointer while Shift is down (and while an edge is being dragged).
+// Lights the edge under the pointer, in two ways: with Shift ("frame": the frame is moved, the picture is not touched) and without
+// ("content", like Paint: the selected part is stretched by its edges and moved by its top left corner; see below).
 function updateHover(shift) {
-  if (view.selDrag?.edge) return;
-  const hit = shift && lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y) : null;
-  const was = view.hl;
+  if (view.selDrag?.edge || view.tdrag || view.drag) return;
+  const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, !shift) : null;
+  const was = JSON.stringify([view.hl, view.hlMode]);
   view.hl = hit;
+  view.hlMode = hit ? (shift ? 'frame' : 'content') : '';
   const key = hit ? (hit.t ? 't' : hit.b ? 'b' : '') + (hit.l ? 'l' : hit.r ? 'r' : '') : '';
-  $('stage').style.cursor = key ? RESIZE_CURSORS[key] : '';
-  if (JSON.stringify(was) !== JSON.stringify(hit)) renderSelection();
+  $('stage').style.cursor = hit?.move || (view.hlMode === 'content' && key === 'tl') ? 'move' : key ? RESIZE_CURSORS[key] : '';
+  if (was !== JSON.stringify([view.hl, view.hlMode])) renderSelection();
 }
 
 function clearSelection() {
+  if (view.fl) { flushFloat({clear: true}); return; } // a lifted part is applied: the selection is let go
   if (!view.sel) return;
-  view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = '';
+  view.sel = null; view.selDrag = null; view.hl = null; view.hlMode = ''; $('stage').style.cursor = '';
   draw();
+}
+
+// ---- Move and stretch the selected part, like Paint ----------------------------------------------------------
+// Without Shift, the edges of the selection stretch the part, and its inside (and its top left corner) moves it. The first time, the part is lifted: the
+// place it came from is white, and the part is shown where it is dropped (#float, over the picture, which is not changed yet; #hole is the
+// white). It is worked out from the part as it was lifted, never from the result of the last drag, so stretching and going back loses
+// nothing. It stays like that, and can be dragged again, until the selection is let go (Esc, a click, a new selection, a picture that
+// changes): then it is applied and the picture is modified. Every drop is a step of the undo history, and so is the applying; undoing the
+// applying brings the lifted part back, selected, and undoing the first drag selects the frame it started from.
+// view.fl = {src: {x, y, w, h} where it came from, dest: {x, y, w, h} where it is, url: its pixels as a PNG}, in the picture as shown.
+
+const rectSel = (r) => ({x0: r.x, y0: r.y, x1: r.x + r.w, y1: r.y + r.h});
+const sameRect = (a, b) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+const floatChanges = (f) => !!f && (f.pasted || !sameRect(f.src, f.dest)); // a pasted layer is always a change; a lifted part is one once it is moved
+
+function renderFloat() {
+  const f = view.fl, el = $('float'), hole = $('hole');
+  if (!f || !pic.naturalWidth) { el.hidden = true; hole.hidden = true; return; }
+  const ox = view.x + view.ox, oy = view.y + view.oy;
+  const place = (e, r) => { e.style.left = `${ox + r.x * view.sx}px`; e.style.top = `${oy + r.y * view.sy}px`; e.style.width = `${r.w * view.sx}px`; e.style.height = `${r.h * view.sy}px`; };
+  place(hole, f.src); hole.hidden = !!f.pasted; // (a pasted picture leaves no hole)
+  // what it leaves is white, or transparent where the type can be: the squares of the window, in step with them
+  hole.style.background = $('stage').classList.contains('checker') ? `${CHECKER} ${-parseFloat(hole.style.left)}px ${-parseFloat(hole.style.top)}px / 16px 16px` : '#fff';
+  el.classList.toggle('pixelated', view.pixelated);
+  place(el, f.dest); el.hidden = !f.url;
+}
+
+// The lifted pixels, for #float.
+async function loadFloatPixels(f) {
+  const b64 = await cutPng(f.src);
+  if (view.fl !== f) return; // let go or changed meanwhile
+  f.url = `data:image/png;base64,${b64}`;
+  for (const en of history.list) if (en.fl && !en.fl.url && en.state === f.state && en.rot === f.rot && sameRect(en.fl.src, f.src)) en.fl.url = f.url; // the history keeps the pixels, so that undo can show them at once
+  $('float').onload = () => renderFloat();
+  $('float').src = f.url;
+}
+
+// A picture with transparent parts gets the squares as the background of the window (worked out after it is shown: Go decodes the file).
+async function checkTransparency(token) {
+  let has = false;
+  try { has = await HasTransparency(); } catch {}
+  if (token === view.token) $('stage').classList.toggle('checker', has);
+}
+
+function dropFloat() {
+  view.fl = null; view.tdrag = null;
+  renderFloat();
+  ClearFloat().catch(() => {});
+}
+
+// Tells Go where the part is, so that it can apply it whenever the picture is saved, pasted into or closed.
+function sendFloat() {
+  const f = view.fl;
+  if (f.pasted) return MovePasted(f.dest.x, f.dest.y, f.dest.w, f.dest.h, !view.pixelated);
+  return SetFloat(view.rot, f.src.x, f.src.y, f.src.w, f.src.h, f.dest.x, f.dest.y, f.dest.w, f.dest.h, !view.pixelated);
+}
+
+let floatBusy = false;
+
+// Applies the lifted part: the picture becomes the one with it dropped (a new step); opts.clear lets the selection go too.
+async function flushFloat(opts = {}) {
+  const f = view.fl;
+  if (!f || floatBusy) return;
+  floatBusy = true;
+  try {
+    const dest = f.dest;
+    if (floatChanges(f)) {
+      await sendFloat(); // (the pixelated view may have been switched since: stretched in whole pixels or smoothed)
+      const info = await BakeFloat();
+      await showImage(info, {keepView: true, rot: 0});
+      if (opts.clear) { // the drops and the applying are one step: undoing it selects the frame again, redoing it moves the part and keeps it selected
+        history.list.length = history.at + 1;
+        while (history.at > 0 && history.list[history.at].fl) { history.list.pop(); history.at--; }
+      }
+      commit();
+      if (opts.clear) { const e = history.list[history.at]; if (e) e.sel = {...dest}; }
+      if (!opts.clear) view.sel = rectSel(dest);
+    } else {
+      dropFloat();
+      if (opts.clear) view.sel = null;
+    }
+    draw();
+  } catch (e) { problem(errText(e)); }
+  floatBusy = false;
+}
+
+function startTransform(ev, edge) {
+  const r = selectionRect();
+  if (!r) return;
+  const first = !view.fl;
+  if (first) { view.fl = {src: {...r}, dest: {...r}, url: '', state: view.state, rot: view.rot}; loadFloatPixels(view.fl).catch((e) => problem(errText(e))); }
+  const [px, py] = pointInPicture(ev.clientX, ev.clientY);
+  view.tdrag = {edge, px, py, start: {...view.fl.dest}, first};
+  view.sel = rectSel(view.fl.dest); view.hl = edge; view.hlMode = 'content';
+  draw();
+}
+
+function dragTransform(ev) {
+  const t = view.tdrag, s = t.start, W = dispW(), H = dispH();
+  const [px, py] = pointInPicture(ev.clientX, ev.clientY);
+  const dx = Math.round(px - t.px), dy = Math.round(py - t.py);
+  let x0 = s.x, y0 = s.y, x1 = s.x + s.w, y1 = s.y + s.h;
+  if (t.edge.move || (t.edge.t && t.edge.l)) { // the inside and the top left corner move it
+    x0 = clamp(s.x + dx, 0, Math.max(0, W - s.w)); y0 = clamp(s.y + dy, 0, Math.max(0, H - s.h)); x1 = x0 + s.w; y1 = y0 + s.h;
+  } else { // the others stretch it (the other edges stay where they are)
+    if (t.edge.l) x0 = clamp(s.x + dx, 0, x1 - 1);
+    if (t.edge.r) x1 = clamp(s.x + s.w + dx, x0 + 1, W);
+    if (t.edge.t) y0 = clamp(s.y + dy, 0, y1 - 1);
+    if (t.edge.b) y1 = clamp(s.y + s.h + dy, y0 + 1, H);
+  }
+  view.fl.dest = {x: x0, y: y0, w: x1 - x0, h: y1 - y0};
+  view.sel = rectSel(view.fl.dest);
+  draw();
+}
+
+async function finishTransform() {
+  const t = view.tdrag, f = view.fl;
+  view.tdrag = null;
+  if (!f) return;
+  if (sameRect(f.dest, t.start)) { // not moved
+    if (t.first) dropFloat();
+    draw();
+    return;
+  }
+  try { await sendFloat(); } catch (e) { problem(errText(e)); }
+  if (t.first) { const prev = history.list[history.at]; if (prev) prev.undoSel = {...f.src}; } // undo (not redo) selects the frame it started from again
+  commit();
 }
 
 // A position of the window as a position in the picture (in pixels, fractions included), kept inside the picture.
@@ -490,6 +644,22 @@ const blobToBase64 = (blob) => new Promise((resolve, reject) => {
   fr.readAsDataURL(blob);
 });
 
+// The part r {x, y, w, h} of the picture as it is shown, as a PNG in base64 (cut out of the decoded file; see SelectionPNG).
+async function cutPng(r) {
+  const nw = pic.naturalWidth, nh = pic.naturalHeight;
+  const n = toNaturalRect(r); // the same part in the file's picture, which is cut out and then turned the way it is shown
+  await preparePixels();
+  let b64 = '';
+  if (pixelState === 'go') b64 = await SelectionPNG(n.x, n.y, n.w, n.h, nw, nh);
+  if (!b64) { // a type Go cannot decode: cut it out of what the web view drew
+    if (!pixelCanvas) throw new Error('this picture cannot be copied');
+    const c = document.createElement('canvas'); c.width = n.w; c.height = n.h;
+    c.getContext('2d').putImageData(pixelCanvas.getImageData(n.x, n.y, n.w, n.h), 0, 0);
+    b64 = await blobToBase64(await new Promise((res) => c.toBlob(res, 'image/png')));
+  }
+  return view.rot ? RotatePNG(b64, view.rot) : b64;
+}
+
 let lastCopy = 0;
 
 async function copySelection() {
@@ -497,20 +667,10 @@ async function copySelection() {
   const now = performance.now();
   if (now - lastCopy < 400) return; // the key and the system's copy command can both come for one press
   lastCopy = now;
-  const nw = pic.naturalWidth, nh = pic.naturalHeight;
+  if (view.fl) await flushFloat(); // what was lifted is applied first, so that the copy is what is seen
   const r = selectionRect() || {x: 0, y: 0, w: dispW(), h: dispH()};
-  const n = toNaturalRect(r); // the same part in the file's picture, which is cut out and then turned the way it is shown
   try {
-    await preparePixels();
-    let b64 = '';
-    if (pixelState === 'go') b64 = await SelectionPNG(n.x, n.y, n.w, n.h, nw, nh);
-    if (!b64) { // a type Go cannot decode: cut it out of what the web view drew
-      if (!pixelCanvas) throw new Error('this picture cannot be copied');
-      const c = document.createElement('canvas'); c.width = n.w; c.height = n.h;
-      c.getContext('2d').putImageData(pixelCanvas.getImageData(n.x, n.y, n.w, n.h), 0, 0);
-      b64 = await blobToBase64(await new Promise((res) => c.toBlob(res, 'image/png')));
-    }
-    if (view.rot) b64 = await RotatePNG(b64, view.rot);
+    const b64 = await cutPng(r);
     try { // the web view's own clipboard, and the system's way when it does not take the picture
       await navigator.clipboard.write([new ClipboardItem({'image/png': base64ToBlob(b64, 'image/png')})]);
     } catch { await CopyImageNative(b64); }
@@ -575,14 +735,51 @@ function onWheel(ev) {
 
 // Ctrl+V (Cmd+V, Shift+Insert, Edit → Paste): the picture on the clipboard becomes the picture of the window. It has no file yet:
 // the title says [clipboard image], and S saves it.
+// Paste (Ctrl+V, Cmd+V, Edit → Paste): the picture on the clipboard is laid over the picture, near the top left corner of what is visible, as a part that
+// floats and is selected, like a lifted part: it can be dragged and stretched, Delete, Backspace or Esc take it away again, and a click beside it lays
+// it down. A part that was lifted and moved is applied first. A clipboard picture that is big (about as big as the picture) is probably a whole new
+// image: Go asks whether it becomes the picture of the window or is laid over this one, and then the window shows it by itself. A window without a picture takes it as its picture.
 async function pasteImage() {
-  try { await PasteImage(); } catch (e) { problem(errText(e)); }
+  try {
+    if (view.fl) await flushFloat({clear: false});
+    let px = 0, py = 0;
+    if (pic.naturalWidth) { const r = $('stage').getBoundingClientRect(); [px, py] = pointInPicture(r.left + 12, r.top + 12); }
+    const L = await PasteLayer(view.rot, Math.floor(px), Math.floor(py));
+    if (!L.w) return;
+    const f = {src: {x: 0, y: 0, w: L.w, h: L.h}, dest: {x: L.x, y: L.y, w: L.w, h: L.h}, url: `data:image/png;base64,${L.png}`, pasted: true, state: view.state, rot: view.rot};
+    view.fl = f;
+    $('float').onload = () => renderFloat();
+    $('float').src = f.url;
+    view.sel = rectSel(f.dest);
+    draw();
+    commit();
+  } catch (e) { problem(errText(e)); }
+}
+
+// Delete, Backspace and Esc take a pasted picture away again (a step of the history, like laying it).
+function removeLayer() {
+  dropFloat();
+  view.sel = null; view.selDrag = null; view.hl = null; view.hlMode = ''; $('stage').style.cursor = '';
+  draw();
+  commit();
+}
+
+// File → Close Image: the window goes back to the way it starts, with no picture. It is a step of the history like any other, so undo brings
+// the picture back (with its unsaved changes, if it had any: they are not asked about, because nothing is lost).
+async function closeImage() {
+  if (view.fl) await flushFloat({clear: true}); // what is lifted is part of the picture that comes back
+  if (!view.state || history.busy) return;
+  try {
+    const info = await RestoreState(0);
+    await showImage(info);
+    commit();
+  } catch (e) { problem(errText(e)); }
 }
 
 // S (Ctrl+S, Cmd+S, File → Save As…): asks where to save the picture. Saving it to another folder makes that folder the one the
 // window works in, and the arrow keys go through its pictures.
 async function saveAs() {
-  try { const note = await SaveAs(); if (note) problem(note, false); } catch (e) { problem(errText(e)); }
+  try { const note = await SaveAs(view.rot); if (note) problem(note, false); } catch (e) { problem(errText(e)); }
 }
 
 // When the window changes its size (full screen with Enter, and back, or the window dragged bigger), a picture that was zoomed or
@@ -624,8 +821,9 @@ const HISTORY_MAX = 100;
 const history = {list: [], at: -1, busy: false};
 let lastUndo = 0;
 
-const snapshot = () => ({state: view.state, mode: view.mode, pixelated: view.pixelated, rot: view.rot});
-const sameSnapshot = (a, b) => a.state === b.state && a.mode === b.mode && a.pixelated === b.pixelated && a.rot === b.rot;
+const snapshot = () => ({state: view.state, mode: view.mode, pixelated: view.pixelated, rot: view.rot, pic: `${view.dir}|${view.name}`, view: {free: view.free, sx: view.sx, sy: view.sy, x: view.x, y: view.y}, fl: view.fl ? {src: {...view.fl.src}, dest: {...view.fl.dest}, url: view.fl.url, pasted: !!view.fl.pasted} : null});
+const flKey = (f) => (f ? JSON.stringify([f.src, f.dest]) : '');
+const sameSnapshot = (a, b) => a.state === b.state && a.mode === b.mode && a.pixelated === b.pixelated && a.rot === b.rot && flKey(a.fl) === flKey(b.fl);
 
 // Makes the state the window is in now a step of the history (and ends what could be redone).
 function commit() {
@@ -649,17 +847,35 @@ async function travel(to) {
   if (history.busy || to < 0 || to >= history.list.length) return;
   history.busy = true;
   const e = history.list[to];
+  const hi = history.list[Math.max(to, history.at)], lo = history.list[Math.min(to, history.at)]; // the step that is undone or done again, and the one next to it
+  const hadFloat = !!view.fl;
+  if (hadFloat) { view.fl = null; view.tdrag = null; } // (what is shown of it stays on the screen until the picture that follows is there)
+  const sel = e.fl ? e.fl.dest : e.sel || (e.undoSel && to < history.at ? e.undoSel : null);
+  const fl = e.fl ? {src: {...e.fl.src}, dest: {...e.fl.dest}, url: e.fl.url || '', state: e.state, rot: e.rot, pasted: !!e.fl.pasted} : null;
   try {
     if (e.state !== view.state) { // another picture (or none): Go brings it back, the view is set as it was
-      const info = await RestoreState(e.state);
-      view.mode = e.mode; view.free = false; view.pixelated = e.pixelated; pic.classList.toggle('pixelated', e.pixelated);
+      // Go brings the picture back with its lifted part in one call, so that the circle of the title does not go out for a moment
+      const info = fl?.pasted ? await RestoreLayer(e.state, e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated) : fl ? await RestoreFloat(e.state, e.rot, fl.src.x, fl.src.y, fl.src.w, fl.src.h, fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated) : await RestoreState(e.state);
+      const same = view.state !== 0 && info?.url && info.name === view.name && info.dir === view.dir && e.mode === view.mode; // the same picture, with a change undone or redone: the zoom stays
+      view.mode = e.mode; if (!same) view.free = false; view.pixelated = e.pixelated; pic.classList.toggle('pixelated', e.pixelated);
       try { localStorage.setItem('mcview.mode', e.mode); } catch {}
-      showImage(info, {rot: e.rot});
+      if (fl?.url) { const fe = $('float'); fe.src = fl.url; await fe.decode().catch(() => {}); } // the lifted part is ready before the picture changes
+      await showImage(info, {rot: e.rot, keepView: !!same, fl: fl?.url ? fl : null, sel});
     } else {
+      if (hadFloat && !e.fl) ClearFloat().catch(() => {});
       if (e.mode !== view.mode) setMode(e.mode);
       if (e.pixelated !== view.pixelated) setPixelated(e.pixelated);
       turnTo(e.rot);
     }
+    if (hi.view && hi.pic === lo.pic && hi.rot === lo.rot && view.state) { // the view (zoom and which part is visible) the step was made in
+      Object.assign(view, hi.view); draw();
+    }
+    if (e.fl) { // the lifted part is back where it was dropped, and selected
+      if (!view.fl) { view.fl = fl; if (fl.pasted) { $('float').onload = () => renderFloat(); $('float').src = fl.url; } else loadFloatPixels(view.fl).catch(() => {}); } // (without its pixels in the history they are cut out again)
+      view.sel = rectSel(e.fl.dest);
+      if (fl.pasted) await SetPasted(e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated); else await sendFloat();
+    } else view.sel = sel ? rectSel(sel) : null; // the frame that was selected before it was lifted, or the part that was dropped and let go
+    draw();
     history.at = to;
   } catch (err) { problem(errText(err)); }
   history.busy = false;
@@ -674,6 +890,23 @@ function undoRedo(delta) {
 }
 const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 
+// Drag to select (with Shift on an edge of the frame, the frame is moved without touching the picture).
+function beginSelection(clientX, clientY, shift) {
+  const edge = shift ? edgeAt(clientX, clientY) : null;
+  if (edge) { // an edge of the frame: it is moved, not a new frame drawn
+    const box = selectionBox();
+    view.sel = {x0: box.x0, x1: box.x1, y0: box.y0, y1: box.y1}; // the first corner is the left top one, so l and t are x0 and y0
+    view.selDrag = {edge, from: [clientX, clientY]};
+    view.hl = edge;
+    draw();
+    return;
+  }
+  const [x, y] = pointInPicture(clientX, clientY);
+  view.selDrag = {x0: x, y0: y, from: [clientX, clientY]};
+  view.sel = {x0: x, y0: y, x1: x, y1: y};
+  draw();
+}
+
 function startViewer() {
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
   $('hint').textContent = `Open a picture with File → Open… (${cmd}O), paste one from the clipboard (${cmd}V), or open one with mcView from your file manager.`;
@@ -684,36 +917,47 @@ function startViewer() {
   EventsOn('problem', (t) => problem(errText(t)));
   EventsOn('note', (t) => problem(t, false));
   EventsOn('menu-copy', copySelection); // Edit → Copy
+  EventsOn('menu-paste', pasteImage); // Edit → Paste
+  EventsOn('menu-save', saveAs); // File → Save As…
+  EventsOn('menu-close-image', closeImage); // File → Close Image
   lastStage = stageSize();
   window.addEventListener('resize', onResize);
+  let saveTimer = 0; // the place and size of the window are remembered for the next start (Go also does it when the window closes)
+  const rememberWindow = () => { clearTimeout(saveTimer); saveTimer = setTimeout(() => SaveWindow().catch(() => {}), 600); };
+  window.addEventListener('resize', rememberWindow);
+  window.addEventListener('blur', rememberWindow);
   $('stage').addEventListener('wheel', onWheel, {passive: false});
-  $('stage').addEventListener('pointermove', (ev) => { lastPointer = {x: ev.clientX, y: ev.clientY}; readPixel(ev.clientX, ev.clientY); document.body.classList.toggle('shift', ev.shiftKey); if (!view.selDrag) updateHover(ev.shiftKey); });
+  $('stage').addEventListener('pointermove', (ev) => { lastPointer = {x: ev.clientX, y: ev.clientY}; readPixel(ev.clientX, ev.clientY); document.body.classList.toggle('shift', ev.shiftKey); if (!view.selDrag && !view.tdrag) updateHover(ev.shiftKey); });
   $('stage').addEventListener('pointerleave', () => { lastPointer = null; clearPixel(); updateHover(false); });
   window.addEventListener('keyup', (ev) => { if (ev.key === 'Shift') { document.body.classList.remove('shift'); updateHover(false); } });
   window.addEventListener('blur', () => { document.body.classList.remove('shift'); updateHover(false); });
   $('stage').addEventListener('pointerdown', (ev) => {
-    if (!pic.naturalWidth || ev.button !== 0) return;
-    $('stage').setPointerCapture(ev.pointerId);
-    if (ev.shiftKey) { // Shift and drag: select
-      const edge = edgeAt(ev.clientX, ev.clientY);
-      if (edge) { // an edge of the frame: it is moved, not a new frame drawn
-        const box = selectionBox();
-        view.sel = {x0: box.x0, x1: box.x1, y0: box.y0, y1: box.y1}; // the first corner is the left top one, so l and t are x0 and y0
-        view.selDrag = {edge, from: [ev.clientX, ev.clientY]};
-        view.hl = edge;
-        draw();
-        return;
-      }
-      const [x, y] = pointInPicture(ev.clientX, ev.clientY);
-      view.selDrag = {x0: x, y0: y, from: [ev.clientX, ev.clientY]};
-      view.sel = {x0: x, y0: y, x1: x, y1: y};
-      draw();
+    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1)) return;
+    try { $('stage').setPointerCapture(ev.pointerId); } catch {}
+    if (ev.button === 1) { // the middle button pans the picture
+      ev.preventDefault();
+      stopBounce(); draw(); // a picture that was still coming back stops where it is, inside its bounds
+      view.drag = {x: ev.clientX - view.x, y: ev.clientY - view.y, from: [ev.clientX, ev.clientY]};
+      $('stage').style.cursor = 'grabbing';
       return;
     }
-    stopBounce(); draw(); // a picture that was still coming back stops where it is, inside its bounds
-    view.drag = {x: ev.clientX - view.x, y: ev.clientY - view.y, from: [ev.clientX, ev.clientY]};
+    pointerDown = true;
+    if (!ev.shiftKey && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)
+      const edge = edgeAt(ev.clientX, ev.clientY, true);
+      if (edge) { startTransform(ev, edge); return; }
+    }
+    if (view.fl) { // what is lifted is applied first; then it is a selection like any other, or, when the button is up by then, a click that lets go of it
+      const [cx, cy, shift] = [ev.clientX, ev.clientY, ev.shiftKey];
+      flushFloat({clear: false}).then(() => {
+        if (view.fl) return;
+        if (pointerDown) beginSelection(cx, cy, shift); else clearSelection();
+      });
+      return;
+    }
+    beginSelection(ev.clientX, ev.clientY, ev.shiftKey);
   });
   $('stage').addEventListener('pointermove', (ev) => {
+    if (view.tdrag) { dragTransform(ev); return; }
     if (view.selDrag?.edge) {
       const [px, py] = pointInPicture(ev.clientX, ev.clientY), e = view.selDrag.edge;
       if (e.l) view.sel.x0 = px; if (e.r) view.sel.x1 = px;
@@ -736,18 +980,18 @@ function startViewer() {
     draw();
   });
   const endDrag = (ev) => {
+    pointerDown = false;
+    setTimeout(renderSelection, 0); // the button is up: the dashes move again
+    if (view.tdrag) { finishTransform().then(() => updateHover(ev.shiftKey)); return; }
     if (view.selDrag) { // a selection dragged less than 3 screen pixels is a click, not a selection
       const [fx, fy] = view.selDrag.from, moved = !!view.selDrag.edge;
       view.selDrag = null;
       if (moved) updateHover(ev.shiftKey);
-      else if (!view.pixelated && Math.abs(ev.clientX - fx) < 3 && Math.abs(ev.clientY - fy) < 3) { view.sel = null; draw(); }
-    } else if (view.drag) { // a click on the picture (no Shift, no drag) takes the selection away
-      const [fx, fy] = view.drag.from;
-      if (Math.abs(ev.clientX - fx) < 3 && Math.abs(ev.clientY - fy) < 3) clearSelection();
+      else if (Math.abs(ev.clientX - fx) < 3 && Math.abs(ev.clientY - fy) < 3) { view.sel = null; draw(); }
     }
-    if (view.drag) startSpring(); // let go: the spring takes the pull away
-    view.drag = null;
+    if (view.drag) { startSpring(); view.drag = null; updateHover(ev.shiftKey); } // let go: the spring takes the pull away
   };
+  $('stage').addEventListener('mousedown', (ev) => { if (ev.button === 1) ev.preventDefault(); }); // no auto-scroll cursor
   $('stage').addEventListener('pointerup', endDrag);
   $('stage').addEventListener('pointercancel', endDrag);
   $('stage').addEventListener('dblclick', () => {
@@ -767,7 +1011,9 @@ function startViewer() {
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'n' || ev.key === 'N')) { ev.preventDefault(); NewWindow(); return; } // Ctrl+N, Cmd+N
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
     if (ev.key === 'Enter') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; }
+    if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
     if (ev.key === 'Escape') { ExitFullscreen(); settleFullscreen(); clearSelection(); return; }
+    if (ev.key === 'e' || ev.key === 'E') { document.body.classList.toggle('edit'); return; } // the edit bar
     if (!pic.naturalWidth) return;
     if (ev.key === 'Tab') { ev.preventDefault(); setPixelated(!view.pixelated); commit(); return; }
     const b = stageSize();
@@ -775,7 +1021,11 @@ function startViewer() {
     else if (ev.key === 'ArrowRight' || ev.key === ' ') { ev.preventDefault(); step(1); }
     else if (ev.key === 'Backspace') { ev.preventDefault(); step(-1); }
     else if (MODES[ev.key]) { setMode(MODES[ev.key]); commit(); }
-    else if (ev.key === 'r' || ev.key === 'R') { rotate(ev.shiftKey ? -1 : 1); commit(); }
+    else if (ev.key === 'r' || ev.key === 'R') {
+      const dir = ev.shiftKey ? -1 : 1;
+      if (view.fl) flushFloat({clear: true}).then(() => { rotate(dir); commit(); }); // what is lifted is applied before the picture is turned
+      else { rotate(dir); commit(); }
+    }
     else if (ev.key === 's' || ev.key === 'S') saveAs();
     else if (ev.key === 'f' || ev.key === 'F') { setMode('large'); commit(); }
     else if (ev.key === '+' || ev.key === '=') zoomAt(1.25, b.w / 2, b.h / 2);

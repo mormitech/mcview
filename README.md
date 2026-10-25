@@ -32,9 +32,13 @@ frontend built with Vite.
   bar at the bottom shows position, R G B A and hex of the pixel under the pointer, as `[x, y]  (r, g, b) - #rrggbb`. The numbers are the ones in the file (mcView decodes
   it itself, with no colour conversion), except for AVIF, SVG and ICO, where they are read from what the web view drew and the bar says so.
 - **Rotate the view.** R turns the picture a quarter clockwise, Shift+R counterclockwise (a quick animation). Only the view turns; the file is not changed.
+- **Paste.** Ctrl+V lays the clipboard picture over the picture, near the top left corner of what you see, as a floating part you can drag and stretch (Delete, Backspace or Esc take it away; a click beside it lays it down); the name gets a ● until you save it. A clipboard picture that is about as big as the picture asks whether it is a new image; a window with no picture takes it as its picture.
+- **Move and stretch a selection (like Paint).** Without Shift, drag an edge of the selection to stretch the selected part, or its top left corner to move it (the place it
+  came from turns white). Shift and drag an edge still moves just the frame. Undo steps back through every drop.
+- **Transparency.** A picture with transparent parts has chequered squares behind it; a part lifted out of one leaves a transparent hole, and Save As offers PNG.
 - **Undo and redo.** Ctrl+Z / Ctrl+Shift+Z (Cmd+Z / Cmd+Shift+Z on a Mac). Every change of the picture shown, of the mode (1–4), the pixelated view and the turn can be undone, including
   the arrow keys and paste; zooming, moving and the selection are not steps.
-- **Select and copy.** Hold Shift and drag to select a part of the picture (it snaps to whole pixels in the pixelated view); Ctrl+C
+- **Select and copy.** Drag with the mouse to select a part of the picture (it snaps to whole pixels in the pixelated view); Ctrl+C
   (Cmd+C on a Mac, Ctrl+Insert) puts just that part on the clipboard, or the whole picture when nothing is selected. Shift and drag an edge or corner of the frame (it lights up) to resize it. The copied frame has moving dashes. Esc or a click takes the
   selection away (the clipboard keeps the picture). On Linux copying a picture needs `xclip` (X11) or `wl-clipboard` (Wayland).
 - **New window, paste, save.** File → New Window (Ctrl+N; Cmd+N on a Mac) opens an empty window; Cmd/Ctrl+V pastes the picture on the clipboard into it (the title says

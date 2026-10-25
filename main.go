@@ -64,6 +64,12 @@ func main() {
 			fmt.Fprintln(os.Stderr, "mcview:", err)
 		}
 	}
+	if !about {
+		if st, ok := loadWinState(); ok { // the window comes up the way it was left
+			width, height = st.W, st.H
+			app.saved = &st
+		}
+	}
 	app.theme, app.cascade = theme, cascade
 	app.winW, app.winH = width, height
 
@@ -91,6 +97,13 @@ func main() {
 		OnStartup:  app.startup,
 		OnDomReady: func(context.Context) { trace("dom ready"); app.reveal() },
 		OnShutdown: app.shutdown,
+		OnBeforeClose: func(context.Context) bool {
+			if !app.discardOK("close the window") {
+				return true // the window stays open
+			}
+			app.SaveWindow()
+			return false
+		},
 		Bind: []interface{}{
 			app,
 		},

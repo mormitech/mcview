@@ -34,7 +34,10 @@ func (a *App) statesLocked() map[int]picState {
 }
 
 // RestoreState makes the picture state n the one of this window again, and returns it. The UI shows it (nothing is emitted).
-func (a *App) RestoreState(n int) (ImageInfo, error) {
+func (a *App) RestoreState(n int) (ImageInfo, error) { return a.restoreState(n, nil) }
+
+// restoreState brings a state back; with a lifted part (after) that is set before the window is titled, so that the title is not seen without the circle of a moved part.
+func (a *App) restoreState(n int, after func() error) (ImageInfo, error) {
 	a.mu.Lock()
 	st, ok := a.statesLocked()[n]
 	if !ok {
@@ -43,6 +46,7 @@ func (a *App) RestoreState(n int) (ImageInfo, error) {
 	}
 	a.image, a.clip, a.clipPNG, a.workDir = st.image, st.clip, st.clipPNG, st.workDir
 	a.stateID = n
+	a.fl = nil
 	a.imgSeq++ // its own URL, so that the web view loads it again
 	if st.clip != nil {
 		a.pix = pixelCache{seq: a.imgSeq, img: st.clip, orient: 1}
@@ -50,6 +54,12 @@ func (a *App) RestoreState(n int) (ImageInfo, error) {
 		a.pix = pixelCache{}
 	}
 	a.mu.Unlock()
+	if after != nil {
+		if err := after(); err != nil {
+			a.titleWindow()
+			return a.Image(), err
+		}
+	}
 	a.titleWindow()
 	return a.Image(), nil
 }
@@ -68,4 +78,11 @@ func (a *App) KeepStates(n []int) {
 			delete(a.states, i)
 		}
 	}
+}
+
+// floating is whether a part of the picture is lifted and dropped somewhere else, not applied yet.
+func (a *App) floating() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.fl.moved()
 }

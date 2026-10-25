@@ -7,12 +7,17 @@
 </head>
 <body>
 <main id="viewer">
-    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i></div></div>
+    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i></div></div>
     <div id="empty">
         <img class="logo" src="./src/assets/mormitech-mark.svg" alt="" width="120">
         <h1>mcView</h1>
         <p class="muted" id="hint"></p>
         <button id="open">Open picture…</button>
+    </div>
+    <div id="tools" aria-label="Edit tools">
+        <button class="tool" id="tool-line" title="Line" aria-label="Line"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
+        <button class="tool" id="tool-rect" title="Rectangle" aria-label="Rectangle"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="1"/></svg></button>
+        <button class="tool" id="tool-text" title="Text" aria-label="Text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg></button>
     </div>
     <div id="status" hidden><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span></div>
 </main>

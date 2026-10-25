@@ -3,6 +3,158 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.12.23 – 2026-10-25 (not released yet)
+
+### Fixed
+- The dashed border of a selection left traces behind while the selection was dragged bigger or moved: the border is now drawn from plain numbers, in a layer of its own.
+
+## 0.12.22 – 2026-10-25 (not released yet)
+
+### Fixed
+- 0.12.21 did not start properly (an empty window that did nothing): an edit of the paste code had taken `closeImage` (File → Close Image) with it, and the page stopped while it was starting. It is back, and with MCVIEW_TRACE set a failure of the page now shows in the trace.
+
+## 0.12.21 – 2026-10-25 (not released yet)
+
+### Changed
+- Every paste is a layer: the clipboard picture floats near the top left corner of what is visible, whether there is a selection or not (stretching a paste into the
+  selection is gone). A part that was lifted and moved but not applied yet is applied first.
+- A clipboard picture that covers about half of the picture or more (or does not fit in it) is probably a new image, so mcView asks: "Large image content is about
+  to be pasted" with Paste as new image, Paste into current image, Cancel. A new image replaces the picture of the window (after the alert about unsaved changes).
+
+## 0.12.20 – 2026-10-25 (not released yet)
+
+### Changed
+- The selection border is like Paint's: while the mouse button is down it is a dashed line (2px, black and dirty white one after the other) that stands still, and once the
+  selection is set the longer dashes move ("marching ants"). The selected part is still a little lighter, and the edge under the pointer is not lit.
+
+## 0.12.19 – 2026-10-25 (not released yet)
+
+### Changed
+- The selection is one black line with a faint light grey shadow, and the selected part is a little lighter. The edge under the pointer is no longer lit (blue or orange); the pointer still changes.
+
+## 0.12.18 – 2026-10-25 (not released yet)
+
+### Changed
+- Paste without a selection no longer replaces the picture: the clipboard picture is laid over it, at its own size, near the top left corner of what is visible, and it floats and is
+  selected like a lifted part. Drag it, stretch it by its edges, or take it away with Delete, Backspace or Esc; a click beside it (or anything that saves or changes the picture)
+  lays it down. Laying it and taking it away are steps of the undo history. A window with no picture still takes the clipboard picture as its picture.
+
+## 0.12.17 – 2026-10-25 (not released yet)
+
+### Fixed
+- Pasting into a selection keeps the zoom and the part of the picture that is visible, and the selection stays; only the paste is done. (A paste without a selection, which replaces the picture, still fits the new picture.)
+
+## 0.12.16 – 2026-10-25 (not released yet)
+
+### Fixed
+- The circle in the title no longer goes out for a moment on undo and redo of a moved part: the picture and its lifted part come back in one call, and the window is titled once.
+
+## 0.12.14 – 2026-10-25 (not released yet)
+
+### Changed
+- A picture with unsaved changes has a filled circle after its name (like VS Code), in the title and in the bottom bar, instead of a star.
+
+## 0.12.13 – 2026-10-25 (not released yet)
+
+### Fixed
+- Undo and redo of a moved part no longer flash the untouched picture: the history keeps the lifted pixels, the picture is decoded off screen, and the lifted part and the selection are
+  put on the screen in the same step as the picture they belong to.
+
+## 0.12.12 – 2026-10-25 (not released yet)
+
+### Fixed
+- Applying a moved part showed nothing again in 0.12.11: the off-screen decode used `new Image()`, which in this page is the binding of Go's `Image` and not the browser's, so no picture was ever loaded.
+
+## 0.12.11 – 2026-10-25 (not released yet)
+
+### Fixed
+- No more flash when a change is applied (a moved part, an undo): the new picture is decoded off screen first, and the lifted part stays on the screen until it takes its place.
+- No more colour shift after an edit: the picture is kept as decoded pixels (it is only encoded again by Save As), and the PNG the window is shown carries the colour
+  profile of the file (the ICC profile of a JPEG or WebP, and the iCCP, sRGB, gAMA, cHRM chunks of a PNG), so a Display P3 photo looks the same before and after.
+
+## 0.12.10 – 2026-10-25 (not released yet)
+
+### Fixed
+- A click beside a moved selection applies the move and lets the selection go again (the button was often up before the applying was done, and then nothing happened).
+
+## 0.12.9 – 2026-10-25 (not released yet)
+
+### Added
+- **The window comes up where and how big it was left.** The place and size are kept in `window.json` in the settings folder of the user (on a Mac `~/Library/Application Support/mcview`),
+  after a resize, when the window loses focus, and when it closes. Full screen, maximised and minimised windows are not remembered, and a place that is
+  no longer on a screen is ignored (the window is centred then).
+
+## 0.12.8 – 2026-10-25 (not released yet)
+
+### Added
+- **File → Close Image** (Ctrl+Shift+W, Cmd+Shift+W): the window goes back to the way it starts, with no picture. Undo brings the picture back, with its unsaved changes.
+
+## 0.12.7 – 2026-10-25 (not released yet)
+
+### Changed
+- Dragging with the mouse selects (it used to need Shift); a click takes the selection away. The picture is panned with the middle mouse button, and the pointer shows the grabbing hand while it is.
+
+## 0.12.6 – 2026-10-25 (not released yet)
+
+### Changed
+- Paste without a selection replaces the picture (the alert about unsaved changes comes first); pasting at the pointer is gone.
+
+## 0.12.5 – 2026-10-25 (not released yet)
+
+### Changed
+- Undo and redo put the view back the way it was when the step was made: the zoom, its mode and which part of the picture is visible (same picture and turn only; zooming and panning themselves are still not steps).
+
+## 0.12.4 – 2026-10-25 (not released yet)
+
+### Fixed
+- Redo into a picture's first state no longer selects the frame a later move started from: only an undo does that.
+
+## 0.12.3 – 2026-10-25 (not released yet)
+
+### Fixed
+- Undo and redo really keep the zoom and position now: the restore of a picture state reset the zoom itself (0.12.2 did not reach that line).
+
+## 0.12.2 – 2026-10-25 (not released yet)
+
+### Fixed
+- Undo and redo of a moved selection keep the zoom (only another picture is fitted to the window).
+- The place a lifted part came from is white in a picture that has no transparency, also in a type that could have it (WebP, PNG); no transparent flash.
+
+## 0.12.1 – 2026-10-25 (not released yet)
+
+### Fixed
+- Undo after a moved selection was let go: one undo now takes the move back and holds the region selected where it was; redo does the move again and keeps it selected.
+- Undoing back to the empty window no longer leaves the selection frame on the screen.
+
+## 0.12.0 – 2026-10-25 (not released yet)
+
+### Added
+- **Paste into the picture.** With a selection, Ctrl+V (Cmd+V, Edit → Paste) stretches the clipboard picture into the selection, whatever size it has.
+  Without one it replaces the picture, after the alert about unsaved changes. A turned view is turned for good in the result, so the selection and the pointer are
+  where you see them. It works on JPEG, PNG, GIF, BMP, WebP and TIFF pictures.
+- **A * after the name of a modified picture** (a picture pasted into, or one from the clipboard that has no file yet): in the title and, in full
+  screen, in the bar. Undo and redo bring the modified picture back and take it away.
+
+- **Move and stretch the selected part, like Paint.** Without Shift, hovering an edge or corner of the selection lights it in orange with a resize pointer:
+  drag an edge or corner to stretch the part (the other edges stay), drag the top left corner to move it. The first time the part is lifted and the place it came from
+  turns white; further drags work from the part as it was lifted (not from the last result), do not clear again, and the part stays a layer until the
+  selection is let go (Esc, a click, a new selection, R, copy, paste, save): then it is applied and the picture is modified. (With Shift the edges still
+  move the frame only.) Every drop and the applying are steps of undo: undoing the applying brings the lifted part back, selected;
+  undoing the first drag selects the frame it started from. The part stays inside the picture. Closing, saving or pasting applies it.
+- **Move the selected part by dragging inside the selection**, as Paint does (the top left corner still moves it too; the edges stretch).
+- **Transparent pictures get squares.** A picture with transparent parts (PNG, GIF, WebP, TIFF, a clipboard picture, SVG, ICO) shows the window behind it as small
+  bluish and white squares, as Gimp does, and no longer a flat colour. What a lifted part leaves behind is transparent, not white, where the type can be (it is
+  white for JPEG and BMP). Save As offers such a picture as PNG, writes GIF with a transparent colour, and says when JPEG made the transparent parts white.
+- **The edit bar (E).** The key E slides a bar of tools in from the left (and fades it in; E again takes it away), like the bottom bar in full screen. It has the buttons Line, Rectangle and Text; they do nothing yet.
+- **A native alert before unsaved changes are lost.** Going to another picture (arrow keys, Space, Backspace, Open…) or closing the window (Cmd+W, the close button,
+  Quit) with a modified picture asks first, in the system's own alert: on macOS Save, Discard, Cancel; on Windows the message box Yes, No, Cancel
+  ("Do you want to save…"); on Linux GTK's two-button question twice (save?, and if not, discard?). Save starts Save As and goes on once the file is written.
+
+### Changed
+- **Save As saves what you see:** the picture as it is turned (R) and with what was pasted into it, starting in the folder of the picture (the Pictures folder for one
+  from the clipboard). The saved file is the picture of the window afterwards, no longer modified or turned. A picture of a type mcView does not write (WebP, SVG…) is
+  offered as PNG.
+
 ## 0.11.3 – 2026-10-25
 
 ### Fixed

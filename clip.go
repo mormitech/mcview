@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"image/draw"
 	"image/png"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 )
 
 // clipboardName is what the title of a window says instead of the name of a file, for a picture pasted from the clipboard.
@@ -71,47 +71,83 @@ func (a *App) setClip(img image.Image) error {
 	}
 	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy())) // the colours as they are, not premultiplied
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
+	return a.setPixels(n, "")
+}
+
+// setPixels makes img the picture of this window, kept in memory: a picture with no file (file is ""), or the file with something
+// pasted into it (the file is still where Save As starts, and the name in the title, with a * after it).
+func (a *App) setPixels(img *image.NRGBA, file string) error { return a.setPixelsEmit(img, file, true) }
+
+func (a *App) setPixelsEmit(img *image.NRGBA, file string, emit bool) error {
 	var buf bytes.Buffer
-	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, n); err != nil {
+	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, img); err != nil {
 		return err
 	}
+	png := buf.Bytes()
+	if file != "" { // the colours are shown as they were in the file
+		png = withChunks(png, colourChunks(file))
+	}
 	a.mu.Lock()
-	a.image = ""
-	a.clip, a.clipPNG = n, buf.Bytes()
+	a.image = file
+	a.clip, a.clipPNG = img, png
 	a.imgSeq++
-	a.pix = pixelCache{seq: a.imgSeq, img: n, orient: 1} // it is decoded already: the readout and Ctrl+C read from it
+	a.pix = pixelCache{seq: a.imgSeq, img: img, orient: 1} // it is decoded already: the readout and Ctrl+C read from it
 	a.workDirLocked()
+	a.fl = nil
 	a.newStateLocked()
 	a.mu.Unlock()
 	if a.ctx != nil {
 		a.titleWindow()
-		a.emit("image", a.Image())
+		if emit {
+			a.emit("image", a.Image())
+		}
 	}
 	return nil
 }
 
-// PasteImage shows the picture that is on the system's clipboard in this window (Ctrl+V, Cmd+V, Edit → Paste).
-func (a *App) PasteImage() error {
-	a.mu.Lock()
-	if time.Since(a.lastPaste) < 400*time.Millisecond { // the menu and the key can both come for one press
-		a.mu.Unlock()
-		return nil
-	}
-	a.lastPaste = time.Now()
-	a.mu.Unlock()
-	img, err := readClipboardImage()
+// shownPixels is a copy of the picture of this window the way it is shown (EXIF turn applied, then turned rot quarters clockwise).
+func (a *App) shownPixels(rot int) (*image.NRGBA, error) {
+	pc, source, err := a.decoded()
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return a.setClip(img)
+	if source != "go" {
+		return nil, fmt.Errorf("mcView cannot change %s: it can only paste into JPEG, PNG, GIF, BMP, WebP and TIFF pictures", a.current().Name)
+	}
+	return turnImage(shownImage(pc), rot), nil
 }
 
-// pasteImage is Edit → Paste: the same as PasteImage, with the error shown by the UI.
-func (a *App) pasteImage() {
-	if err := a.PasteImage(); err != nil {
-		a.emit("problem", err.Error())
+// turnImage is a copy of src (as NRGBA) turned clockwise by quarter turns, 0 to 3 (any number is taken modulo 4).
+func turnImage(src image.Image, quarters int) *image.NRGBA {
+	quarters = (quarters%4 + 4) % 4
+	b := src.Bounds()
+	w, h := b.Dx(), b.Dy()
+	dw, dh := w, h
+	if quarters%2 == 1 {
+		dw, dh = h, w
 	}
+	dst := image.NewNRGBA(image.Rect(0, 0, dw, dh))
+	for y := 0; y < h; y++ {
+		for x := 0; x < w; x++ {
+			var tx, ty int
+			switch quarters {
+			case 0:
+				tx, ty = x, y
+			case 1:
+				tx, ty = h-1-y, x
+			case 2:
+				tx, ty = w-1-x, h-1-y
+			default:
+				tx, ty = y, w-1-x
+			}
+			dst.SetNRGBA(tx, ty, color.NRGBAModel.Convert(src.At(b.Min.X+x, b.Min.Y+y)).(color.NRGBA))
+		}
+	}
+	return dst
 }
+
+// pasteImage is Edit → Paste. It is the UI that knows the selection and the pointer, so the menu only tells it to paste.
+func (a *App) pasteImage() { a.emit("menu-paste") }
 
 var errNoClipboardPicture = errors.New("there is no picture on the clipboard")
 

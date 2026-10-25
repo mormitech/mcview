@@ -70,27 +70,7 @@ func (a *App) RotatePNG(pngBase64 string, quarters int) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	b := src.Bounds()
-	w, h := b.Dx(), b.Dy()
-	dw, dh := w, h
-	if quarters%2 == 1 {
-		dw, dh = h, w
-	}
-	dst := image.NewNRGBA(image.Rect(0, 0, dw, dh))
-	for y := 0; y < h; y++ {
-		for x := 0; x < w; x++ {
-			var tx, ty int
-			switch quarters {
-			case 1:
-				tx, ty = h-1-y, x
-			case 2:
-				tx, ty = w-1-x, h-1-y
-			default:
-				tx, ty = y, w-1-x
-			}
-			dst.SetNRGBA(tx, ty, color.NRGBAModel.Convert(src.At(b.Min.X+x, b.Min.Y+y)).(color.NRGBA))
-		}
-	}
+	dst := turnImage(src, quarters)
 	var buf bytes.Buffer
 	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, dst); err != nil {
 		return "", err
