@@ -749,7 +749,7 @@ async function pasteImage() {
     if (view.fl) await flushFloat({clear: false});
     let px = 0, py = 0;
     if (pic.naturalWidth) { const r = $('stage').getBoundingClientRect(); [px, py] = pointInPicture(r.left + 12, r.top + 12); }
-    const L = await PasteLayer(view.rot, Math.floor(px), Math.floor(py));
+    const L = await PasteLayer(view.rot, Math.ceil(px), Math.ceil(py)); // (rounded up: the first pixel that is seen whole, 12 screen pixels in from the corner)
     if (!L.w) return;
     const f = {src: {x: 0, y: 0, w: L.w, h: L.h}, dest: {x: L.x, y: L.y, w: L.w, h: L.h}, url: `data:image/png;base64,${L.png}`, pasted: true, state: view.state, rot: view.rot};
     view.fl = f;
