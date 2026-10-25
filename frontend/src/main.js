@@ -256,7 +256,6 @@ function showImage(info, opts = {}) {
   }
   view.name = info.name; view.modified = !!info.modified; view.canAlpha = !!info.canAlpha; view.dir = info.dir; view.index = info.index; view.count = info.count; if (!opts.keepView) view.free = false; // (a picture that is the same, with something applied, keeps its zoom)
   stopBounce();
-  if (!opts.keepView) $('stage').classList.remove('checker');
   view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = opts.sel ? rectSel(opts.sel) : null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
   pic.onload = () => {
     Trace(`img onload, visibility ${document.visibilityState}, focus ${document.hasFocus()}`);
@@ -269,11 +268,15 @@ function showImage(info, opts = {}) {
   };
   pic.onerror = () => { problem(`Cannot show ${info.name}`); done(); };
   Trace('img src set');
-  if (opts.keepView) { // the new one is decoded off screen first, and then it takes the place of the old one in a single step
-    const pre = document.createElement('img'), token = view.token; // (not new Image(): that name is the binding of Go's Image)
-    pre.src = info.url;
-    pre.decode().catch(() => {}).then(() => { if (token === view.token) pic.src = info.url; else done(); });
-  } else pic.src = info.url;
+  // The new picture is decoded off screen first, and then it takes the place of the old one in a single step: the old one stays on the screen until
+  // then, so nothing is cleared in between (that flashed when the next or the previous picture of a folder was shown).
+  const pre = document.createElement('img'), token = view.token; // (not new Image(): that name is the binding of Go's Image)
+  pre.src = info.url;
+  pre.decode().catch(() => {}).then(() => {
+    if (token !== view.token) { done(); return; } // another picture was asked for meanwhile
+    if (!opts.keepView) $('stage').classList.remove('checker');
+    pic.src = info.url;
+  });
   return loaded;
 }
 
