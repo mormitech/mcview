@@ -3,6 +3,13 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.12.27 – 2026-10-25
+
+### Added
+- **Installers for macOS and Linux.** A `.dmg` for macOS (open it and drag mcView to Applications), and a `.deb` (Debian, Ubuntu) and an `.rpm` (Fedora, openSUSE) for Linux, which also put mcView in the application menu and in Open With.
+  The release workflow builds them and tests them (the disk image is opened and its app is checked; the .deb is installed and removed; the .rpm is checked for its files and requirements), so they come with every release from now on.
+  No AppImage yet: it would have to carry WebKit with it.
+
 ## 0.12.26 – 2026-10-25
 
 The steps 0.12.0 to 0.12.25 were never released one by one; this is everything since 0.11.3.
