@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.12.26 – 2026-10-25 (not released yet)
+
+### Fixed
+- No flicker when the next or the previous picture is shown: it is decoded off screen and takes the place of the old one in one step, instead of the window being cleared first.
+
 ## 0.12.25 – 2026-10-25 (not released yet)
 
 ### Fixed
