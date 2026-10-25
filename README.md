@@ -57,7 +57,15 @@ frontend built with Vite.
 
 ## Install
 
-There is no release yet. Build it yourself (below).
+Download the package for your system from the [releases](https://github.com/mormitech/mcview/releases):
+
+| | Package |
+|---|---|
+| **macOS** (Apple silicon) | `mcview-<version>-macos-arm64.dmg` (open it and drag mcView to Applications), or the `.zip` with the app |
+| **Windows** (x64) | `mcview-setup-<version>-windows-x64.exe` (per user, no admin rights), or the `.zip` |
+| **Linux** (x64) | `mcview-<version>-linux-amd64.deb` (Debian, Ubuntu: `sudo apt install ./mcview-….deb`), `mcview-<version>-linux-x86_64.rpm` (Fedora, openSUSE: `sudo dnf install ./mcview-….rpm`), or the `.tar.gz` with `install.sh` |
+
+The app is not code-signed or notarized yet, so macOS asks you to confirm the first start (right-click → Open). Or build it yourself (below).
 
 <a id="open-with"></a>
 ## Open with…
@@ -68,7 +76,7 @@ mcView is offered for the picture types above. It does not take them over from y
 |---|---|
 | **macOS** | Right-click a picture → **Open With** → mcView. To make it the default for a type: **Get Info** → **Open with** → mcView → **Change All…**. The app must be in Applications (or have been opened once) for macOS to know it. |
 | **Windows** | Right-click a picture → **Open with** → mcView (the first time **Choose another app**). To make it the default: **Settings → Apps → Default apps → mcView**. The installer adds this per user, without admin rights. |
-| **Linux** | Run `./install.sh` from the extracted tar.gz (`./install.sh --remove` undoes it), then right-click a picture → **Open With** → mcView. |
+| **Linux** | The .deb and .rpm do this by themselves. From the tar.gz, run `./install.sh` (`./install.sh --remove` undoes it). Then right-click a picture → **Open With** → mcView. |
 
 The list of types is written in four places, because each system wants it in its own form: `image.go`, `wails.json` (macOS Info.plist),
 `packaging/windows/installer.iss` and `packaging/linux/mcview.desktop`. A test keeps them equal.
@@ -95,7 +103,7 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 | `frontend/` | the UI (vanilla JS, built with Vite) |
 | `build/` | icons, macOS Info.plist, Windows manifest and version info |
 | `packaging/windows` | the Inno Setup installer script, with the Open with… registry entries |
-| `packaging/linux` | the desktop entry and `install.sh` |
+| `packaging/linux` | the desktop entry and `install.sh` (the .deb and .rpm are made by the workflow with fpm) |
 | `.github/workflows/build.yml` | builds, tests and packages on macOS, Windows and Linux; publishes the release on a tag |
 
 The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mcview picture.jpg`). `--theme dark` (or `light`)
