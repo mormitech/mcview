@@ -16,6 +16,8 @@ export function CopyImageNative(arg1:string):Promise<void>;
 
 export function DeleteImage():Promise<string>;
 
+export function DiscardOK(arg1:string):Promise<boolean>;
+
 export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 
 export function ExitFullscreen():Promise<void>;

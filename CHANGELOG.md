@@ -3,6 +3,31 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.26.1 – 2026-10-26
+
+### Changed
+- Close Image on a picture with changes asks the same question as closing the window: Save, Discard or Cancel.
+
+## 0.26.0 – 2026-10-26
+
+### Changed
+- S on a picture from a file that has changes (or is turned) asks first: Overwrite, Save As… or Cancel. Overwrite writes the changes into the file; Save As… opens the dialog with the name followed by the date and time (`photo-20261026-153012.jpg`).
+
+## 0.25.3 – 2026-10-26
+
+### Fixed
+- Letting go of a selection (Esc, a click) ends the clipboard highlight at once, and so does starting a new one. Before, the clipboard icon of the old selection could appear again over the next one while its button was still held.
+
+## 0.25.2 – 2026-10-26
+
+### Fixed
+- A selection starts only when the mouse covers more than one pixel. Holding the button down no longer shows a 1 × 1 frame, and a drag that stays on one pixel selects and copies nothing.
+
+## 0.25.1 – 2026-10-26
+
+### Fixed
+- The pencil stops the moment the mouse button is let go. Before, it kept following the pointer until the stroke was drawn into the picture, which took longer on big pictures.
+
 ## 0.25.0 – 2026-10-26
 
 ### Changed

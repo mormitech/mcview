@@ -33,11 +33,14 @@ func (a *App) discardOK(action string) bool {
 	case choiceDiscard:
 		return true
 	case choiceSave:
-		msg, err := a.SaveAs(a.turn) // empty when the Save As dialog was cancelled
+		msg, err := a.saveAsDialog(a.turn, false) // empty when the Save As dialog was cancelled
 		return err == nil && msg != ""
 	}
 	return false
 }
+
+// DiscardOK is for the UI, which asks it before Close Image: false when the user cancelled.
+func (a *App) DiscardOK(action string) bool { return a.discardOK(action) }
 
 // askDiscard is the system's own alert, so it looks like every other app on that system:
 //

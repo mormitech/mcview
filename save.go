@@ -31,7 +31,13 @@ var saveFormats = map[string]string{
 // (PNG, JPEG, GIF, BMP or TIFF; a name without one gets .png). A picture that was pasted becomes the file it was saved to. Saving to
 // another folder makes that folder the one this window works in: the arrow keys go through its pictures from then on. The text
 // returned is for the UI to show; it is empty when the dialog was cancelled.
-func (a *App) SaveAs(rot int) (string, error) {
+//
+// A picture that came from a file and has changes (or is turned) first asks: overwrite the file, save as a new one (the dialog then offers
+// the name with the date and time after it), or cancel.
+func (a *App) SaveAs(rot int) (string, error) { return a.saveAsDialog(rot, true) }
+
+// saveAsDialog is SaveAs; ask is false when the user was asked about the changes already (see discardOK).
+func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 	a.mu.Lock()
 	if a.saving {
 		a.mu.Unlock()
@@ -46,6 +52,17 @@ func (a *App) SaveAs(rot int) (string, error) {
 		return "", nil
 	}
 	name := cur.Name
+	stamp := false
+	_, writable := saveFormats[strings.ToLower(filepath.Ext(cur.Path))]
+	if ask && cur.Path != "" && writable && (cur.Modified || (rot%4+4)%4 != 0) {
+		switch a.askOverwrite(cur.Name) {
+		case overwriteCancel:
+			return "", nil
+		case overwriteFile:
+			return a.saveTo(cur.Path, rot)
+		}
+		stamp = true
+	}
 	if cur.Path == "" {
 		name = "clipboard-" + time.Now().Format("20060102-150405") + ".png"
 	} else if _, ok := saveFormats[strings.ToLower(filepath.Ext(name))]; !ok { // a type that is not written (WebP, SVG…): PNG
@@ -56,6 +73,9 @@ func (a *App) SaveAs(rot int) (string, error) {
 		if a.HasTransparency() {
 			name = strings.TrimSuffix(name, filepath.Ext(name)) + ".png"
 		}
+	}
+	if stamp {
+		name = changedName(name, time.Now())
 	}
 	target, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
 		Title:                "Save picture as",

@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DeleteImage, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DeleteImage, DiscardOK, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -353,6 +353,7 @@ function setTool(t) {
 }
 
 let ink = null; // the stroke that is being drawn: {pts: [x, y, x, y, …], color}
+let fin = null; // the stroke that is let go and is being drawn into the picture by Go: only its overlay is still shown
 
 function inkPoint(ev) {
   const [px, py] = pointInPicture(ev.clientX, ev.clientY);
@@ -361,7 +362,7 @@ function inkPoint(ev) {
 
 function renderInk() {
   const cv = $('ink');
-  if (!ink) { cv.hidden = true; return; }
+  if (!ink && !fin) { cv.hidden = true; return; }
   cv.style.left = `${view.x + view.ox}px`; cv.style.top = `${view.y + view.oy}px`;
   cv.style.width = `${dispW() * view.sx}px`; cv.style.height = `${dispH() * view.sy}px`;
   cv.hidden = false;
@@ -400,14 +401,14 @@ function addInk([x, y]) {
   ink.pts.push(x, y);
 }
 
-async function finishInk() {
-  const k = ink;
+async function finishInk(k) {
+  fin = k; // the overlay stays until the picture has the stroke, but the stroke itself is over
   try {
     const info = await DrawStroke(view.rot, k.pts, k.color, k.width);
     await showImage(info, {keepView: true, rot: 0});
     commit();
   } catch (e) { problem(errText(e)); }
-  ink = null;
+  if (fin === k) fin = null; // (a stroke that started meanwhile has the overlay now)
   renderInk();
 }
 
@@ -677,6 +678,7 @@ function updateHover(shift) {
 }
 
 function clearSelection() {
+  stopSelectionFlash();
   if (view.fl) { flushFloat({clear: true}); return; } // a lifted part is applied: the selection is let go
   if (!view.sel) return;
   view.sel = null; view.selDrag = null; view.hl = null; view.hlMode = ''; $('stage').style.cursor = '';
@@ -854,6 +856,10 @@ function flashSelection() {
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); // (taken off and put on again, so that a second copy starts it again)
   clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('flash'), 1700);
 }
+// A selection that is let go, or a new one begun, ends the flash of the old one: #sel is the same element, and would show it again.
+function stopSelectionFlash() {
+  clearTimeout(flashTimer); $('sel').classList.remove('flash');
+}
 function flashStatus() {
   const el = $('status');
   el.classList.remove('ok-flash'); void el.offsetWidth; el.classList.add('ok-flash');
@@ -967,8 +973,10 @@ function removeLayer() {
 }
 
 // File → Close Image: the window goes back to the way it starts, with no picture. It is a step of the history like any other, so undo brings
-// the picture back (with its unsaved changes, if it had any: they are not asked about, because nothing is lost).
+// the picture back with its changes, but a picture that has some is asked about first (Save, Discard, Cancel), as when the window is closed.
 async function closeImage() {
+  if (!pic.naturalWidth) return;
+  try { if (!await DiscardOK('close the image')) return; } catch (e) { problem(errText(e)); return; }
   if (view.fl) await flushFloat({clear: true}); // what is lifted is part of the picture that comes back
   if (!view.state || history.busy) return;
   try {
@@ -1121,6 +1129,7 @@ const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 
 // Drag to select (with Shift on an edge of the frame, the frame is moved without touching the picture).
 function beginSelection(clientX, clientY) {
+  stopSelectionFlash();
   const edge = document.body.classList.contains('edit') ? null : edgeAt(clientX, clientY, true); // edit mode off: the frame alone is moved and resized
   const [qx, qy] = pointInPicture(clientX, clientY);
   if (edge) { // an edge of the frame: it is moved, not a new frame drawn
@@ -1133,7 +1142,7 @@ function beginSelection(clientX, clientY) {
   }
   const [x, y] = pointInPicture(clientX, clientY);
   view.selDrag = {x0: x, y0: y, from: [clientX, clientY]};
-  view.sel = dragFrame(x, y, x, y);
+  view.sel = null; // the frame appears once the drag covers more than one pixel
   draw();
 }
 
@@ -1223,6 +1232,8 @@ function startViewer() {
     if (view.selDrag) {
       const [px, py] = pointInPicture(ev.clientX, ev.clientY);
       view.sel = dragFrame(view.selDrag.x0, view.selDrag.y0, px, py);
+      const r = selectionRect();
+      if (!r || r.w * r.h < 2) view.sel = null; // one pixel is not a selection (also not when the drag comes back to it)
       draw();
       return;
     }
@@ -1238,7 +1249,7 @@ function startViewer() {
   const endDrag = (ev) => {
     pointerDown = false;
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
-    if (ink) { finishInk().then(() => updateHover(ev.shiftKey)); return; }
+    if (ink) { const k = ink; ink = null; finishInk(k).then(() => updateHover(ev.shiftKey)); return; } // the button is up: drawing stops now, not when Go is done
     if (view.tdrag) { finishTransform().then(() => updateHover(ev.shiftKey)); return; }
     if (view.selDrag) { // a selection dragged less than 3 screen pixels is a click, not a selection
       const [fx, fy] = view.selDrag.from, moved = !!view.selDrag.edge;
