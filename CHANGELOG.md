@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.25.0 – 2026-10-26
+
+### Changed
+- While a selection is drawn or resized, its size is written in the middle of it (white with a black outline, so that it can be read on any picture).
+- A copy to the clipboard lights things up for a moment: the border of the selection fades to orange and white and back to its usual black and dirty white, a clipboard fades in and out in the middle, and the message in the status bar flashes orange and settles. The border is black and dirty white at rest again.
+
 ## 0.24.0 – 2026-10-26
 
 ### Changed

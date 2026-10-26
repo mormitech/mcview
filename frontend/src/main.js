@@ -219,7 +219,7 @@ function setStatus(folder, info = '', name = '') {
   $('name').textContent = name; $('name').title = name;
   $('folder').textContent = folder; $('folder').title = folder;
   $('info').textContent = info;
-  $('status').classList.remove('bad');
+  $('status').classList.remove('bad', 'ok-flash');
 }
 
 // The keys 1 to 4: choose a mode, and keep it.
@@ -627,6 +627,7 @@ function renderSelection() {
   el.classList.toggle('drawing', !!(view.selDrag || view.tdrag)); // while the button is down the dashes stand still; set, they move
   el.classList.toggle('copied', copiedKey === boxKey(box));
   el.classList.toggle('content', view.hlMode === 'content');
+  const dr = selectionRect(); el.querySelector('.dims').textContent = dr ? `${dr.w} × ${dr.h}` : '';
   const {x0, x1, y0, y1} = box;
   for (const e of ['t', 'b', 'l', 'r']) el.querySelector(`.edge.${e}`).classList.toggle('on', !!view.hl?.[e]);
   el.style.left = `${view.x + view.ox + x0 * view.sx}px`; el.style.top = `${view.y + view.oy + y0 * view.sy}px`;
@@ -846,6 +847,19 @@ async function cutPng(r) {
 
 let lastCopy = 0;
 
+// A copy lights things up for a moment: the border of the selection (orange and white, with a clipboard in the middle), and the message in the status bar.
+let flashTimer = 0, statusFlashTimer = 0;
+function flashSelection() {
+  const el = $('sel');
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); // (taken off and put on again, so that a second copy starts it again)
+  clearTimeout(flashTimer); flashTimer = setTimeout(() => el.classList.remove('flash'), 1700);
+}
+function flashStatus() {
+  const el = $('status');
+  el.classList.remove('ok-flash'); void el.offsetWidth; el.classList.add('ok-flash');
+  clearTimeout(statusFlashTimer); statusFlashTimer = setTimeout(() => el.classList.remove('ok-flash'), 1700);
+}
+
 async function copySelection(auto = false) {
   if (!pic.naturalWidth) return;
   const now = performance.now();
@@ -860,7 +874,8 @@ async function copySelection(auto = false) {
     } catch { await CopyImageNative(b64); }
     copiedKey = view.sel && selectionBox() ? boxKey(selectionBox()) : null;
     renderSelection();
-    if (auto) problem(`Selection copied to the clipboard  ·  ${r.w} × ${r.h}`, false, 1400); // (a finished selection is copied by itself: a short note)
+    if (auto) { problem(`Selection copied to the clipboard  ·  ${r.w} × ${r.h}`, false, 1700); flashStatus(); } // (a finished selection is copied by itself: a short note)
+    if (view.sel) flashSelection();
     else problem(`Copied ${r.w} × ${r.h} pixels${view.sel ? ' (the selection)' : ''} to the clipboard`, false);
   } catch (e) { problem(errText(e)); }
 }

@@ -30,7 +30,7 @@ button:hover { border-color:var(--accent); }
 #sel .ants { position:absolute; left:0; top:0; overflow:hidden; pointer-events:none; } /* (its size and the size of its rectangles are set by the page, in numbers: sizes worked out by the style left traces of the dashes behind) */ /* the border: black and dirty white dashes, 2px wide, one after the other */
 #sel .ants rect { fill:none; stroke-width:2; stroke-dasharray:6 6; animation:ants .6s linear infinite; } /* set: long dashes that move */
 #sel.drawing .ants rect { stroke-dasharray:3 3; animation:none; } /* while the button is down: short dashes that stand still */
-#sel .ants .k { stroke:#ff8a00; } #sel.drawing .ants .k { stroke:#000; } #sel .ants .w { stroke:#ececec; stroke-dashoffset:6; animation-name:ants-w; } #sel.drawing .ants .w { stroke-dashoffset:3; }
+#sel .ants .k { stroke:#000; } #sel .ants .w { stroke:#ececec; stroke-dashoffset:6; animation-name:ants-w; } #sel.drawing .ants .w { stroke-dashoffset:3; }
 @keyframes ants { to { stroke-dashoffset:-12; } } @keyframes ants-w { from { stroke-dashoffset:6; } to { stroke-dashoffset:-6; } }
 #pic.pixelated { image-rendering:pixelated; }
 #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:0 32px; pointer-events:none; }
@@ -107,3 +107,22 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #pixel .chip { display:flex; align-items:center; gap:8px; padding:2px 8px 2px 4px; border:1px solid var(--line); border-radius:999px; background:var(--btn); font-weight:600; }
 #pixel .chip .sw { width:16px; height:16px; order:-1; }
 #pixel .from { margin-left:12px; color:var(--muted); }
+/* the size of the selection, in it, while it is drawn or resized: white with a black outline, to be read on any picture */
+#sel .dims { display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); white-space:nowrap; font:700 14px ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color:#fff; -webkit-text-stroke:4px #000; paint-order:stroke fill; letter-spacing:.02em; }
+#sel.drawing .dims { display:block; }
+/* a copy to the clipboard: the border fades to orange and white and back, and a clipboard fades in and out in the middle */
+#sel.flash .ants .k { animation:ants .6s linear infinite, kflash 1.6s ease-in-out; }
+#sel.flash .ants .w { animation:ants-w .6s linear infinite, wflash 1.6s ease-in-out; }
+@keyframes kflash { 0%, 100% { stroke:#000; } 18%, 62% { stroke:#ff8a00; } }
+@keyframes wflash { 0%, 100% { stroke:#ececec; } 18%, 62% { stroke:#fff; } }
+#sel .clipmark { display:none; position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:0;
+  filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000); }
+#sel.flash .clipmark { display:block; animation:clipfade 1.6s ease-in-out; }
+@keyframes clipfade { 0% { opacity:0; transform:scale(.8); } 22% { opacity:.95; transform:scale(1); } 65% { opacity:.95; } 100% { opacity:0; transform:scale(1); } }
+/* the message in the status bar: it lights up and settles */
+#status.ok-flash { animation:okflash 1.6s ease-out; }
+#status.ok-flash #folder { color:var(--text); font-weight:600; animation:okslide .35s ease-out; }
+@keyframes okflash { 0% { background:rgba(255,138,0,.5); } 100% { background:var(--bar); } }
+@keyframes okslide { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { #sel.flash .ants .k, #sel.flash .ants .w, #sel.flash .clipmark, #status.ok-flash, #status.ok-flash #folder { animation:none; } }
