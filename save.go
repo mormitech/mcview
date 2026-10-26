@@ -192,7 +192,7 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 		draw.Draw(flat, b, img, b.Min, draw.Over)
 		return jpeg.Encode(w, flat, &jpeg.Options{Quality: 95})
 	case "gif":
-		if o, ok := img.(interface{ Opaque() bool }); !ok || !o.Opaque() { // a transparent colour of its own, or the transparent parts would be black
+		if o, ok := img.(interface{ Opaque() bool }); !ok || !o.Opaque() { // a transparent color of its own, or the transparent parts would be black
 			return gif.Encode(w, img, &gif.Options{NumColors: 256, Quantizer: transparentPlan9{}, Drawer: draw.FloydSteinberg})
 		}
 		return gif.Encode(w, img, &gif.Options{NumColors: 256, Drawer: draw.FloydSteinberg})
@@ -204,7 +204,7 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 	return fmt.Errorf("cannot write %s", format)
 }
 
-// transparentPlan9 is the 256 colour palette of Go with the first colour made transparent, for a GIF of a picture with transparent parts.
+// transparentPlan9 is the 256 color palette of Go with the first color made transparent, for a GIF of a picture with transparent parts.
 type transparentPlan9 struct{}
 
 func (transparentPlan9) Quantize(p color.Palette, m image.Image) color.Palette {

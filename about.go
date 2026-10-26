@@ -35,9 +35,11 @@ func appMenu(app *App) *menu.Menu {
 func fileMenu(app *App, m *menu.Menu) {
 	file := m.AddSubmenu("File")
 	file.AddText("New Window", keys.CmdOrCtrl("n"), func(*menu.CallbackData) { app.newWindow() })
-	file.AddText("Open…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { app.chooseImage() })
+	file.AddText("Open File…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { app.chooseImage() })
+	file.AddText("Create Image", nil, func(*menu.CallbackData) { app.emit("menu-create") }) // a new 1280 × 720 image, in edit mode
 	file.AddText("Save As…", keys.CmdOrCtrl("s"), func(*menu.CallbackData) { app.saveAs() })
 	file.AddText("Close Image", keys.Combo("w", keys.CmdOrCtrlKey, keys.ShiftKey), func(*menu.CallbackData) { app.emit("menu-close-image") })
+	file.AddText("Delete Image…", nil, func(*menu.CallbackData) { app.emit("menu-delete") }) // (the key D does the same; no accelerator, so that a plain letter is not taken from the menu)
 	if runtime.GOOS == "darwin" {
 		file.AddSeparator()
 		file.AddText("Close Window", keys.CmdOrCtrl("w"), func(*menu.CallbackData) { app.CloseWindow() })

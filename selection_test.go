@@ -29,7 +29,7 @@ func decodePNG(t *testing.T, b64 string) image.Image {
 	return img
 }
 
-// a 10 × 6 picture where the pixel at x, y has the colour (x*20, y*40, 77) and the transparency 200 + x
+// a 10 × 6 picture where the pixel at x, y has the color (x*20, y*40, 77) and the transparency 200 + x
 func gridPNG(t *testing.T) string {
 	t.Helper()
 	img := image.NewNRGBA(image.Rect(0, 0, 10, 6))
@@ -57,7 +57,7 @@ func TestSelectionPNG(t *testing.T) {
 		t.Fatalf("the part is %v, want 4 × 3", got.Bounds())
 	}
 	for y := 0; y < 3; y++ {
-		for x := 0; x < 4; x++ { // the colours are those of the file, transparency included, not premultiplied or converted
+		for x := 0; x < 4; x++ { // the colors are those of the file, transparency included, not premultiplied or converted
 			want := color.NRGBA{R: uint8((x + 3) * 20), G: uint8((y + 2) * 40), B: 77, A: uint8(200 + x + 3)}
 			if c := color.NRGBAModel.Convert(got.At(x, y)).(color.NRGBA); c != want {
 				t.Errorf("pixel %d,%d = %v, want %v", x, y, c, want)

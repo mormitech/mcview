@@ -3,6 +3,167 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.25.0 – 2026-10-26
+
+### Changed
+- While a selection is drawn or resized, its size is written in the middle of it (white with a black outline, so that it can be read on any picture).
+- A copy to the clipboard lights things up for a moment: the border of the selection fades to orange and white and back to its usual black and dirty white, a clipboard fades in and out in the middle, and the message in the status bar flashes orange and settles. The border is black and dirty white at rest again.
+
+## 0.24.0 – 2026-10-26
+
+### Changed
+- Zoom mode 2 (the key 2) zooms every image, up or down, so that it fills 85% of the window. It is the mode every window starts with (it was 3), so a new image, a small one and a big one all show whole with a margin around them.
+
+## 0.23.2 – 2026-10-26
+
+### Fixed
+- Edit mode cannot be turned on in the window without an image, and it ends whenever the window gets empty (File → Close Image, the close button, deleting the last image, undo back to the empty window).
+
+## 0.23.1 – 2026-10-26
+
+### Added
+- In edit mode the status bar has a close (x) button at its right end. It closes the image (any image) and goes back to the empty window, and edit mode ends. Undo brings the image back, as with File → Close Image.
+
+## 0.23.0 – 2026-10-26
+
+### Added
+- File → Create Image makes a new white 1280 × 720 image and starts edit mode. The empty window's "Create image" button does the same (it replaces "New picture…" and its size fields; the size will be configurable later).
+
+### Changed
+- Names: "Open file…" (the button of the empty window, File → Open File…), "Delete Image…" and "Close Image".
+
+## 0.22.1 – 2026-10-26
+
+### Added
+- File → Delete Picture… does the same as the key D.
+
+## 0.22.0 – 2026-10-26
+
+### Added
+- D deletes the picture after a question (on macOS the file goes to the Trash). The folder is counted again and the picture that comes next in the folder is shown at the same place (3 / 8 becomes 3 / 7); after the last picture the one before it, and the empty window when no picture is left. Undo does not bring a deleted picture back.
+
+### Changed
+- F toggles full screen, the same as Enter (it used to choose zoom mode 2; the key 2 still does).
+- US English spelling: "color", not "colour".
+- Keys typed into a field of the empty window (the size of a new picture) are not taken as commands.
+
+## 0.21.0 – 2026-10-26
+
+### Changed
+- The pencil draws a round stroke 5 pixels wide by default. While the pencil is the tool, a ribbon at the bottom has a slider for its width (1 to 64 pixels) and a dot that shows it; the color palette takes its place while it is open.
+
+## 0.20.0 – 2026-10-26
+
+### Added
+- The window without a picture offers "Open from clipboard" when the clipboard has a picture (checked when the window opens and when it gets focus again), and "New picture…", which asks for a size and whether the picture is white or transparent.
+
+## 0.19.1 – 2026-10-26
+
+### Changed
+- The border of the selection is black and dirty white while it is being drawn, and orange and dirty white once the button is released.
+
+## 0.19.0 – 2026-10-26
+
+### Changed
+- A finished selection (the button is released after drawing it, or after moving or resizing its frame) is put on the clipboard at once, with a short note in the status bar.
+- The moving border of the selection is black and orange instead of black and white.
+- S (Save As) with a selection saves only the selected part, as a picture of its own; the window keeps showing its picture. Without a selection the whole picture is offered, as before.
+
+## 0.18.4 – 2026-10-26
+
+### Fixed
+- The pencil no longer freezes the window: the line between two points of a stroke could go on for ever.
+
+## 0.18.3 – 2026-10-26
+
+### Fixed
+- The status bar has one height. It used to get lower when the pixel readout was not shown (the pointer outside the picture).
+
+## 0.18.2 – 2026-10-26
+
+### Fixed
+- The status bar no longer takes the pointer. Moving the pointer to the bottom of the window in edit mode used to leave the picture, which cleared the pixel readout and made the bar flicker.
+
+## 0.18.1 – 2026-10-26
+
+### Fixed
+- In edit mode the pointer at the bottom of the window no longer does anything to the status bar, which edit mode shows already.
+
+## 0.18.0 – 2026-10-26
+
+### Added
+- Edit bar: a Select tool at the top, which is the one chosen whenever edit mode starts (the selection works as before).
+- Edit bar: the pencil draws. A stroke is one pixel wide, in the first color with the left button and in the second color with the right button, and is one step of the undo history. Choosing the pencil lets go of the selection.
+
+## 0.17.0 – 2026-10-26
+
+### Changed
+- View mode has no status bar. What it said about the picture (its size, its place in the folder, the zoom) is in the title of the window. The bar shows in edit mode, while there is a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom.
+
+## 0.16.1 – 2026-10-26
+
+### Fixed
+- With the edit bar open, the status bar starts at its right edge instead of running under it, so the two colors at the bottom of the edit bar are not covered.
+
+## 0.16.0 – 2026-10-26
+
+### Added
+- Edit bar: the two colors (the drawing color and a second one) are at the bottom. Clicking one slides a palette up above the status bar, with the 20 basic colors and "Edit colors…" for the system picker. It closes with a click anywhere else, and when the pointer leaves it after a color was changed.
+- Edit bar: buttons for a pencil and a color picker (they do nothing yet, like the line, rectangle and text buttons).
+
+## 0.15.0 – 2026-10-26
+
+### Added
+- The title of the window says the size of the picture, after its name.
+- In full screen the bottom bar shows while the pointer is at the bottom of the screen, and goes when it leaves.
+- In full screen with edit mode off, the bottom bar stays for as long as there is a selection.
+
+## 0.14.4 – 2026-10-26
+
+### Fixed
+- The items of the status bar are centred vertically, so the pixel readout lines up with the file name and the picture info.
+
+## 0.14.3 – 2026-10-26
+
+### Changed
+- The pixel readout in the status bar is easier to read: the position is written x and y, each color channel has a small meter, and the hex code sits in a pill with the color swatch.
+
+## 0.14.2 – 2026-10-26
+
+### Changed
+- Tab toggles edit mode, the same as E.
+
+## 0.14.1 – 2026-10-26
+
+### Changed
+- Every window starts in zoom mode 3 (contain). The mode chosen with the keys 1 to 4 is kept while the window is open, but no longer for the next start or for a new window (Ctrl+N).
+
+## 0.14.0 – 2026-10-26
+
+### Changed
+- Edit mode (E) shows in the title ("[edit]") and in the status bar ("EDIT"). Turning it on switches to the pixelated view and turning it off goes back to the smoothed one; Tab does nothing for now.
+- In full screen, edit mode shows the status bar along with the edit bar; with it off both are hidden.
+
+## 0.13.1 – 2026-10-26
+
+### Changed
+- With edit mode off, paste always makes the clipboard picture the picture of the window, dropping the open one (undo brings it back). With edit mode on, paste works as before.
+
+## 0.13.0 – 2026-10-26
+
+### Changed
+- Edit mode (E) now decides what the selection does. With edit mode off, dragging the inside of the selection moves only the frame, and dragging an edge resizes only the frame; the picture is not touched and nothing goes into the undo history. With edit mode on, dragging the inside lifts and moves the part, and dragging an edge stretches it, like Paint; these steps can be undone.
+
+## 0.12.29 – 2026-10-25
+
+### Fixed
+- On Windows the menu shortcuts Ctrl+O, Ctrl+W, Ctrl+Shift+W and Ctrl+Q also work while the menu bar is hidden in full screen (the others were already handled by the page).
+
+## 0.12.28 – 2026-10-25
+
+### Changed
+- Full screen has a black background. On Windows the menu bar is hidden in full screen and shows while the pointer is at the top edge of the screen.
+
 ## 0.12.27 – 2026-10-25
 
 ### Added
@@ -23,14 +184,14 @@ The steps 0.12.0 to 0.12.25 were never released one by one; this is everything s
   little lighter. With Shift, the edges of the frame move the frame only. The picture is panned with the middle mouse button (the pointer shows the grabbing hand), the trackpad and the wheel as before.
 - **Move and stretch the selected part, like Paint.** Drag an edge or corner to stretch it, drag the inside (or the top left corner) to move it. The place it came from turns white (transparent in a picture that has transparency) and the part
   stays a layer until the selection is let go (Esc, a click beside it, a new selection, R, copy, paste, save, closing); then it is applied. Every drop and the applying are steps of undo. The picture is not recoded for this: it is kept as decoded pixels and only
-  encoded again by Save As, and the colour profile of the file (ICC of a JPEG or WebP, the colour chunks of a PNG) is carried along, so the colours do not change when you edit.
+  encoded again by Save As, and the color profile of the file (ICC of a JPEG or WebP, the color chunks of a PNG) is carried along, so the colors do not change when you edit.
 - **Paste is a layer.** Ctrl+V (Cmd+V, Edit → Paste) lays the clipboard picture over the picture at its own size, on pixels near the top left corner of what is visible, selected and floating like a lifted part: drag it, stretch it, take it away with
   Delete, Backspace or Esc, or lay it down with a click. A clipboard picture that covers about half of the picture or more (or does not fit in it) is probably a new image, so mcView asks "Large image content is about to be pasted":
   Paste as new image, Paste into current image, Cancel. A window with no picture takes the clipboard picture as its picture. It works on JPEG, PNG, GIF, BMP, WebP and TIFF pictures.
 - **A ● after the name of a modified picture** in the title and, in full screen, in the bottom bar.
 - **A native alert before unsaved changes are lost.** Going to another picture or closing the window with a modified picture asks first, in the system's own alert: on macOS Save, Discard, Cancel; on Windows Yes, No, Cancel; on Linux GTK's two-button question
   twice. Save starts Save As and goes on once the file is written.
-- **Transparent pictures get squares** (small bluish and white ones, as Gimp does) instead of a flat colour. Save As offers such a picture as PNG, writes GIF with a transparent colour, and says when JPEG made the transparent parts white.
+- **Transparent pictures get squares** (small bluish and white ones, as Gimp does) instead of a flat color. Save As offers such a picture as PNG, writes GIF with a transparent color, and says when JPEG made the transparent parts white.
 - **File → Close Image** (Ctrl+Shift+W, Cmd+Shift+W): back to the way the window starts, with no picture; undo brings the picture back. **File → Close Window** (Cmd+W) on a Mac.
 - **The window comes up where and how big it was left** (`window.json` in the settings folder of the user); full screen, maximised and minimised windows are not remembered, and a place that is no longer on a screen is ignored.
 - **The edit bar** (key E) slides in a bar of tools from the left, like the bottom bar in full screen; Line, Rectangle and Text are there but do nothing yet.
@@ -175,7 +336,7 @@ The steps 0.12.0 to 0.12.25 were never released one by one; this is everything s
   are selected. It stays on its place when the picture is zoomed or moved. A click on the picture, Esc, or another picture takes it away.
   The bar shows its size (`selection 120 × 80`).
 - **Ctrl+C (Cmd+C on a Mac, and Ctrl+Insert) copies the selected part to the clipboard** as a picture; with nothing selected it copies the
-  whole picture. The part is cut out of the decoded file, so it has the colours of the file (transparency included). The web view's own
+  whole picture. The part is cut out of the decoded file, so it has the colors of the file (transparency included). The web view's own
   clipboard is tried first, then the system's way (osascript on macOS, PowerShell on Windows, `xclip` or `wl-copy` on Linux, which have to
   be installed). AVIF, SVG and ICO are cut from what the web view drew.
 
@@ -189,12 +350,12 @@ The steps 0.12.0 to 0.12.25 were never released one by one; this is everything s
 - **Tab switches between the smoothed view and the pixelated view**, where every pixel of the picture is a sharp square and nothing is
   blended. Tab again goes back. The pixelated view stays when the next or the previous picture is shown, but not the next time mcView
   starts (it always starts smoothed). The bar says `pixels` while it is on.
-- **Pixel readout.** In the pixelated view the bottom bar shows the colour of the pixel under the pointer: its position, R G B and
+- **Pixel readout.** In the pixelated view the bottom bar shows the color of the pixel under the pointer: its position, R G B and
   alpha (0 to 255), the hex code and a swatch (a checkerboard shows through a transparent pixel).
-  - The numbers are those of the file: mcView decodes the picture a second time in Go, without any colour conversion (the web view
-    converts colours for the screen, and its JPEG decoder can be one off in the last digit). JPEG, PNG, GIF, BMP, WebP and TIFF.
+  - The numbers are those of the file: mcView decodes the picture a second time in Go, without any color conversion (the web view
+    converts colors for the screen, and its JPEG decoder can be one off in the last digit). JPEG, PNG, GIF, BMP, WebP and TIFF.
     A JPEG turned by its EXIF Orientation tag is read the way it is shown.
-  - For types Go cannot decode (AVIF, SVG, ICO) the colour is read from what the web view drew, and the bar says `from the screen`.
+  - For types Go cannot decode (AVIF, SVG, ICO) the color is read from what the web view drew, and the bar says `from the screen`.
   - A picture over 150 megapixels is not decoded for the readout.
 
 ## 0.4.1 – 2026-10-25

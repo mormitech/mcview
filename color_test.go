@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-func TestColourProfileSurvivesEditing(t *testing.T) {
+func TestColorProfileSurvivesEditing(t *testing.T) {
 	profile := bytes.Repeat([]byte("profile!"), 40)
 	var jb bytes.Buffer
 	jpeg.Encode(&jb, image.NewRGBA(image.Rect(0, 0, 8, 8)), nil)
@@ -36,7 +36,7 @@ func TestColourProfileSurvivesEditing(t *testing.T) {
 	if _, err := png.Decode(bytes.NewReader(a.clipPNG)); err != nil {
 		t.Errorf("the PNG with the profile must still decode: %v", err)
 	}
-	if got := colourChunks(filepath.Join(t.TempDir(), "none.jpg")); got != nil {
+	if got := colorChunks(filepath.Join(t.TempDir(), "none.jpg")); got != nil {
 		t.Error("no file, no chunks")
 	}
 }

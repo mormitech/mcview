@@ -36,7 +36,7 @@ func TestFloatMoveLeavesWhiteAndKeepsPixels(t *testing.T) {
 	if px := a.PixelAt(5, 1, 10, 6); px.R != 100 {
 		t.Errorf("a pixel beside the lifted part must stay: %+v", px)
 	}
-	// 2,1 now at 6,3: its colour (40, 40, 77)
+	// 2,1 now at 6,3: its color (40, 40, 77)
 	if px := a.PixelAt(6, 3, 10, 6); px.R != 40 || px.G != 40 || px.B != 77 {
 		t.Errorf("the dropped pixel 6,3 = %+v, want the one that was 2,1", px)
 	}

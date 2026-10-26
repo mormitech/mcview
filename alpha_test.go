@@ -128,7 +128,7 @@ func TestSaveKeepsTransparency(t *testing.T) {
 		t.Errorf("turned PNG: the top left pixel was in the transparent column, got %+v", got)
 	}
 
-	// GIF keeps it too (a transparent colour)
+	// GIF keeps it too (a transparent color)
 	b := NewApp()
 	b.setImage(src)
 	gout := filepath.Join(dir, "copy.gif")

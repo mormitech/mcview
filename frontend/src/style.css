@@ -34,16 +34,24 @@ button:hover { border-color:var(--accent); }
 @keyframes ants { to { stroke-dashoffset:-12; } } @keyframes ants-w { from { stroke-dashoffset:6; } to { stroke-dashoffset:-6; } }
 #pic.pixelated { image-rendering:pixelated; }
 #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:0 32px; pointer-events:none; }
+#empty-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:8px; } #empty-actions button { pointer-events:auto; margin-top:0; }
+#newform { pointer-events:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--muted); } #newform[hidden] { display:none; } #newform input[type=number] { width:76px; } #newform label { display:flex; align-items:center; gap:4px; }
 #empty[hidden] { display:none; } #empty button { pointer-events:auto; margin-top:8px; } #empty h1 { font-size:28px; margin:8px 0 0; }
-#status { position:absolute; left:0; right:0; bottom:0; padding:5px 12px; font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; gap:16px; }
+#status { position:absolute; left:0; right:0; bottom:0; height:34px; padding:0 12px; /* one height, with the pixel readout or without */ font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; align-items:center; gap:16px; }
 #status[hidden] { display:none; }
 /* full screen: the bar is there while Shift is held (and for a message); it slides and fades in and out, quickly */
 #status { transition: transform .12s ease-out, opacity .12s ease-out; }
-body.full #status { transform:translateY(100%); opacity:0; pointer-events:none; }
-body.full.shift #status, body.full.peek #status { transform:none; opacity:1; pointer-events:auto; } #status.bad { color:var(--bad); }
+body.full, body.full #viewer { background:#000; }
+#status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
+body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
 #name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
 #folder { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #info { white-space:nowrap; }
+#close-img { display:none; flex:none; width:22px; height:22px; padding:0; align-items:center; justify-content:center; border:1px solid transparent; background:none; color:var(--muted); border-radius:4px; pointer-events:auto; }
+#close-img svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+#close-img:hover { color:var(--text); background:var(--btn); border-color:var(--line); }
+body.edit #close-img { display:flex; } /* edit mode: the image is closed from here (any image, also one opened from a file) */
+#editmark { flex:none; font-weight:700; color:var(--accent); }
 #pixel { display:flex; align-items:center; gap:8px; white-space:nowrap; color:var(--text); font-variant-numeric:tabular-nums; } #pixel[hidden] { display:none; }
 #pixel .sw { width:14px; height:14px; border:1px solid var(--line); border-radius:3px; flex:none; background-image:linear-gradient(45deg,#9aa 25%,transparent 25%,transparent 75%,#9aa 75%),linear-gradient(45deg,#9aa 25%,#eee 25%,#eee 75%,#9aa 75%); background-size:8px 8px; background-position:0 0,4px 4px; position:relative; overflow:hidden; } #pixel .sw b { position:absolute; inset:0; }
 body.about-mode #viewer { display:none; }
@@ -64,4 +72,57 @@ body.about-mode #viewer { display:none; }
 body.edit #tools { transform:none; opacity:1; pointer-events:auto; }
 #tools .tool { width:42px; height:42px; padding:0; display:flex; align-items:center; justify-content:center; }
 #tools .tool svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#tools .tool.on { background:var(--accent); border-color:var(--accent); color:var(--accent-text); }
+#ink { position:absolute; image-rendering:pixelated; pointer-events:none; }
 #status { z-index:5; }
+body.edit #status { left:56px; } /* the edit bar is as tall as the window: the status bar starts where it ends */
+/* the two colors at the bottom of the edit bar, and the palette that slides up from the status bar when one is clicked */
+#wells { position:relative; width:42px; height:42px; margin-top:auto; flex:none; }
+.well { position:absolute; padding:0; border-radius:4px; border:1px solid var(--line); overflow:hidden; background-image:linear-gradient(45deg,#9aa 25%,transparent 25%,transparent 75%,#9aa 75%),linear-gradient(45deg,#9aa 25%,#eee 25%,#eee 75%,#9aa 75%); background-size:8px 8px; background-position:0 0,4px 4px; }
+.well b { position:absolute; inset:0; }
+#well-fg { left:0; top:0; width:28px; height:28px; border:2px solid var(--text); box-shadow:0 0 0 2px var(--bar); z-index:1; }
+#well-bg { right:0; bottom:0; width:26px; height:26px; }
+#dock, #pendock { position:absolute; left:56px; right:0; bottom:0; z-index:4; display:flex; align-items:center; gap:12px; padding:8px 12px; background:var(--bar); border-top:1px solid var(--line); backdrop-filter:blur(8px);
+  transform:translateY(100%); opacity:0; pointer-events:none; visibility:hidden; transition:transform .12s ease-out, opacity .12s ease-out, visibility 0s .12s; }
+#dock.open, #pendock.open { transform:none; opacity:1; pointer-events:auto; visibility:visible; transition:transform .12s ease-out, opacity .12s ease-out; }
+#pendock { font-size:12px; color:var(--muted); } #pendock input[type=range] { width:240px; accent-color:var(--accent); } #pen-wv { width:5ch; color:var(--text); font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+#pen-dot { flex:none; border-radius:50%; background:var(--text); margin-left:6px; }
+#palette { display:flex; gap:4px; flex-wrap:wrap; min-width:0; }
+#palette .cell { width:20px; height:20px; padding:0; border-radius:4px; border:1px solid rgba(0,0,0,.25); }
+#palette .cell.sel { outline:2px solid var(--accent); outline-offset:1px; }
+#dock-native { position:absolute; width:0; height:0; opacity:0; pointer-events:none; }
+/* the pixel readout: x, y | a meter for each color channel | the hex code in a pill with the swatch */
+#pixel { gap:0; font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+#pixel .pos { display:flex; gap:10px; } #pixel .pos i { font-style:normal; color:var(--muted); margin-right:3px; }
+#pixel .sep { width:1px; height:14px; background:var(--line); margin:0 12px; flex:none; }
+#pixel .chans { display:flex; gap:12px; }
+#pixel .ch { display:flex; align-items:center; gap:5px; }
+#pixel .ch em { font-style:normal; font-weight:600; width:1ch; }
+#pixel .ch .m { width:44px; height:5px; border-radius:3px; background:var(--line); overflow:hidden; } #pixel .ch .m s { display:block; height:100%; }
+#pixel .ch .n { width:3ch; text-align:right; }
+#pixel .ch.r em { color:#d94a4a; } #pixel .ch.r s { background:#d94a4a; }
+#pixel .ch.g em { color:#3aa45a; } #pixel .ch.g s { background:#3aa45a; }
+#pixel .ch.b em { color:#3d83e0; } #pixel .ch.b s { background:#3d83e0; }
+#pixel .ch.a em { color:var(--muted); } #pixel .ch.a s { background:var(--muted); }
+#pixel .chip { display:flex; align-items:center; gap:8px; padding:2px 8px 2px 4px; border:1px solid var(--line); border-radius:999px; background:var(--btn); font-weight:600; }
+#pixel .chip .sw { width:16px; height:16px; order:-1; }
+#pixel .from { margin-left:12px; color:var(--muted); }
+/* the size of the selection, in it, while it is drawn or resized: white with a black outline, to be read on any picture */
+#sel .dims { display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); white-space:nowrap; font:700 14px ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color:#fff; -webkit-text-stroke:4px #000; paint-order:stroke fill; letter-spacing:.02em; }
+#sel.drawing .dims { display:block; }
+/* a copy to the clipboard: the border fades to orange and white and back, and a clipboard fades in and out in the middle */
+#sel.flash .ants .k { animation:ants .6s linear infinite, kflash 1.6s ease-in-out; }
+#sel.flash .ants .w { animation:ants-w .6s linear infinite, wflash 1.6s ease-in-out; }
+@keyframes kflash { 0%, 100% { stroke:#000; } 18%, 62% { stroke:#ff8a00; } }
+@keyframes wflash { 0%, 100% { stroke:#ececec; } 18%, 62% { stroke:#fff; } }
+#sel .clipmark { display:none; position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:0;
+  filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000); }
+#sel.flash .clipmark { display:block; animation:clipfade 1.6s ease-in-out; }
+@keyframes clipfade { 0% { opacity:0; transform:scale(.8); } 22% { opacity:.95; transform:scale(1); } 65% { opacity:.95; } 100% { opacity:0; transform:scale(1); } }
+/* the message in the status bar: it lights up and settles */
+#status.ok-flash { animation:okflash 1.6s ease-out; }
+#status.ok-flash #folder { color:var(--text); font-weight:600; animation:okslide .35s ease-out; }
+@keyframes okflash { 0% { background:rgba(255,138,0,.5); } 100% { background:var(--bar); } }
+@keyframes okslide { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion: reduce) { #sel.flash .ants .k, #sel.flash .ants .w, #sel.flash .clipmark, #status.ok-flash, #status.ok-flash #folder { animation:none; } }

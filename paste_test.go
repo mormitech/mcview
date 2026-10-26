@@ -174,7 +174,7 @@ func TestSaveModifiedAndTurnedPictures(t *testing.T) {
 
 func TestPastedLayerFloatsUntilApplied(t *testing.T) {
 	a := NewApp()
-	a.setImage(gridPNG(t)) // 10 × 6, opaque colours with alpha 200+
+	a.setImage(gridPNG(t)) // 10 × 6, opaque colors with alpha 200+
 	if err := a.setPasted(0, solidNRGBA(2, 2, blue), image.Rect(1, 1, 3, 3), true); err != nil {
 		t.Fatal(err)
 	}

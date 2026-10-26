@@ -6,12 +6,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/wailsapp/wails/v2/pkg/menu"
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
@@ -32,8 +34,11 @@ type App struct {
 	clip      image.Image // a picture pasted from the clipboard, which has no file yet (image is "" then); see clip.go
 	clipPNG   []byte      // the same as a PNG, for the web view
 	workDir   string      // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
+	titleInfo string      // size, place in the folder and zoom of the picture, for the title
+	edit      bool        // edit mode is on: the title says so
 	lastPaste time.Time   // the menu and the key can both ask for one paste
 	lastNew   time.Time   // the same for a new window
+	deleting  bool        // the question about deleting a picture is open
 	saving    bool        // the Save As dialog is open
 	spawned   int         // the windows this one started, so that each opens a little further down and right
 	cascade   int         // --cascade: how many steps of that this window was started at
@@ -44,6 +49,7 @@ type App struct {
 
 	openWindow     func(path string) error                 // starts a window for a picture; spawn, except in the tests
 	confirmDiscard func(name, action string) discardChoice // asks before unsaved changes are thrown away; the system's alert, except in the tests (see discard.go)
+	menuBar        *menu.Menu                              // the menu of the window (nil for the About window), put back when full screen ends
 	confirmLarge   func(w, h, pw, ph int) largeChoice      // asks what to do with a big clipboard picture; the system's alert, except in the tests (see discard.go)
 	fl             *floatSession                           // the part of the picture that is lifted and dropped somewhere else, not applied yet (see float.go)
 	saved          *winState                               // the place and size the window was left in, from the last run (see winstate.go)
@@ -101,6 +107,19 @@ func (a *App) ToggleFullscreen() {
 	}
 }
 
+// SetMenuBar shows or hides the menu bar of the window on Windows, where full screen leaves it at the top (macOS has its own, which
+// slides down by itself). Hiding sets an empty menu; showing sets the real one again.
+func (a *App) SetMenuBar(show bool) {
+	if a.ctx == nil || a.menuBar == nil || runtime.GOOS != "windows" {
+		return
+	}
+	if show {
+		wruntime.MenuSetApplicationMenu(a.ctx, a.menuBar)
+	} else {
+		wruntime.MenuSetApplicationMenu(a.ctx, menu.NewMenu())
+	}
+}
+
 // SetTurn tells this side how many quarter turns clockwise the picture is shown with, for the Save As that an alert about unsaved changes can start.
 func (a *App) SetTurn(rot int) { a.mu.Lock(); a.turn = (rot%4 + 4) % 4; a.mu.Unlock() }
 
@@ -140,10 +159,44 @@ func (a *App) titleWindow() {
 		if cur.Modified {
 			name += modifiedMark
 		}
-		wruntime.WindowSetTitle(a.ctx, name+" – mcView v"+version())
+		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mcView v"+version()+a.editMark())
 	} else { // undo can take the window back to empty
-		wruntime.WindowSetTitle(a.ctx, "mcView v"+version())
+		wruntime.WindowSetTitle(a.ctx, "mcView v"+version()+a.editMark())
 	}
+}
+
+func (a *App) sizeMark() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.titleInfo != "" {
+		return " – " + a.titleInfo
+	}
+	return ""
+}
+
+// SetTitleInfo tells Go what the title of the window says after the name of the picture: its size, its place in the folder and the zoom.
+func (a *App) SetTitleInfo(text string) {
+	a.mu.Lock()
+	a.titleInfo = text
+	a.mu.Unlock()
+	a.titleWindow()
+}
+
+func (a *App) editMark() string {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if a.edit {
+		return " [edit]"
+	}
+	return ""
+}
+
+// SetEditMode tells Go that edit mode (key E) is on or off, so that the title says so.
+func (a *App) SetEditMode(on bool) {
+	a.mu.Lock()
+	a.edit = on
+	a.mu.Unlock()
+	a.titleWindow()
 }
 
 func (a *App) emit(event string, data ...interface{}) {
@@ -166,7 +219,7 @@ func imageFilter() wruntime.FileFilter {
 func (a *App) ChooseImage() error {
 	dir := a.current().Dir
 	path, err := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{
-		Title:            "Open picture",
+		Title:            "Open file",
 		DefaultDirectory: dir,
 		Filters:          []wruntime.FileFilter{imageFilter()},
 	})

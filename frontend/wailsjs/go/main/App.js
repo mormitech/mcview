@@ -14,12 +14,24 @@ export function ClearFloat() {
   return window['go']['main']['App']['ClearFloat']();
 }
 
+export function ClipboardHasImage() {
+  return window['go']['main']['App']['ClipboardHasImage']();
+}
+
 export function CloseWindow() {
   return window['go']['main']['App']['CloseWindow']();
 }
 
 export function CopyImageNative(arg1) {
   return window['go']['main']['App']['CopyImageNative'](arg1);
+}
+
+export function DeleteImage() {
+  return window['go']['main']['App']['DeleteImage']();
+}
+
+export function DrawStroke(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['DrawStroke'](arg1, arg2, arg3, arg4);
 }
 
 export function ExitFullscreen() {
@@ -50,6 +62,10 @@ export function MovePasted(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['MovePasted'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function NewBlank(arg1, arg2, arg3) {
+  return window['go']['main']['App']['NewBlank'](arg1, arg2, arg3);
+}
+
 export function NewWindow() {
   return window['go']['main']['App']['NewWindow']();
 }
@@ -60,6 +76,10 @@ export function OpenImage(arg1) {
 
 export function PasteLayer(arg1, arg2, arg3) {
   return window['go']['main']['App']['PasteLayer'](arg1, arg2, arg3);
+}
+
+export function PasteNew() {
+  return window['go']['main']['App']['PasteNew']();
 }
 
 export function PixelAt(arg1, arg2, arg3, arg4) {
@@ -94,6 +114,10 @@ export function SaveAs(arg1) {
   return window['go']['main']['App']['SaveAs'](arg1);
 }
 
+export function SaveSelectionAs(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['SaveSelectionAs'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function SaveWindow() {
   return window['go']['main']['App']['SaveWindow']();
 }
@@ -102,12 +126,24 @@ export function SelectionPNG(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SelectionPNG'](arg1, arg2, arg3, arg4, arg5, arg6);
 }
 
+export function SetEditMode(arg1) {
+  return window['go']['main']['App']['SetEditMode'](arg1);
+}
+
 export function SetFloat(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
   return window['go']['main']['App']['SetFloat'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 }
 
+export function SetMenuBar(arg1) {
+  return window['go']['main']['App']['SetMenuBar'](arg1);
+}
+
 export function SetPasted(arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
   return window['go']['main']['App']['SetPasted'](arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+}
+
+export function SetTitleInfo(arg1) {
+  return window['go']['main']['App']['SetTitleInfo'](arg1);
 }
 
 export function SetTurn(arg1) {
