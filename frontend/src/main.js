@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, DeleteImage, DiscardOK, ConfirmQuit, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -356,7 +356,7 @@ function setTool(t) {
   if (t === 'pick' && view.tool !== 'pick') view.prevTool = view.tool; // the picker gives the tool back
   view.tool = t;
   syncPenDock();
-  for (const k of ['select', 'pen', 'line', 'rect', 'text', 'pick']) $(`tool-${k}`).classList.toggle('on', k === t);
+  for (const k of ['select', 'pen', 'line', 'rect', 'ellipse', 'fill', 'text', 'pick']) $(`tool-${k}`).classList.toggle('on', k === t);
   updateHover(false);
 }
 
@@ -420,7 +420,7 @@ async function finishInk(k) {
   renderInk();
 }
 
-// ---- Line and rectangle: dragged out on #ink (Shift: a line at a multiple of 45°, a square), and drawn into the picture by Go from the pixels of #ink ----
+// ---- Line, rectangle and ellipse: dragged out on #ink (Shift: a line at a multiple of 45°, a square or a circle), and drawn into the picture by Go from the pixels of #ink ----
 // The left button draws with the first color, the right button with the second (the rectangle: the other way round, as in Paint).
 // A stroke, line or rectangle that is being drawn is dropped at once by Esc, or by the other mouse button, even though the first is still down.
 function cancelDraw() {
@@ -443,13 +443,15 @@ function drawShape(ctx, s) {
   if (s.kind === 'line') {
     ctx.setLineDash(dashes(w, s.style));
     ctx.beginPath(); ctx.moveTo(s.x0 + 0.5, s.y0 + 0.5); ctx.lineTo(s.x1 + 0.5, s.y1 + 0.5); ctx.stroke();
-  } else {
+  } else { // a rectangle, or the ellipse in the box that is dragged
     const xa = Math.min(s.x0, s.x1), ya = Math.min(s.y0, s.y1), W = Math.abs(s.x1 - s.x0) + 1, H = Math.abs(s.y1 - s.y0) + 1;
-    if (s.fill === 'fill' || W <= w || H <= w) { ctx.fillStyle = c1; ctx.fillRect(xa, ya, W, H); } // (a rectangle that is all outline is a filled one)
+    const round = s.kind === 'ellipse';
+    const path = (inset) => { ctx.beginPath(); if (round) ctx.ellipse(xa + W / 2, ya + H / 2, Math.max(0, W / 2 - inset), Math.max(0, H / 2 - inset), 0, 0, Math.PI * 2); else ctx.rect(xa + inset, ya + inset, W - 2 * inset, H - 2 * inset); };
+    if (s.fill === 'fill' || W <= w || H <= w) { ctx.fillStyle = c1; path(0); ctx.fill(); } // (a shape that is all outline is a filled one)
     else {
-      if (s.fill === 'both') { ctx.fillStyle = c2; ctx.fillRect(xa, ya, W, H); }
+      if (s.fill === 'both') { ctx.fillStyle = c2; path(0); ctx.fill(); }
       ctx.setLineDash(dashes(w, s.style));
-      ctx.strokeRect(xa + w / 2, ya + w / 2, W - w, H - w); // the outline is inside the dragged box
+      path(w / 2); ctx.stroke(); // the outline is inside the dragged box
     }
   }
   ctx.restore();
@@ -505,6 +507,19 @@ async function finishShape(s) {
   } catch (e) { problem(errText(e)); }
   if (fin === s) fin = null;
   renderInk();
+}
+
+// ---- Fill: a click fills the area of the same color (give or take the tolerance) with the first color, a right click with the second ----
+async function fillAt(ev) {
+  const at = pixelUnder(ev.clientX, ev.clientY);
+  if (!at) return;
+  try {
+    if (view.fl) await flushFloat({clear: true});
+    const info = await FloodFill(view.rot, at[0], at[1], ev.button === 2 ? paint.bg : paint.fg, Math.round(paint.tol * 2.55));
+    if (info.state === view.state) return; // nothing changed
+    await showImage(info, {keepView: true, rot: 0});
+    commit();
+  } catch (e) { problem(errText(e)); }
 }
 
 // ---- Color picker: a click takes the color of the pixel as the first color (right click: the second), and the tool that was used comes back ----
@@ -583,6 +598,7 @@ async function commitText() {
 function showToolOptions() {
   for (const b of $('seg-style').children) b.classList.toggle('on', b.dataset.v === paint.style);
   for (const b of $('seg-fill').children) b.classList.toggle('on', b.dataset.v === paint.fill);
+  $('fill-tol').value = paint.tol; $('fill-tolv').textContent = `${paint.tol}%`;
   $('txt-b').classList.toggle('on', paint.bold); $('txt-i').classList.toggle('on', paint.italic);
   $('txt-size').value = paint.size; $('txt-font').value = paint.font;
 }
@@ -594,6 +610,7 @@ function initToolOptions() {
   for (const [name, css] of FONTS) { const o = document.createElement('option'); o.value = css; o.textContent = name; $('txt-font').append(o); }
   for (const b of $('seg-style').children) b.onclick = () => { paint.style = b.dataset.v; showToolOptions(); };
   for (const b of $('seg-fill').children) b.onclick = () => { paint.fill = b.dataset.v; showToolOptions(); };
+  $('fill-tol').addEventListener('input', () => { paint.tol = +$('fill-tol').value; showToolOptions(); });
   const again = () => { showToolOptions(); renderText(); };
   $('txt-font').onchange = () => { paint.font = $('txt-font').value; again(); $('txt-font').blur(); };
   $('txt-size').oninput = () => { const v = +$('txt-size').value; if (v >= 6 && v <= 400) { paint.size = v; renderText(); } };
@@ -612,7 +629,7 @@ function initToolOptions() {
 // A click on a well opens the palette for that color; a click anywhere else closes it, and so does the pointer leaving it once a color was changed in it.
 const PALETTE = ['#000000', '#7F7F7F', '#880015', '#ED1C24', '#FF7F27', '#FFF200', '#22B14C', '#00A2E8', '#3F48CC', '#A349A4',
   '#FFFFFF', '#C3C3C3', '#B97A57', '#FFAEC9', '#FFC90E', '#EFE4B0', '#B5E61D', '#99D9EA', '#7092BE', '#C8BFE7'];
-const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, native: false, width: 5, style: 'solid', fill: 'outline',
+const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, native: false, width: 5, style: 'solid', fill: 'outline', tol: 10,
   font: 'system-ui, sans-serif', size: 32, bold: false, italic: false};
 
 // The ribbon with the options of the tool (width, style, fill, font…): there while a drawing tool is the tool (and the palette is not).
@@ -850,8 +867,8 @@ function edgeAt(clientX, clientY, inside = false) {
   return inside && clientX > l && clientX < rt && clientY > t && clientY < bt ? {move: true} : null;
 }
 
-const RIGHT_TOOLS = ['pen', 'line', 'rect', 'pick']; // the right button works in these (the second color)
-const TOOL_CURSOR = {pen: 'crosshair', line: 'crosshair', rect: 'crosshair', pick: 'crosshair', text: 'text'};
+const RIGHT_TOOLS = ['pen', 'line', 'rect', 'ellipse', 'fill', 'pick']; // the right button works in these (the second color)
+const TOOL_CURSOR = {pen: 'crosshair', line: 'crosshair', rect: 'crosshair', ellipse: 'crosshair', fill: 'crosshair', pick: 'crosshair', text: 'text'};
 const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize'};
 
 // Lights the edge under the pointer, in two ways: with Shift ("frame": the frame is moved, the picture is not touched) and without
@@ -1355,6 +1372,8 @@ function startViewer() {
   $('tool-pen').onclick = () => setTool('pen');
   $('tool-line').onclick = () => setTool('line');
   $('tool-rect').onclick = () => setTool('rect');
+  $('tool-ellipse').onclick = () => setTool('ellipse');
+  $('tool-fill').onclick = () => setTool('fill');
   $('tool-text').onclick = () => setTool('text');
   $('tool-pick').onclick = () => setTool('pick');
   $('stage').addEventListener('contextmenu', (ev) => { if (RIGHT_TOOLS.includes(tool())) ev.preventDefault(); if (shape || ink) cancelDraw(); });
@@ -1406,10 +1425,11 @@ function startViewer() {
     }
     pointerDown = true;
     const t = tool();
-    if (t === 'pen' || t === 'line' || t === 'rect') { // what is lifted is applied first, then the stroke starts (if the button is still down)
+    if (t === 'pen' || t === 'line' || t === 'rect' || t === 'ellipse') { // what is lifted is applied first, then the stroke starts (if the button is still down)
       (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) (t === 'pen' ? startInk : startShape)(ev, t); });
       return;
     }
+    if (t === 'fill') { fillAt(ev); return; }
     if (t === 'pick') { pickColor(ev); return; }
     if (t === 'text') { startText(ev); return; }
     if (document.body.classList.contains('edit') && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)

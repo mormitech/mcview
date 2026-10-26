@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.30.0 – 2026-10-26
+
+### Added
+- **Circle and ellipse** tool: drag the box; Shift makes a circle. It has the width, style and outline/fill options of the rectangle in the ribbon, and the left button and the right button work as there.
+- **Fill** tool (the paint bucket): a click fills the connected area of the same color with the first color, a right click with the second. The ribbon has a tolerance (0 to 100%). It is one step of the undo history, and no step when the area has that color already.
+
 ## 0.29.8 – 2026-10-26
 
 ### Changed

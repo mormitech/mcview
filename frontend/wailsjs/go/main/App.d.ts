@@ -26,6 +26,8 @@ export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:numbe
 
 export function ExitFullscreen():Promise<void>;
 
+export function FloodFill(arg1:number,arg2:number,arg3:number,arg4:string,arg5:number):Promise<main.ImageInfo>;
+
 export function HasTransparency():Promise<boolean>;
 
 export function Image():Promise<main.ImageInfo>;

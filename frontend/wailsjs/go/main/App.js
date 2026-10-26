@@ -50,6 +50,10 @@ export function ExitFullscreen() {
   return window['go']['main']['App']['ExitFullscreen']();
 }
 
+export function FloodFill(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['FloodFill'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function HasTransparency() {
   return window['go']['main']['App']['HasTransparency']();
 }
