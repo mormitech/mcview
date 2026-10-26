@@ -38,6 +38,8 @@ type control struct {
 	waiting map[int]chan string
 	answers map[string][]string // by the kind of dialog: discard, overwrite, large, delete, quit, open, save
 	asked   []string            // the questions asked since the last "dialogs" command
+	mock    bool                // the dialogs are answered from the queue (--control); false for the chat panel's tools, where a person is at the window
+	srv     *http.Server
 }
 
 // controlPort is the port from --control or MCVIEW_CONTROL; the second result is false when control mode is not asked for.
@@ -65,22 +67,64 @@ func newToken() string {
 	return hex.EncodeToString(b)
 }
 
-// startControl starts listening. It returns the address (127.0.0.1:port).
-func (a *App) startControl(port string) (string, error) {
+// listenControl starts the server of the commands on 127.0.0.1:port and makes it the one of this window. mock is control mode (the dialogs
+// are answered from the queue); the chat panel's tools (mcp.go) use the same commands without it.
+func (a *App) listenControl(port string, mock bool) (*control, error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:"+port)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	c := &control{app: a, token: newToken(), addr: ln.Addr().String(), waiting: map[int]chan string{}, answers: map[string][]string{}}
-	c.send = func(id int, cmd map[string]any) { a.emit("control", id, cmd) }
-	a.mu.Lock()
-	a.ctl = c
-	a.mu.Unlock()
+	c := a.newControl(mock)
+	c.addr = ln.Addr().String()
 	mux := http.NewServeMux()
 	mux.HandleFunc("/cmd", c.guard(c.handleCmd))
 	mux.HandleFunc("/batch", c.guard(c.handleBatch))
 	mux.HandleFunc("/info", c.guard(c.handleInfo))
-	go http.Serve(ln, mux)
+	c.srv = &http.Server{Handler: mux}
+	go c.srv.Serve(ln)
+	return c, nil
+}
+
+// newControl makes the commands of this window the ones of c (no server: listenControl adds it, and the chat panel's tools call do directly).
+func (a *App) newControl(mock bool) *control {
+	c := &control{app: a, token: newToken(), waiting: map[int]chan string{}, answers: map[string][]string{}, mock: mock}
+	c.send = func(id int, cmd map[string]any) { a.emit("control", id, cmd) }
+	a.mu.Lock()
+	a.ctl = c
+	a.mu.Unlock()
+	return c
+}
+
+// windowCommands is the control of this window for a program inside it (the chat panel's tools): the one of control mode if that is on, else a new one
+// without a server and without the dialog queue (a person is at the window).
+func (a *App) windowCommands() *control {
+	a.mu.Lock()
+	c := a.ctl
+	a.mu.Unlock()
+	if c != nil {
+		return c
+	}
+	return a.newControl(false)
+}
+
+// stopControl ends the server and forgets it.
+func (a *App) stopControl(c *control) {
+	a.mu.Lock()
+	if a.ctl == c {
+		a.ctl = nil
+	}
+	a.mu.Unlock()
+	if c.srv != nil {
+		c.srv.Close()
+	}
+}
+
+// startControl starts listening (control mode). It returns the address (127.0.0.1:port).
+func (a *App) startControl(port string) (string, error) {
+	c, err := a.listenControl(port, true)
+	if err != nil {
+		return "", err
+	}
 	file := os.Getenv("MCVIEW_CONTROL_FILE")
 	if file == "" {
 		file = filepath.Join(os.TempDir(), "mcview-control.json")
@@ -219,6 +263,12 @@ func (c *control) do(m map[string]any) (map[string]any, error) {
 	case "sleep":
 		time.Sleep(time.Duration(num(m, "ms", 100)) * time.Millisecond)
 		return map[string]any{"ok": true}, nil
+	case "mask": // an area of the picture by a color or a shape (see masks.go)
+		return a.maskCommand(m)
+	case "seam": // how much the edge of a shape shows (see masks.go)
+		return a.seamCommand(m)
+	case "snapshot": // the picture as a PNG (see mcp.go): {x, y, w, h} for a part, "max" for the longest side of the answer
+		return a.snapshot(m)
 	case "quit": // without asking anything
 		if a.ctx != nil {
 			go func() { time.Sleep(100 * time.Millisecond); wruntime.Quit(a.ctx) }()
@@ -280,7 +330,7 @@ func (a *App) mockAnswer(kind, detail string) (answer string, ok bool) {
 	a.mu.Lock()
 	c := a.ctl
 	a.mu.Unlock()
-	if c == nil {
+	if c == nil || !c.mock {
 		return "", false
 	}
 	c.mu.Lock()

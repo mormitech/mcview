@@ -17,7 +17,7 @@ const (
 )
 
 // discardOK is asked before something that throws away what is not saved yet: another picture, closing the window. A picture is not saved
-// when it is modified (something pasted into it, or a picture from the clipboard; see ImageInfo.Modified). It is true when there is
+// when it is modified (something pasted or drawn into it; a new or clipboard picture that nothing was done to is not; see ImageInfo.Modified). It is true when there is
 // nothing to lose, or the changes were saved or the user chose to discard them; it is false when the user cancelled (or cancelled the
 // Save As). Undo brings a picture back after going to another one; closing the window cannot be undone.
 func (a *App) discardOK(action string) bool {

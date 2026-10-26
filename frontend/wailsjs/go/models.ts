@@ -10,6 +10,7 @@ export namespace main {
 	    state: number;
 	    modified: boolean;
 	    canAlpha: boolean;
+	    note?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ImageInfo(source);
@@ -26,6 +27,7 @@ export namespace main {
 	        this.state = source["state"];
 	        this.modified = source["modified"];
 	        this.canAlpha = source["canAlpha"];
+	        this.note = source["note"];
 	    }
 	}
 	export class PastedLayer {

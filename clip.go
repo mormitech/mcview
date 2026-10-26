@@ -81,7 +81,8 @@ func (a *App) NewBlank(w, h int, transparent bool) error {
 	return a.setPixelsBlank(n, true)
 }
 
-// setClip makes a picture without a file the picture of this window.
+// setClip makes the picture from the clipboard the picture of this window. It has no file, but it is not modified until something is done to it (the clipboard still
+// has it), so closing it, or going to another picture, asks nothing; the first change makes it modified.
 func (a *App) setClip(img image.Image) error {
 	b := img.Bounds()
 	if b.Dx() < 1 || b.Dy() < 1 || b.Dx()*b.Dy() > maxPixels {
@@ -89,7 +90,7 @@ func (a *App) setClip(img image.Image) error {
 	}
 	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy())) // the colors as they are, not premultiplied
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
-	return a.setPixels(n, "")
+	return a.setPixelsBlank(n, true)
 }
 
 // setPixels makes img the picture of this window, kept in memory: a picture with no file (file is ""), or the file with something
@@ -100,7 +101,8 @@ func (a *App) setPixelsEmit(img *image.NRGBA, file string, emit bool) error {
 	return a.setPixelsFull(img, file, emit, false)
 }
 
-// setPixelsBlank is a new blank picture (see NewBlank): it has no changes until something is done to it, so nothing asks about it when it is closed.
+// setPixelsBlank is a new picture (a blank one, see NewBlank, or one from the clipboard, see setClip) that nothing has been done to: it has no changes, so nothing asks
+// about it when it is closed.
 func (a *App) setPixelsBlank(img *image.NRGBA, blank bool) error {
 	return a.setPixelsFull(img, "", true, blank)
 }
@@ -118,6 +120,9 @@ func (a *App) setPixelsFull(img *image.NRGBA, file string, emit, blank bool) err
 	a.image = file
 	a.clip, a.clipPNG = img, png
 	a.blank = blank
+	if blank { // a new or pasted picture is the original that Discard changes goes back to
+		a.origImg = img
+	}
 	a.imgSeq++
 	a.pix = pixelCache{seq: a.imgSeq, img: img, orient: 1} // it is decoded already: the readout and Ctrl+C read from it
 	a.workDirLocked()

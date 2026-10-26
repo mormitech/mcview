@@ -72,6 +72,8 @@ type ImageInfo struct {
 	// CanAlpha: the type can have transparent pixels (PNG, GIF, WebP, TIFF, ICO, SVG, AVIF, or a picture from the clipboard); what a lifted part leaves
 	// behind is then transparent, not white.
 	CanAlpha bool `json:"canAlpha"`
+	// Note: what the chat panel's tools tell the model about the last retouch (a seam report, a warning); empty otherwise.
+	Note string `json:"note,omitempty"`
 }
 
 // current is the picture of this window without its place in the folder, which needs the folder to be read.
@@ -118,6 +120,7 @@ func (a *App) setImage(path string) error {
 	a.mu.Lock()
 	a.image = abs
 	a.clip, a.clipPNG = nil, nil
+	a.origImg = nil
 	a.blank = false
 	a.imgSeq++
 	a.pix = pixelCache{} // the decoded picture of the one before is not needed any more

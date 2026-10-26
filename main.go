@@ -38,27 +38,33 @@ func version() string {
 	return p.Info.ProductVersion
 }
 
-// windowFlags reads --about (show the About window instead of the viewer), --theme, --cascade, and the file to open (`mcview picture.jpg`,
-// which is also how Windows and Linux hand over a double-clicked file). The app starts itself with --about, because Wails v2 has
-// one window per process.
-func windowFlags(args []string) (about bool, theme, file string, cascade int) {
+// windowFlags reads --about (show the About window instead of the viewer: mode is "about", "" for the viewer), --theme, --cascade, and the file to open (`mcview picture.jpg`, which is also how Windows and Linux hand over a
+// double-clicked file). The app starts itself with --about, because Wails v2 has one window per process.
+func windowFlags(args []string) (mode, theme, file string, cascade int) {
 	fs := flag.NewFlagSet("mcview", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
+	var about bool
 	fs.BoolVar(&about, "about", false, "show the About window")
 	fs.StringVar(&theme, "theme", "", "light or dark, instead of the system's setting (for screenshots)")
 	fs.IntVar(&cascade, "cascade", 0, "open this many steps down and to the right of the centre (used for the windows a window starts)")
 	fs.Parse(args) // other arguments, such as the ones macOS adds when it launches an app, are ignored
-	return about, theme, fileArg(fs.Args()), cascade
+	switch {
+	case about:
+		mode = "about"
+	}
+	return mode, theme, fileArg(fs.Args()), cascade
 }
 
 func main() {
 	trace("main")
 	app := NewApp()
 	title, width, height := "mcView v"+version(), 1024, 640
-	about, theme, file, cascade := windowFlags(os.Args[1:])
-	if about {
+	mode, theme, file, cascade := windowFlags(os.Args[1:])
+	about := mode != "" // (a window of its own, not a viewer)
+	switch {
+	case mode == "about":
 		app.mode, title, width, height = "about", "About mcView", 440, 520
-	} else if file != "" {
+	case file != "":
 		app.child = true
 		if err := app.setImage(file); err != nil {
 			fmt.Fprintln(os.Stderr, "mcview:", err)
