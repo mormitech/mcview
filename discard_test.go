@@ -1,6 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/base64"
+	"image"
+	"image/color"
+	"image/png"
 	"path/filepath"
 	"testing"
 )
@@ -82,5 +87,30 @@ func TestBlankPictureIsNotModifiedUntilSomethingIsDone(t *testing.T) {
 	}
 	if _, err := a.RestoreState(blank); err != nil || a.current().Modified {
 		t.Fatalf("undo back to the blank picture: modified %v, %v", a.current().Modified, err)
+	}
+}
+
+func TestDrawLayerPutsAPictureIntoTheWindowPicture(t *testing.T) {
+	a := NewApp()
+	if err := a.NewBlank(20, 20, false); err != nil {
+		t.Fatal(err)
+	}
+	layer := image.NewNRGBA(image.Rect(0, 0, 4, 3))
+	for i := range layer.Pix {
+		layer.Pix[i] = 0 // transparent, but for one pixel
+	}
+	layer.SetNRGBA(1, 1, color.NRGBA{255, 0, 0, 255})
+	var buf bytes.Buffer
+	png.Encode(&buf, layer)
+	info, err := a.DrawLayer(0, 5, 6, base64.StdEncoding.EncodeToString(buf.Bytes()))
+	if err != nil || !info.Modified {
+		t.Fatalf("DrawLayer: %v, modified %v", err, info.Modified)
+	}
+	pc, _, _ := a.decoded()
+	if got := color.NRGBAModel.Convert(pc.img.At(6, 7)).(color.NRGBA); got != (color.NRGBA{255, 0, 0, 255}) {
+		t.Errorf("the pixel is %v, want red", got)
+	}
+	if got := color.NRGBAModel.Convert(pc.img.At(5, 6)).(color.NRGBA); got != (color.NRGBA{255, 255, 255, 255}) {
+		t.Errorf("a transparent pixel of the layer must leave the white: %v", got)
 	}
 }

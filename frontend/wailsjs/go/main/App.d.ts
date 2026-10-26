@@ -12,11 +12,15 @@ export function ClipboardHasImage():Promise<boolean>;
 
 export function CloseWindow():Promise<void>;
 
+export function ConfirmQuit():Promise<boolean>;
+
 export function CopyImageNative(arg1:string):Promise<void>;
 
 export function DeleteImage():Promise<string>;
 
 export function DiscardOK(arg1:string):Promise<boolean>;
+
+export function DrawLayer(arg1:number,arg2:number,arg3:number,arg4:string):Promise<main.ImageInfo>;
 
 export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 

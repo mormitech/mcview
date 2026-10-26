@@ -99,3 +99,17 @@ func trashFile(path string) error {
 	}
 	return os.Remove(path)
 }
+
+// ConfirmQuit is asked when Esc is pressed twice on the home screen: the system's alert, with Quit and Cancel.
+func (a *App) ConfirmQuit() bool {
+	if a.ctx == nil {
+		return true
+	}
+	res, err := wruntime.MessageDialog(a.ctx, wruntime.MessageDialogOptions{
+		Type: wruntime.QuestionDialog, Title: "Quit mcView?",
+		Message:       "Do you want to quit mcView? Nothing is open, so nothing is lost.",
+		Buttons:       []string{"Quit", "Cancel"},
+		DefaultButton: "Quit", CancelButton: "Cancel",
+	})
+	return err == nil && (res == "Quit" || res == "Yes" || res == "Ok")
+}

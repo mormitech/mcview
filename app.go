@@ -5,7 +5,6 @@ import (
 	"image"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"sort"
 	"strconv"
@@ -135,7 +134,7 @@ func (a *App) CloseWindow() {
 // IsFullscreen tells the UI whether the window is in full screen (it can also be put there with the green button of macOS).
 func (a *App) IsFullscreen() bool { return a.ctx != nil && wruntime.WindowIsFullscreen(a.ctx) }
 
-// ExitFullscreen is the Esc key: it leaves full screen, and does nothing otherwise.
+// ExitFullscreen leaves full screen, and does nothing otherwise (the UI does not call it any more: Esc is for double-Esc, see main.js).
 func (a *App) ExitFullscreen() {
 	if a.ctx != nil && wruntime.WindowIsFullscreen(a.ctx) {
 		wruntime.WindowUnfullscreen(a.ctx)
@@ -219,13 +218,16 @@ func imageFilter() wruntime.FileFilter {
 
 // ChooseImage shows the Open dialog and opens the picture in this window. Cancelling is not an error.
 func (a *App) ChooseImage() error {
+	if !a.discardOK("open another picture") { // the question about unsaved changes comes before the dialog
+		return nil
+	}
 	dir := a.current().Dir
 	path, err := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{
 		Title:            "Open file",
 		DefaultDirectory: dir,
 		Filters:          []wruntime.FileFilter{imageFilter()},
 	})
-	if err != nil || path == "" || !a.discardOK("open "+filepath.Base(path)) {
+	if err != nil || path == "" {
 		return err
 	}
 	return a.setImage(path)

@@ -1,8 +1,8 @@
 <h1 align="center">mcView</h1>
 
 <p align="center">
-  <b>A picture viewer for macOS, Windows and Linux.</b><br>
-  Early preview: it shows pictures, and it is offered in Open with… for them.
+  <b>A picture viewer, with a small Paint-like editor, for macOS, Windows and Linux.</b><br>
+  Early preview: it is offered in Open with… for your pictures, and edit mode (key <b>E</b>) draws, types and pastes on them.
 </p>
 
 <p align="center">
@@ -14,44 +14,72 @@
 
 ---
 
+<!-- TODO: a screenshot of edit mode here, e.g. docs/edit-mode.png -->
+
 ## What it does
 
-mcView shows a picture, quickly, and nothing else (it is going to be an [IrfanView](https://www.irfanview.com)-like viewer). It is built
-the same way as [mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS
-frontend built with Vite.
+mcView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
+small editor in the way of Paint: select, move and stretch parts, draw, type, paste, save. It is built the same way as
+[mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS frontend built with Vite.
+The manual is going to live at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mcView Help opens it).
+
+Below, **Ctrl** is **Cmd** on a Mac.
+
+### Viewing
 
 - **Shows pictures.** JPEG, PNG, GIF, BMP, WebP, ICO, SVG, AVIF and TIFF (AVIF and WebP need a web view that has them; TIFF is
-  decoded by mcView itself, so it also works on Windows and Linux). Four zoom modes on the keys 1 to 4, as in IrfanView, which stay when you
-  go to another picture (and the next time you start mcView): **1** original size (100%, however small or big), **2** shrink big
-  pictures to fit the window, small ones stay 100% (the default), **3** fit every picture to the window borders, keeping its proportions,
-  **4** stretch every picture to the window borders. **+** and **-** zoom, dragging moves the picture, double-click toggles 100%.
-  A mouse wheel zooms; on a Mac two fingers on the trackpad move the picture, and a pinch zooms.
-- **Arrow keys** (and Space for next, Backspace for previous). Left and right show the previous and the next picture of the folder, in alphabetical order, and go round (after the last comes the
-  first). The bar at the bottom shows the folder, and which picture of it you are looking at.
-- **Pixel view and color readout.** Tab switches between smoothed and pixelated (every pixel a sharp square); in the pixelated view the
-  bar at the bottom shows position, R G B A and hex of the pixel under the pointer, as `[x, y]  (r, g, b) - #rrggbb`. The numbers are the ones in the file (mcView decodes
-  it itself, with no color conversion), except for AVIF, SVG and ICO, where they are read from what the web view drew and the bar says so.
-- **Rotate the view.** R turns the picture a quarter clockwise, Shift+R counterclockwise (a quick animation). Only the view turns; the file is not changed.
-- **Paste.** Ctrl+V lays the clipboard picture over the picture, near the top left corner of what you see, as a floating part you can drag and stretch (Delete, Backspace or Esc take it away; a click beside it lays it down); the name gets a ● until you save it. A clipboard picture that is about as big as the picture asks whether it is a new image; a window with no picture takes it as its picture.
-- **Move and stretch a selection (like Paint).** Without Shift, drag an edge of the selection to stretch the selected part, or its top left corner to move it (the place it
-  came from turns white). Shift and drag an edge still moves just the frame. Undo steps back through every drop.
-- **Transparency.** A picture with transparent parts has chequered squares behind it; a part lifted out of one leaves a transparent hole, and Save As offers PNG.
-- **Undo and redo.** Ctrl+Z / Ctrl+Shift+Z (Cmd+Z / Cmd+Shift+Z on a Mac). Every change of the picture shown, of the mode (1–4), the pixelated view and the turn can be undone, including
-  the arrow keys and paste; zooming, moving and the selection are not steps.
-- **Select and copy.** Drag with the mouse to select a part of the picture (it snaps to whole pixels in the pixelated view); Ctrl+C
-  (Cmd+C on a Mac, Ctrl+Insert) puts just that part on the clipboard, or the whole picture when nothing is selected. Shift and drag an edge or corner of the frame (it lights up) to resize it. The copied frame has moving dashes. Esc or a click takes the
-  selection away (the clipboard keeps the picture). On Linux copying a picture needs `xclip` (X11) or `wl-clipboard` (Wayland).
-- **New window, paste, save.** File → New Window (Ctrl+N; Cmd+N on a Mac) opens an empty window; Cmd/Ctrl+V pastes the picture on the clipboard into it (the title says
-  `[clipboard image]`, the folder is your Pictures folder); **S** saves the picture as PNG, JPEG, GIF, BMP or TIFF. Saving to another folder makes
-  that folder the one the window works in, so the arrow keys go through its pictures. On Linux pasting and copying pictures needs `xclip` or `wl-clipboard`.
-- **Bounce.** Pull a big picture past its edge with the mouse or the trackpad and it gives a little (up to 20 pixels), then eases back.
-- **Full screen.** Enter toggles it, Esc leaves it.
+  decoded by mcView itself, so it also works on Windows and Linux).
+- **Zoom modes** on the keys **1** to **4**, as in IrfanView; the mode stays when you go to another picture and until you quit (a new window starts in **2**):
+  **1** original size (100%, however small or big), **2** fit the window with a margin (85%; small pictures stay 100%), **3** fit every picture to
+  the window borders, keeping its proportions, **4** stretch every picture to the window borders, **5** zoom until the side edges touch the window (the top and bottom may go over), **6** zoom until the top and bottom edges touch it (the sides may go over). **+** and **-** zoom, a mouse wheel zooms, dragging
+  moves the picture, double-click toggles 100%; on a Mac two fingers on the trackpad move the picture and a pinch zooms. Pull a big picture past its edge and it gives a little, then eases back.
+- **Arrow keys** (Space for next, Backspace for previous) go through the pictures of the folder in alphabetical order, and go round. The title of the window
+  says the size, the place in the folder (`3 / 5`) and the zoom.
+- **Rotate the view.** **R** turns the picture a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file is not changed until you save.
+- **Full screen.** **F** or **Enter** toggles it (Esc does not leave it: two Escs close the picture). There is no title or bar then: the bar (size, place, zoom, color readout) comes up
+  when the pointer is at the bottom edge, or while there is a selection.
+- **Pixel view and color readout.** In edit mode the picture is shown pixelated (every pixel a sharp square) and the bar shows the pixel under the pointer: its x and
+  y, R G B (A) with meters, and the hex color in a pill. The numbers are the ones in the file (mcView decodes it itself, with no color conversion), except for AVIF, SVG and ICO,
+  where they are read from what the web view drew and the bar says so.
+- **Transparency.** A picture with transparent parts has chequered squares behind it.
+- **Select and copy.** Drag to select a part (it snaps to whole pixels in the pixelated view). The moment you let go, the selection is **on the clipboard**,
+  with a short highlight and its size written in the middle. With no selection, **Ctrl+C** copies the whole picture. **Esc** or a click takes the selection away.
+  On Linux copying and pasting pictures needs `xclip` (X11) or `wl-clipboard` (Wayland).
+- **Paste as a new picture.** Outside edit mode, **Ctrl+V** makes the clipboard picture the picture of the window (undo brings the one before back). Open a new window
+  (**Ctrl+N**) to keep both.
+- **Home screen.** A window with no picture offers three big buttons: **Open file…** (key **O**), **Open from clipboard** (**Ctrl+V**, shown when there is a picture on it) and **Create image** (**N**). **O** and **N** work with a picture open too; a picture with unsaved changes asks Save, Discard or Cancel first.
+
+### Editing (edit mode)
+
+**E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
+**File → Create Image** makes a new white 1280 × 720 one and starts it in edit mode (a blank image counts as unchanged: it closes without a question until you do something to it).
+
+- **Select** (default): drag an edge of the selection to stretch the selected part, or its top left corner (or inside) to move it; the place it came from turns white
+  (transparent in a picture that can have it). **Shift** and drag moves just the frame. **Ctrl+V** lays the clipboard picture over this one as a floating part you can drag and stretch
+  (Delete, Backspace or Esc take it away; a click beside it lays it down).
+- **Pencil**: drag to draw; left button the first color, right button the second. The ribbon above the bottom bar sets the width.
+- **Line** and **Rectangle**: drag them out; **Shift** makes a line at a multiple of 45° and a square. The ribbon sets the width, a solid, dashed or dotted style and, for the rectangle,
+  outline, outline with fill, or fill. **Esc** or the other mouse button drops one that is being dragged.
+- **Text**: click, type, click elsewhere to put it in (**Ctrl+Enter** also does, **Esc** drops it). Font, size, bold and italic are in the ribbon.
+- **Pick**: click takes the color under the pointer as the first color (right click: the second), then the tool you had comes back.
+- **Colors**: the two wells at the bottom of the rail are the first and second color; click one for the palette (or *Edit colors…* for the system's picker).
+- **Undo and redo.** **Ctrl+Z** / **Ctrl+Shift+Z** (Ctrl+Y). Every change of the picture, the mode (1–6), the pixelated view, the turn and the arrow keys can be undone; zooming, moving and the selection are not steps.
+- Nothing is written to the file until you save. A picture with changes has a ● after its name.
+
+### Saving, closing, deleting
+
+- **S** (Ctrl+S, File → Save As…) saves PNG, JPEG, GIF, BMP or TIFF. For a picture from a file that has changes it first asks **Overwrite**, **Save As** (the dialog offers the name with the date and time added, `photo-20261026-153012.jpg`) or **Cancel**.
+  With a selection, **S** saves just the selection as a picture of its own. Saving to another folder makes that folder the one the window works in. A picture with transparent parts is offered as PNG.
+- **Closing** a picture with changes asks **Save**, **Discard** or **Cancel**, whether by **Ctrl+W** (closes the picture, or the window when there is none), **Esc Esc** (two presses within a quarter of a second; on the home screen it asks whether to quit), the **✕**,
+  going to another picture, or closing the window. File → Close Image (**Ctrl+Shift+W**) closes just the picture.
+- **D** (File → Delete Image…) asks, then deletes the file and shows the next picture of the folder. On a Mac the file goes to the Trash; on Windows and Linux it is deleted for good.
+- **File → Open…** (**Ctrl+O**, or just **O**) opens a picture; a second picture from the file manager gets a window of its own.
+
+### Everywhere
+
 - **Open with… offers mcView.** [See below](#open-with). No code signing needed.
-- **File → Open…** (⌘O or Ctrl+O). A second picture opened from the file manager gets a window of its own.
-- **One window, three systems.** The same code builds for macOS, Windows and Linux.
-- **A window that fits the screen.** At start the window is cut down to 90% of the screen and centred, so its title bar is never out of reach, also
-  with a high scaling setting in Windows.
-- **An About window.** *mcView → About mcView* on macOS, *Help → About mcView* on Windows and Linux. It has the Mormitech logo, the version and links.
+- **One window, three systems.** The same code builds for macOS, Windows and Linux; the window is cut down to 90% of the screen at start and its place is remembered.
+- **An About window and a Help menu.** *mcView → About mcView* on macOS, *Help → About mcView* on Windows and Linux; *Help → mcView Help* opens the manual.
 - **Follows your system.** Light or dark mode.
 - **Tests and CI.** Builds, vets and tests on macOS, Windows and Linux, and packages the app on a release tag.
 
@@ -99,6 +127,9 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 | `main.go`, `about.go` | the window, the menus per system, the `--about` window |
 | `window.go` | the screen-size gate: `fitSize` and `fitWindow` |
 | `app.go` | the methods the UI calls (the version, the window mode, Open…) and the extra windows |
+| `float.go`, `layer.go`, `selection.go`, `selsave.go` | the lifted and moved part, the pencil stroke, a drawn line, rectangle or text put into the picture, the selection |
+| `clip.go`, `save.go`, `overwrite.go`, `discard.go`, `delete.go` | the clipboard and new images, Save As and its questions, unsaved changes, deleting |
+| `undo.go` | the history of picture states |
 | `image.go` | the picture types, opening a file (command line and the macOS open-file event), serving the picture to the web view |
 | `frontend/` | the UI (vanilla JS, built with Vite) |
 | `build/` | icons, macOS Info.plist, Windows manifest and version info |

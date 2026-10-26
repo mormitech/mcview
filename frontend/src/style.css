@@ -34,7 +34,13 @@ button:hover { border-color:var(--accent); }
 @keyframes ants { to { stroke-dashoffset:-12; } } @keyframes ants-w { from { stroke-dashoffset:6; } to { stroke-dashoffset:-6; } }
 #pic.pixelated { image-rendering:pixelated; }
 #empty { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:0 32px; pointer-events:none; }
-#empty-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:8px; } #empty-actions button { pointer-events:auto; margin-top:0; }
+#hint { max-width:520px; text-wrap:balance; }
+#empty-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:14px; } #empty-actions button { pointer-events:auto; margin-top:0; }
+#empty-actions .card { display:flex; flex-direction:column; align-items:center; gap:3px; width:156px; padding:18px 12px 12px; border-radius:12px; }
+#empty-actions .card[hidden] { display:none; }
+#empty-actions .card svg { width:40px; height:40px; margin-bottom:6px; fill:none; stroke:var(--accent); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+#empty-actions .card b { font-size:14px; } #empty-actions .card small { font-size:12px; color:var(--muted); }
+#empty-actions .card kbd { margin-top:8px; font:600 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 #newform { pointer-events:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--muted); } #newform[hidden] { display:none; } #newform input[type=number] { width:76px; } #newform label { display:flex; align-items:center; gap:4px; }
 #empty[hidden] { display:none; } #empty button { pointer-events:auto; margin-top:8px; } #empty h1 { font-size:28px; margin:8px 0 0; }
 #status { position:absolute; left:0; right:0; bottom:0; height:34px; padding:0 12px; /* one height, with the pixel readout or without */ font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; align-items:center; gap:16px; }
@@ -42,6 +48,7 @@ button:hover { border-color:var(--accent); }
 /* full screen: the bar is there while Shift is held (and for a message); it slides and fades in and out, quickly */
 #status { transition: transform .12s ease-out, opacity .12s ease-out; }
 body.full, body.full #viewer { background:#000; }
+body.full #empty h1 { color:#e6ecf5; } body.full #empty .muted { color:#9fb2cc; } body.full #empty .logo { filter:invert(1); } /* the home screen on the black of full screen, in either theme */
 #status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
 body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
 #name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
@@ -86,6 +93,23 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
   transform:translateY(100%); opacity:0; pointer-events:none; visibility:hidden; transition:transform .12s ease-out, opacity .12s ease-out, visibility 0s .12s; }
 #dock.open, #pendock.open { transform:none; opacity:1; pointer-events:auto; visibility:visible; transition:transform .12s ease-out, opacity .12s ease-out; }
 #pendock { font-size:12px; color:var(--muted); } #pendock input[type=range] { width:240px; accent-color:var(--accent); } #pen-wv { width:5ch; color:var(--text); font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+#pendock { overflow-x:auto; white-space:nowrap; }
+#pendock .grp { display:flex; align-items:center; gap:10px; flex:none; } #pendock .grp[hidden] { display:none; }
+#pendock .lbl { color:var(--muted); }
+#pendock .hint { color:var(--muted); }
+.seg { display:flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; background:var(--btn); }
+.seg button { padding:3px 9px; border:0; border-radius:0; background:transparent; display:flex; align-items:center; }
+.seg button + button { border-left:1px solid var(--line); }
+.seg button.on, .tog.on { background:var(--accent); } .seg button.on svg, .tog.on { color:#fff; }
+.seg svg { width:28px; height:14px; fill:none; stroke:var(--text); stroke-width:2; stroke-linecap:butt; }
+.seg #seg-fill svg, #seg-fill svg { width:22px; }
+.seg svg .dots { stroke-linecap:round; stroke-width:2.6; }
+.seg .on svg { stroke:#fff; } .seg svg .fill2 { fill:rgba(127,127,127,.55); } .seg svg .fill1 { fill:var(--text); } .seg .on svg .fill1 { fill:#fff; }
+#pendock select, #pendock input[type=number] { font:inherit; font-size:12px; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:3px 6px; }
+#pendock input[type=number] { width:6ch; }
+#pendock .tog { padding:3px 9px; min-width:28px; font-size:13px; }
+#textbox { user-select:text; -webkit-user-select:text; cursor:text; position:absolute; z-index:3; margin:0; padding:0; border:0; outline:1px dashed var(--accent); outline-offset:2px; background:transparent; resize:none; overflow:hidden; white-space:pre; line-height:1.2; }
+#textbox[hidden] { display:none; }
 #pen-dot { flex:none; border-radius:50%; background:var(--text); margin-left:6px; }
 #palette { display:flex; gap:4px; flex-wrap:wrap; min-width:0; }
 #palette .cell { width:20px; height:20px; padding:0; border-radius:4px; border:1px solid rgba(0,0,0,.25); }

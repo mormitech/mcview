@@ -3,6 +3,76 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.29.8 – 2026-10-26
+
+### Changed
+- The "Quit mcView?" question no longer says that Esc was pressed twice.
+
+## 0.29.7 – 2026-10-26
+
+### Changed
+- Esc twice on the home screen asks "Quit mcView?" (Quit, Cancel) before it quits. Ctrl/Cmd+W on the home screen still quits at once.
+
+## 0.29.6 – 2026-10-26
+
+### Added
+- Two more zoom modes, as in IrfanView: **5** zooms until the left and right edges of the picture touch the window (the top and bottom go over it, or stay short), **6** until the top and bottom edges touch it. Like the others they stay while you go through the pictures, and a double click toggles between 100% and the mode.
+
+## 0.29.5 – 2026-10-26
+
+### Fixed
+- The page now claims the Esc key (`preventDefault`), so that the system does not get it to leave full screen, in addition to the Mac option of 0.29.4.
+
+## 0.29.4 – 2026-10-26
+
+### Fixed
+- Esc really does not leave full screen on a Mac any more: the system itself took it (the window's own full screen), whatever the page did. **F** and **Enter** are the way out.
+
+## 0.29.3 – 2026-10-26
+
+### Fixed
+- **F** toggles full screen on the home screen too (it did only with a picture open).
+
+## 0.29.2 – 2026-10-26
+
+### Changed
+- Esc no longer leaves full screen, because it gets in the way of Esc twice (close the picture). **F** or **Enter** toggles full screen.
+
+## 0.29.1 – 2026-10-26
+
+### Fixed
+- The home screen in full screen (black background): the title, the text and the logo are light now, so they can be read in the light theme too.
+
+## 0.29.0 – 2026-10-26
+
+### Changed
+- The home screen has three big buttons with an icon, a title and a small line under it: Open file… (**O**), Open from clipboard (Ctrl/Cmd+V) and Create image (**N**). The key is written on each button.
+- **O** opens the Open dialog and **N** creates a blank image, from any picture or from the home screen. If the picture has unsaved changes, the question (Save, Discard, Cancel) comes first, before the Open dialog (it used to come after a file was chosen). This goes for File → Open… too.
+
+## 0.28.2 – 2026-10-26
+
+### Added
+- Help → mcView Help opens the manual (mormitech.com/tools/mcview/docs) in the browser. On macOS it is a Help menu after Window; on Windows and Linux it is the first item of Help, with F1 (About mcView follows it).
+
+## 0.28.1 – 2026-10-26
+
+### Changed
+- A pencil stroke, line or rectangle that is being drawn is dropped at once by Esc or by a click of the other mouse button, while the first is still held down. Nothing is drawn into the picture.
+
+## 0.28.0 – 2026-10-26
+
+### Added
+- The Line, Rectangle, Text and Pick tools of the edit bar work, in the way of Paint. Each has its options in the ribbon above the bottom bar.
+  - Line and Rectangle: drag it out; Shift makes the line go at a multiple of 45° and the rectangle a square; Esc drops it. The left button uses the first color, the right button the second. Options: width, and a solid, dashed or dotted style. The rectangle also has outline, outline and fill (the second color fills) and fill only (the first color).
+  - Text: click to put a box on the picture and type; click elsewhere, pick another tool or press Ctrl/Cmd+Enter to draw it in, Esc to drop it. Options: font, size, bold and italic.
+  - Pick: a click takes the color of the pixel as the first color, a right click as the second, and the tool you had comes back.
+- Every one of them is a step of the undo history. The drawing goes to the picture as a small PNG (`DrawLayer`), so big pictures stay quick.
+
+## 0.27.0 – 2026-10-26
+
+### Added
+- Esc pressed twice within a quarter of a second closes the picture (asking about unsaved changes first), and closes the window when there is no picture. The first Esc does what it did before.
+
 ## 0.26.4 – 2026-10-26
 
 ### Changed

@@ -7,12 +7,16 @@
 </head>
 <body>
 <main id="viewer">
-    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div></div>
+    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div></div>
     <div id="empty">
         <img class="logo" src="./src/assets/mormitech-mark.svg" alt="" width="120">
         <h1>mcView</h1>
         <p class="muted" id="hint"></p>
-        <div id="empty-actions"><button id="open">Open file…</button><button id="open-clip" hidden>Open from clipboard</button><button id="new-pic">Create image</button></div>
+        <div id="empty-actions">
+            <button id="open" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></svg><b>Open file…</b><small>Browse for a picture</small><kbd>O</kbd></button>
+            <button id="open-clip" class="card" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg><b>Open from clipboard</b><small>The picture you copied</small><kbd id="k-clip">⌘V</kbd></button>
+            <button id="new-pic" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 9.5v5M9.5 12h5"/></svg><b>Create image</b><small>A blank 1280 × 720</small><kbd>N</kbd></button>
+        </div>
     </div>
     <div id="tools" aria-label="Edit tools">
         <button class="tool on" id="tool-select" title="Select" aria-label="Select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="1" stroke-dasharray="3 2.5"/></svg></button>
@@ -24,7 +28,21 @@
         <div id="wells"><button class="well" id="well-bg" title="Second color" aria-label="Second color"><b></b></button><button class="well" id="well-fg" title="Color" aria-label="Color"><b></b></button></div>
     </div>
     <div id="dock" aria-label="Colors"><div id="palette"></div><button id="dock-more">Edit colors…</button><input type="color" id="dock-native" tabindex="-1" aria-hidden="true"></div>
-    <div id="pendock" aria-label="Pencil"><label for="pen-w">Pencil width</label><input type="range" id="pen-w" min="1" max="64" value="5"><span id="pen-wv" class="mono">5 px</span><span id="pen-dot"></span></div>
+    <div id="pendock" aria-label="Tool options">
+        <div class="grp" data-for="pen line rect"><label for="pen-w">Width</label><input type="range" id="pen-w" min="1" max="64" value="5"><span id="pen-wv" class="mono">5 px</span><span id="pen-dot"></span></div>
+        <div class="grp" data-for="line rect"><span class="lbl">Style</span><div class="seg" id="seg-style">
+            <button data-v="solid" title="Solid" aria-label="Solid"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M2 6h24"/></svg></button>
+            <button data-v="dashed" title="Dashed" aria-label="Dashed"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M2 6h6M11 6h6M20 6h6"/></svg></button>
+            <button data-v="dotted" title="Dotted" aria-label="Dotted"><svg viewBox="0 0 28 12" aria-hidden="true"><path class="dots" d="M3 6h0M8.5 6h0M14 6h0M19.5 6h0M25 6h0"/></svg></button></div></div>
+        <div class="grp" data-for="rect"><span class="lbl">Shape</span><div class="seg" id="seg-fill">
+            <button data-v="outline" title="Outline" aria-label="Outline"><svg viewBox="0 0 20 14" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button>
+            <button data-v="both" title="Outline and fill (the second color fills)" aria-label="Outline and fill"><svg viewBox="0 0 20 14" aria-hidden="true"><rect class="fill2" x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button>
+            <button data-v="fill" title="Fill (the first color)" aria-label="Fill"><svg viewBox="0 0 20 14" aria-hidden="true"><rect class="fill1" x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button></div></div>
+        <div class="grp" data-for="text"><label for="txt-font">Font</label><select id="txt-font"></select><label for="txt-size">Size</label><input type="number" id="txt-size" min="6" max="400" value="32"><span class="mono">px</span>
+            <button class="tog" id="txt-b" title="Bold" aria-label="Bold"><b>B</b></button><button class="tog" id="txt-i" title="Italic" aria-label="Italic"><i>I</i></button>
+            <span class="hint">Click to place the text; click elsewhere to apply it, Esc to drop it.</span></div>
+        <div class="grp" data-for="pick"><span class="hint">Click takes the color under the pointer as the first color, right click as the second. The tool you had comes back.</span></div>
+    </div>
     <div id="status" hidden><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 </main>
 <div id="about" hidden></div>
