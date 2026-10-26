@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -47,7 +48,7 @@ func TestControlModeNeedsTheTokenAndAnswersDialogs(t *testing.T) {
 	if info.Token != c.token {
 		t.Fatalf("the control file has token %q, want %q", info.Token, c.token)
 	}
-	if fi, _ := os.Stat(file); fi.Mode().Perm() != 0o600 {
+	if fi, _ := os.Stat(file); runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 { // (Windows has no such permission bits)
 		t.Errorf("the control file is %v", fi.Mode().Perm())
 	}
 	if code, m := call(c.token, `{"cmd":"key","key":"e"}`); code != 200 || m["echo"] != "key" {
