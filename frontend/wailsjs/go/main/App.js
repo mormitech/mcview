@@ -22,6 +22,10 @@ export function CloseWindow() {
   return window['go']['main']['App']['CloseWindow']();
 }
 
+export function ConfirmQuit() {
+  return window['go']['main']['App']['ConfirmQuit']();
+}
+
 export function CopyImageNative(arg1) {
   return window['go']['main']['App']['CopyImageNative'](arg1);
 }
@@ -32,6 +36,10 @@ export function DeleteImage() {
 
 export function DiscardOK(arg1) {
   return window['go']['main']['App']['DiscardOK'](arg1);
+}
+
+export function DrawLayer(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['DrawLayer'](arg1, arg2, arg3, arg4);
 }
 
 export function DrawStroke(arg1, arg2, arg3, arg4) {

@@ -139,7 +139,8 @@ func windowsTheme(theme string) windows.Theme {
 // macOptions: OnFileOpen is how macOS hands over the files opened with the app. MCVIEW_NO_FILEOPEN is for tracking down slow
 // starts: it leaves the handler out.
 func macOptions(theme string, app *App) *mac.Options {
-	o := &mac.Options{Appearance: macAppearance(theme)}
+	// Esc does not leave full screen (F and Enter do): it is for two Escs, which close the picture
+	o := &mac.Options{Appearance: macAppearance(theme), DisableEscapeExitsFullscreen: true}
 	if os.Getenv("MCVIEW_NO_FILEOPEN") == "" {
 		o.OnFileOpen = app.onFileOpen
 	}

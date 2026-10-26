@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DeleteImage, DiscardOK, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, DeleteImage, DiscardOK, ConfirmQuit, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -38,7 +38,7 @@ document.addEventListener('click', (ev) => {
 });
 
 // ---- Viewer ----------------------------------------------------------------------------------------------
-// How the picture sits in the window is one of four modes, the way IrfanView has them on the keys 1 to 4, and the mode stays when
+// How the picture sits in the window is one of six modes, the way IrfanView has them on the keys 1 to 6, and the mode stays when
 // the next or the previous picture is shown (until the window is closed; every new window starts with 2):
 //   1  original  - the pixels of the picture, 100%, however small or big it is (a big one is centred and can be moved)
 //   2  large     - every picture is zoomed, up or down, to fill 85% of the window, keeping its proportions (the default)
@@ -46,10 +46,10 @@ document.addEventListener('click', (ev) => {
 //   4  stretch   - every picture is stretched border to border, proportions or not
 // The scroll wheel (or a pinch on the trackpad) zooms around the pointer (on a Mac two fingers on the trackpad move the picture instead),
 // dragging moves the picture, + and - zoom: that leaves
-// the mode until the next picture or the next of the keys 1 to 4. A double click toggles between 100% and the mode.
-// The arrow keys go to the previous and the next picture of the folder (so do Backspace and Space, as in IrfanView), Enter toggles full screen (Esc leaves it), E or Tab the edit mode (with the pixelated view), Shift and drag selects, Ctrl+C copies, Ctrl+V pastes, S saves, R turns the picture (Shift+R the other way), Ctrl+Z undoes and Ctrl+Shift+Z redoes, Ctrl+N opens a new window.
+// the mode until the next picture or the next of the keys 1 to 6. A double click toggles between 100% and the mode.
+// The arrow keys go to the previous and the next picture of the folder (so do Backspace and Space, as in IrfanView), Enter toggles full screen (Esc no longer leaves it), E or Tab the edit mode (with the pixelated view), Shift and drag selects, Ctrl+C copies, Ctrl+V pastes, S saves, R turns the picture (Shift+R the other way), Ctrl+Z undoes and Ctrl+Shift+Z redoes, Ctrl+N opens a new window.
 
-const MODES = {'1': 'original', '2': 'large', '3': 'contain', '4': 'stretch'};
+const MODES = {'1': 'original', '2': 'large', '3': 'contain', '4': 'stretch', '5': 'width', '6': 'height'};
 const pic = $('pic');
 const view = {tool: 'select', name: '', dir: '', index: 0, count: 0, mode: 'large', pixelated: false, state: 0, modified: false, canAlpha: false, fl: null, tdrag: null, hlMode: '', token: 0, sel: null, selDrag: null, rot: 0, angle: 0, free: false, ox: 0, oy: 0, sx: 1, sy: 1, x: 0, y: 0, drag: null};
 const CHECKER = 'repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%)'; // the squares of a picture with transparent parts, a bluish one and a white one
@@ -112,6 +112,8 @@ function modeScale() {
     case 'original': return [1, 1];
     case 'large': return [fit * 0.85, fit * 0.85]; // 85% of the window, up or down
     case 'contain': return [fit, fit];
+    case 'width': return [b.w / w, b.w / w]; // the side edges touch the window; the top and bottom go over, or stay short
+    case 'height': return [b.h / h, b.h / h]; // the top and bottom edges touch the window
     default: return [b.w / w, b.h / h];
   }
 }
@@ -205,6 +207,7 @@ function draw() {
   tellInfo(pic.naturalWidth ? `${dispW()} × ${dispH()}${view.count ? `  ·  ${view.index} / ${view.count}` : ''}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}` : '');
   renderFloat();
   renderInk();
+  renderText();
   renderSelection();
   if (view.pixelated && lastPointer) readPixel(lastPointer.x, lastPointer.y); // the picture moved under the pointer
 }
@@ -225,7 +228,7 @@ function setStatus(folder, info = '', name = '') {
   $('status').classList.remove('bad', 'ok-flash');
 }
 
-// The keys 1 to 4: choose a mode, and keep it.
+// The keys 1 to 6: choose a mode, and keep it.
 function setMode(mode) {
   stopBounce();
   view.mode = mode; view.free = false;
@@ -261,7 +264,7 @@ function showImage(info, opts = {}) {
   view.fl = opts.fl || null; view.tdrag = null; if (!opts.keepView && !opts.fl) renderFloat(); // (the same picture with a change applied: what is lifted stays on the screen until the new one is there, so nothing flashes)
   clearTimeout(turnTimer); pic.classList.remove('turning'); view.rot = opts.rot || 0; view.angle = view.rot * 90; SetTurn(view.rot);
   if (!info?.url) { // no picture: the window as it is when it starts
-    stopBounce(); pic.onload = null; pic.removeAttribute('src');
+    stopBounce(); pic.onload = null; pic.removeAttribute('src'); cancelText();
     view.name = ''; view.modified = false; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
     pic.hidden = true; $('empty').hidden = false; setStatus(''); renderSelection(); offerClipboard();
     if (editOn()) setEdit(false); // no image: no edit mode (closing it, deleting the last one, undo back to the empty window)
@@ -342,16 +345,18 @@ function setEdit(on) {
   updateHover(false);
 }
 
-// ---- Tools of the edit bar: select (the default when edit mode starts) and the pencil ----------------------------------
+// ---- Tools of the edit bar: select (the default when edit mode starts), pencil, line, rectangle, text and the color picker ----------------------------------
 // With edit mode off the selection is the only thing there is. The pencil draws one pixel wide strokes with the left button in the first color,
 // with the right button in the second; a stroke is shown on #ink while the button is down and then drawn into the picture by Go (a step of the history).
 const tool = () => (editOn() ? view.tool : 'select');
 
 function setTool(t) {
   if (t !== 'select' && view.tool !== t) clearSelection(); // drawing has no selection
+  if (view.tool !== t && txt) commitText(); // a text that is being typed is applied when the tool changes
+  if (t === 'pick' && view.tool !== 'pick') view.prevTool = view.tool; // the picker gives the tool back
   view.tool = t;
   syncPenDock();
-  for (const k of ['select', 'pen']) $(`tool-${k}`).classList.toggle('on', k === t);
+  for (const k of ['select', 'pen', 'line', 'rect', 'text', 'pick']) $(`tool-${k}`).classList.toggle('on', k === t);
   updateHover(false);
 }
 
@@ -365,7 +370,7 @@ function inkPoint(ev) {
 
 function renderInk() {
   const cv = $('ink');
-  if (!ink && !fin) { cv.hidden = true; return; }
+  if (!ink && !fin && !shape) { cv.hidden = true; return; }
   cv.style.left = `${view.x + view.ox}px`; cv.style.top = `${view.y + view.oy}px`;
   cv.style.width = `${dispW() * view.sx}px`; cv.style.height = `${dispH() * view.sy}px`;
   cv.hidden = false;
@@ -381,7 +386,7 @@ function stampOffsets(width) {
 function startInk(ev) {
   const cv = $('ink');
   cv.width = dispW(); cv.height = dispH();
-  ink = {pts: [], width: paint.width, color: ev.button === 2 ? paint.bg : paint.fg, ctx: cv.getContext('2d')};
+  ink = {button: ev.button, pts: [], width: paint.width, color: ev.button === 2 ? paint.bg : paint.fg, ctx: cv.getContext('2d')};
   ink.tip = stampOffsets(ink.width);
   ink.ctx.fillStyle = ink.color;
   addInk(inkPoint(ev));
@@ -415,15 +420,205 @@ async function finishInk(k) {
   renderInk();
 }
 
+// ---- Line and rectangle: dragged out on #ink (Shift: a line at a multiple of 45°, a square), and drawn into the picture by Go from the pixels of #ink ----
+// The left button draws with the first color, the right button with the second (the rectangle: the other way round, as in Paint).
+// A stroke, line or rectangle that is being drawn is dropped at once by Esc, or by the other mouse button, even though the first is still down.
+function cancelDraw() {
+  if (!shape && !ink) return false;
+  shape = null; ink = null;
+  renderInk(); updateHover(false);
+  return true;
+}
+const otherButton = (ev, d) => (ev.buttons & ~(d.button === 2 ? 2 : 1)) !== 0; // a button that is not the one the drawing was started with
+
+let shape = null; // the one that is dragged: {kind, x0, y0, x1, y1, fg, bg, swap, width, style, fill, ctx, moved}
+
+const dashes = (w, style) => style === 'dashed' ? [Math.max(4, w * 3), Math.max(3, w * 2)] : style === 'dotted' ? [0, Math.max(3, w * 2)] : [];
+
+function drawShape(ctx, s) {
+  const w = s.width, [c1, c2] = s.swap ? [s.bg, s.fg] : [s.fg, s.bg]; // the outline, and what fills a rectangle with an outline
+  ctx.save();
+  ctx.strokeStyle = c1; ctx.lineWidth = w; ctx.lineJoin = 'miter';
+  ctx.lineCap = s.style === 'solid' || s.style === 'dotted' ? 'round' : 'butt';
+  if (s.kind === 'line') {
+    ctx.setLineDash(dashes(w, s.style));
+    ctx.beginPath(); ctx.moveTo(s.x0 + 0.5, s.y0 + 0.5); ctx.lineTo(s.x1 + 0.5, s.y1 + 0.5); ctx.stroke();
+  } else {
+    const xa = Math.min(s.x0, s.x1), ya = Math.min(s.y0, s.y1), W = Math.abs(s.x1 - s.x0) + 1, H = Math.abs(s.y1 - s.y0) + 1;
+    if (s.fill === 'fill' || W <= w || H <= w) { ctx.fillStyle = c1; ctx.fillRect(xa, ya, W, H); } // (a rectangle that is all outline is a filled one)
+    else {
+      if (s.fill === 'both') { ctx.fillStyle = c2; ctx.fillRect(xa, ya, W, H); }
+      ctx.setLineDash(dashes(w, s.style));
+      ctx.strokeRect(xa + w / 2, ya + w / 2, W - w, H - w); // the outline is inside the dragged box
+    }
+  }
+  ctx.restore();
+}
+
+function renderShape() {
+  const cv = $('ink');
+  shape.ctx.clearRect(0, 0, cv.width, cv.height);
+  drawShape(shape.ctx, shape);
+  renderInk();
+}
+
+function startShape(ev, kind) {
+  const cv = $('ink');
+  cv.width = dispW(); cv.height = dispH();
+  const [x, y] = inkPoint(ev);
+  shape = {kind, x0: x, y0: y, x1: x, y1: y, fg: paint.fg, bg: paint.bg, swap: ev.button === 2, width: paint.width, style: paint.style, fill: paint.fill, ctx: cv.getContext('2d'), moved: false, button: ev.button};
+  renderShape();
+}
+
+// With Shift: the line goes at the nearest multiple of 45°, the rectangle is a square (as big as the picture lets it be).
+function constrainShape(s, x, y) {
+  const dx = x - s.x0, dy = y - s.y0;
+  if (s.kind === 'line') {
+    const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4), len = Math.hypot(dx, dy);
+    return [clamp(s.x0 + Math.round(Math.cos(a) * len), 0, dispW() - 1), clamp(s.y0 + Math.round(Math.sin(a) * len), 0, dispH() - 1)];
+  }
+  const sx = dx < 0 ? -1 : 1, sy = dy < 0 ? -1 : 1;
+  const side = Math.min(Math.max(Math.abs(dx), Math.abs(dy)), sx > 0 ? dispW() - 1 - s.x0 : s.x0, sy > 0 ? dispH() - 1 - s.y0 : s.y0);
+  return [s.x0 + sx * side, s.y0 + sy * side];
+}
+
+function moveShape(ev) {
+  let [x, y] = inkPoint(ev);
+  if (ev.shiftKey) [x, y] = constrainShape(shape, x, y);
+  shape.x1 = x; shape.y1 = y;
+  shape.moved = shape.moved || x !== shape.x0 || y !== shape.y0;
+  renderShape();
+}
+
+async function finishShape(s) {
+  if (!s.moved) { renderInk(); return; } // a click is not a shape
+  fin = s; // the overlay stays until the picture has it
+  try {
+    const cv = $('ink'), pad = s.kind === 'line' ? Math.ceil(s.width / 2) + 2 : 2; // (what is drawn, with a little room for the edges)
+    const bx = Math.max(0, Math.min(s.x0, s.x1) - pad), by = Math.max(0, Math.min(s.y0, s.y1) - pad);
+    const bw = Math.min(cv.width, Math.max(s.x0, s.x1) + pad + 1) - bx, bh = Math.min(cv.height, Math.max(s.y0, s.y1) + pad + 1) - by;
+    const part = document.createElement('canvas'); part.width = bw; part.height = bh;
+    part.getContext('2d').drawImage(cv, bx, by, bw, bh, 0, 0, bw, bh); // only the box around it goes to Go
+    const info = await DrawLayer(view.rot, bx, by, part.toDataURL('image/png').split(',')[1]);
+    await showImage(info, {keepView: true, rot: 0});
+    commit();
+  } catch (e) { problem(errText(e)); }
+  if (fin === s) fin = null;
+  renderInk();
+}
+
+// ---- Color picker: a click takes the color of the pixel as the first color (right click: the second), and the tool that was used comes back ----
+async function fetchPixel(X, Y) {
+  const [fx, fy] = toNatural(X + 0.5, Y + 0.5), x = Math.floor(fx), y = Math.floor(fy); // the pixel in the file; the readout says where it is on the screen
+  let p = null;
+  try {
+    if (pixelState === 'go') p = await PixelAt(x, y, pic.naturalWidth, pic.naturalHeight);
+    else if (pixelState === 'browser' && pixelCanvas) {
+      const d = pixelCanvas.getImageData(x, y, 1, 1).data;
+      p = {ready: true, x, y, r: d[0], g: d[1], b: d[2], a: d[3]};
+    }
+    if (p) { p.x = X; p.y = Y; }
+  } catch {}
+  return p;
+}
+
+async function pickColor(ev) {
+  const at = pixelUnder(ev.clientX, ev.clientY);
+  if (!at) return;
+  if (pixelState === 'preparing') await preparePixels();
+  const p = await fetchPixel(at[0], at[1]);
+  if (!p?.ready) return;
+  paint[ev.button === 2 ? 'bg' : 'fg'] = '#' + [p.r, p.g, p.b].map((v) => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+  showColors();
+  setTool(view.prevTool && view.prevTool !== 'pick' ? view.prevTool : 'pen');
+}
+
+// ---- Text: a click puts a box on the picture to type in; a click elsewhere (or another tool, or Ctrl+Enter) draws it into the picture, Esc drops it ----
+let txt = null; // the text that is being typed: {x, y, color}, in picture pixels
+const textFont = (px) => `${paint.italic ? 'italic ' : ''}${paint.bold ? 'bold ' : ''}${px}px ${paint.font}`;
+
+function renderText() {
+  const tb = $('textbox');
+  if (!txt) { tb.hidden = true; return; }
+  tb.style.left = `${view.x + view.ox + txt.x * view.sx}px`; tb.style.top = `${view.y + view.oy + txt.y * view.sy}px`;
+  tb.style.font = textFont(paint.size * view.sy); tb.style.lineHeight = '1.2'; tb.style.color = txt.color;
+  const lines = tb.value.split('\n'), m = document.createElement('canvas').getContext('2d');
+  m.font = textFont(paint.size);
+  const w = Math.max(...lines.map((l) => m.measureText(l).width), paint.size / 2);
+  tb.style.width = `${(w + 4) * view.sx}px`; tb.style.height = `${lines.length * paint.size * 1.2 * view.sy}px`;
+  tb.hidden = false;
+}
+
+function startText(ev) {
+  const at = pixelUnder(ev.clientX, ev.clientY);
+  if (txt) commitText();
+  if (!at) return;
+  txt = {x: at[0], y: at[1], color: paint.fg};
+  const tb = $('textbox'); tb.value = '';
+  renderText();
+  setTimeout(() => tb.focus(), 0); // (after the click has moved the focus)
+}
+
+function cancelText() { txt = null; const tb = $('textbox'); tb.value = ''; tb.hidden = true; }
+
+async function commitText() {
+  const t = txt;
+  if (!t) return;
+  const tb = $('textbox'), text = tb.value.replace(/\s+$/, '');
+  cancelText();
+  if (!text.trim()) return;
+  const lines = text.split('\n'), lh = paint.size * 1.2, cv = document.createElement('canvas');
+  let ctx = cv.getContext('2d'); ctx.font = textFont(paint.size);
+  cv.width = Math.ceil(Math.max(...lines.map((l) => ctx.measureText(l).width))) + 2; cv.height = Math.ceil(lines.length * lh) + 2;
+  ctx = cv.getContext('2d'); ctx.font = textFont(paint.size); ctx.fillStyle = t.color; ctx.textBaseline = 'middle';
+  lines.forEach((l, i) => ctx.fillText(l, 0, i * lh + lh / 2));
+  try {
+    const info = await DrawLayer(view.rot, t.x, t.y, cv.toDataURL('image/png').split(',')[1]);
+    await showImage(info, {keepView: true, rot: 0});
+    commit();
+  } catch (e) { problem(errText(e)); }
+}
+
+// The controls of the ribbon for these tools (the width is the one of the pencil, see showPenWidth).
+function showToolOptions() {
+  for (const b of $('seg-style').children) b.classList.toggle('on', b.dataset.v === paint.style);
+  for (const b of $('seg-fill').children) b.classList.toggle('on', b.dataset.v === paint.fill);
+  $('txt-b').classList.toggle('on', paint.bold); $('txt-i').classList.toggle('on', paint.italic);
+  $('txt-size').value = paint.size; $('txt-font').value = paint.font;
+}
+
+const FONTS = [['Sans', 'system-ui, sans-serif'], ['Serif', 'Georgia, serif'], ['Monospace', 'ui-monospace, Menlo, Consolas, monospace'], ['Arial', 'Arial, sans-serif'],
+  ['Times New Roman', '"Times New Roman", serif'], ['Courier New', '"Courier New", monospace'], ['Verdana', 'Verdana, sans-serif'], ['Impact', 'Impact, sans-serif']];
+
+function initToolOptions() {
+  for (const [name, css] of FONTS) { const o = document.createElement('option'); o.value = css; o.textContent = name; $('txt-font').append(o); }
+  for (const b of $('seg-style').children) b.onclick = () => { paint.style = b.dataset.v; showToolOptions(); };
+  for (const b of $('seg-fill').children) b.onclick = () => { paint.fill = b.dataset.v; showToolOptions(); };
+  const again = () => { showToolOptions(); renderText(); };
+  $('txt-font').onchange = () => { paint.font = $('txt-font').value; again(); $('txt-font').blur(); };
+  $('txt-size').oninput = () => { const v = +$('txt-size').value; if (v >= 6 && v <= 400) { paint.size = v; renderText(); } };
+  $('txt-b').onclick = () => { paint.bold = !paint.bold; again(); };
+  $('txt-i').onclick = () => { paint.italic = !paint.italic; again(); };
+  const tb = $('textbox');
+  tb.addEventListener('input', renderText);
+  tb.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') { ev.preventDefault(); cancelText(); }
+    else if (ev.key === 'Enter' && (ev.metaKey || ev.ctrlKey)) { ev.preventDefault(); commitText(); }
+  });
+  showToolOptions();
+}
+
 // ---- Colors: the two wells at the bottom of the edit bar, and the palette that slides up from the status bar ----------
 // A click on a well opens the palette for that color; a click anywhere else closes it, and so does the pointer leaving it once a color was changed in it.
 const PALETTE = ['#000000', '#7F7F7F', '#880015', '#ED1C24', '#FF7F27', '#FFF200', '#22B14C', '#00A2E8', '#3F48CC', '#A349A4',
   '#FFFFFF', '#C3C3C3', '#B97A57', '#FFAEC9', '#FFC90E', '#EFE4B0', '#B5E61D', '#99D9EA', '#7092BE', '#C8BFE7'];
-const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, native: false, width: 5};
+const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, native: false, width: 5, style: 'solid', fill: 'outline',
+  font: 'system-ui, sans-serif', size: 32, bold: false, italic: false};
 
-// The ribbon with the width of the pencil: there while the pencil is the tool (and the palette is not).
+// The ribbon with the options of the tool (width, style, fill, font…): there while a drawing tool is the tool (and the palette is not).
 function syncPenDock() {
-  const open = editOn() && view.tool === 'pen' && !$('dock').classList.contains('open');
+  const open = editOn() && view.tool !== 'select' && !$('dock').classList.contains('open');
+  for (const g of $('pendock').querySelectorAll('.grp')) g.hidden = !g.dataset.for.split(' ').includes(view.tool);
   if (open) $('pendock').style.bottom = `${$('status').hidden ? 0 : $('status').offsetHeight}px`;
   $('pendock').classList.toggle('open', open);
 }
@@ -470,6 +665,7 @@ function initDock() {
   }
   $('pen-w').addEventListener('input', () => { paint.width = +$('pen-w').value; showPenWidth(); });
   showPenWidth();
+  initToolOptions();
   for (const t of ['fg', 'bg']) {
     $(`well-${t}`).onclick = () => { if ($('dock').classList.contains('open') && paint.target === t) closeDock(); else openDock(t); };
   }
@@ -565,16 +761,7 @@ async function readPixel(clientX, clientY) {
   const token = view.token;
   while (pixelPending) {
     const [X, Y] = pixelPending; pixelPending = null;
-    const [fx, fy] = toNatural(X + 0.5, Y + 0.5), x = Math.floor(fx), y = Math.floor(fy); // the pixel in the file; the readout says where it is on the screen
-    let p = null;
-    try {
-      if (pixelState === 'go') p = await PixelAt(x, y, pic.naturalWidth, pic.naturalHeight);
-      else if (pixelState === 'browser' && pixelCanvas) {
-        const d = pixelCanvas.getImageData(x, y, 1, 1).data;
-        p = {ready: true, x, y, r: d[0], g: d[1], b: d[2], a: d[3]};
-      }
-      if (p) { p.x = X; p.y = Y; }
-    } catch {}
+    const p = await fetchPixel(X, Y);
     if (token === view.token) showPixel(p);
   }
   pixelBusy = false;
@@ -663,15 +850,17 @@ function edgeAt(clientX, clientY, inside = false) {
   return inside && clientX > l && clientX < rt && clientY > t && clientY < bt ? {move: true} : null;
 }
 
+const RIGHT_TOOLS = ['pen', 'line', 'rect', 'pick']; // the right button works in these (the second color)
+const TOOL_CURSOR = {pen: 'crosshair', line: 'crosshair', rect: 'crosshair', pick: 'crosshair', text: 'text'};
 const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize'};
 
 // Lights the edge under the pointer, in two ways: with Shift ("frame": the frame is moved, the picture is not touched) and without
 // ("content", like Paint: the selected part is stretched by its edges and moved by its top left corner; see below).
 function updateHover(shift) {
   if (view.selDrag?.edge || view.tdrag || view.drag) return;
-  if (tool() === 'pen') { // the pencil cursor is for the picture; beside it the pointer is an ordinary one (while a stroke is drawn it stays)
+  if (TOOL_CURSOR[tool()]) { // the cursor of a drawing tool is for the picture; beside it the pointer is an ordinary one (while a stroke is drawn it stays)
     view.hl = null; view.hlMode = '';
-    $('stage').style.cursor = ink || (lastPointer && pixelUnder(lastPointer.x, lastPointer.y)) ? 'crosshair' : '';
+    $('stage').style.cursor = ink || shape || (lastPointer && pixelUnder(lastPointer.x, lastPointer.y)) ? TOOL_CURSOR[tool()] : '';
     return;
   }
   const editOn = document.body.classList.contains('edit');
@@ -983,6 +1172,7 @@ function removeLayer() {
 // the picture back with its changes, but a picture that has some is asked about first (Save, Discard, Cancel), as when the window is closed.
 async function closeImage() {
   if (!pic.naturalWidth) return;
+  await commitText();
   try { if (!await DiscardOK('close the image')) return; } catch (e) { problem(errText(e)); return; }
   if (view.fl) await flushFloat({clear: true}); // what is lifted is part of the picture that comes back
   if (!view.state || history.busy) return;
@@ -994,6 +1184,7 @@ async function closeImage() {
 }
 
 // Ctrl+W, Cmd+W (File → Close): the picture is closed; the window, when there is none.
+let lastEsc = 0;
 function closeOrQuit() { if (pic.naturalWidth) closeImage(); else CloseWindow(); }
 
 // S (Ctrl+S, Cmd+S, File → Save As…): asks where to save the picture. Saving it to another folder makes that folder the one the
@@ -1001,7 +1192,7 @@ function closeOrQuit() { if (pic.naturalWidth) closeImage(); else CloseWindow();
 // Create Image (File menu, and the empty window): a new white 1280 × 720 image, and edit mode starts with it.
 let editAfterImage = false;
 async function createImage() {
-  try { editAfterImage = true; await NewBlank(1280, 720, false); } catch (e) { editAfterImage = false; problem(errText(e)); }
+  try { if (!await DiscardOK('create a new image')) return; editAfterImage = true; await NewBlank(1280, 720, false); } catch (e) { editAfterImage = false; problem(errText(e)); }
 }
 
 // D: the picture is deleted (the system asks first); the next picture of the folder is shown in its place, with the folder's new count.
@@ -1010,6 +1201,7 @@ async function deleteImage() {
 }
 
 async function saveAs() {
+  await commitText(); // a text that is being typed is part of what is saved
   try {
     if (view.fl) await flushFloat(); // what was lifted is part of what is saved
     const r = selectionRect(); // with a selection only that part is saved, as a picture of its own; the window keeps its picture
@@ -1062,7 +1254,7 @@ function onResize() {
 
 // ---- Undo and redo ---------------------------------------------------------------------------------------
 // Every change of what the window shows is a step that can be undone with Ctrl+Z (Cmd+Z) and done again with Ctrl+Shift+Z (Cmd+Shift+Z,
-// Ctrl+Y): another picture (Open, the arrow keys, paste, save to another folder, a file opened with mcView), the mode (1 to 4, F), the
+// Ctrl+Y): another picture (Open, the arrow keys, paste, save to another folder, a file opened with mcView), the mode (1 to 6, F), the
 // pixelated view (Tab) and the turn (R). Not steps: how far it is zoomed, where it is moved, the selection.
 // The history is a list of whole states, {picture, mode, pixelated, turn}, and an undo shows the one before. The picture is a number
 // that Go knows (ImageInfo.state; 0 is no picture at all), because a picture pasted from the clipboard exists only there.
@@ -1161,9 +1353,14 @@ function startViewer() {
   initDock();
   $('tool-select').onclick = () => setTool('select');
   $('tool-pen').onclick = () => setTool('pen');
-  $('stage').addEventListener('contextmenu', (ev) => { if (tool() === 'pen') ev.preventDefault(); });
+  $('tool-line').onclick = () => setTool('line');
+  $('tool-rect').onclick = () => setTool('rect');
+  $('tool-text').onclick = () => setTool('text');
+  $('tool-pick').onclick = () => setTool('pick');
+  $('stage').addEventListener('contextmenu', (ev) => { if (RIGHT_TOOLS.includes(tool())) ev.preventDefault(); if (shape || ink) cancelDraw(); });
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
-  $('hint').textContent = `Open a picture with File → Open… (${cmd}O), paste one from the clipboard (${cmd}V), or open one with mcView from your file manager.`;
+  $('hint').textContent = 'Open a picture, paste one from the clipboard, or start a blank one. You can also open pictures with mcView from your file manager.';
+  $('k-clip').textContent = `${cmd}V`;
   $('open').onclick = choose;
   $('open-clip').onclick = () => PasteNew().catch((e) => problem(errText(e)));
   $('new-pic').onclick = createImage;
@@ -1173,12 +1370,13 @@ function startViewer() {
   offerClipboard();
   EventsOn('history-reset', () => { history.list.length = 0; history.at = -1; }); // a deleted picture cannot be brought back by undo
   EventsOn('image', (info) => { const edit = editAfterImage; editAfterImage = false; showImage(info).then(() => { if (edit) setEdit(true); }); commit(); });
-  EventsOn('menu-undo', undo);
-  EventsOn('menu-redo', redo);
+  const typing = () => !!txt && document.activeElement === $('textbox'); // the Edit menu then works on the text
+  EventsOn('menu-undo', () => typing() ? document.execCommand('undo') : undo());
+  EventsOn('menu-redo', () => typing() ? document.execCommand('redo') : redo());
   EventsOn('problem', (t) => problem(errText(t)));
   EventsOn('note', (t) => problem(t, false));
-  EventsOn('menu-copy', copySelection); // Edit → Copy
-  EventsOn('menu-paste', pasteImage); // Edit → Paste
+  EventsOn('menu-copy', () => typing() ? document.execCommand('copy') : copySelection()); // Edit → Copy
+  EventsOn('menu-paste', () => typing() ? navigator.clipboard.readText().then((t) => document.execCommand('insertText', false, t)).catch(() => {}) : pasteImage()); // Edit → Paste
   EventsOn('menu-save', saveAs); // File → Save As…
   EventsOn('menu-close', closeOrQuit); // File → Close
   EventsOn('menu-close-image', closeImage); // File → Close Image
@@ -1195,7 +1393,9 @@ function startViewer() {
   window.addEventListener('keyup', (ev) => { if (ev.key === 'Shift') { document.body.classList.remove('shift'); updateHover(false); } });
   window.addEventListener('blur', () => { document.body.classList.remove('shift'); updateHover(false); });
   $('stage').addEventListener('pointerdown', (ev) => {
-    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1 && !(ev.button === 2 && tool() === 'pen'))) return;
+    if (ev.target === $('textbox')) return; // (the text box is typed in)
+    if (cancelDraw()) return; // a press while a drawing is on (the other button, where the system reports it as a press) drops it
+    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1 && !(ev.button === 2 && RIGHT_TOOLS.includes(tool())))) return;
     try { $('stage').setPointerCapture(ev.pointerId); } catch {}
     if (ev.button === 1) { // the middle button pans the picture
       ev.preventDefault();
@@ -1205,10 +1405,13 @@ function startViewer() {
       return;
     }
     pointerDown = true;
-    if (tool() === 'pen') { // what is lifted is applied first, then the stroke starts (if the button is still down)
-      (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) startInk(ev); });
+    const t = tool();
+    if (t === 'pen' || t === 'line' || t === 'rect') { // what is lifted is applied first, then the stroke starts (if the button is still down)
+      (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) (t === 'pen' ? startInk : startShape)(ev, t); });
       return;
     }
+    if (t === 'pick') { pickColor(ev); return; }
+    if (t === 'text') { startText(ev); return; }
     if (document.body.classList.contains('edit') && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)
       const edge = edgeAt(ev.clientX, ev.clientY, true);
       if (edge) { startTransform(ev, edge); return; }
@@ -1224,6 +1427,8 @@ function startViewer() {
     beginSelection(ev.clientX, ev.clientY);
   });
   $('stage').addEventListener('pointermove', (ev) => {
+    if ((shape || ink) && otherButton(ev, shape || ink)) { cancelDraw(); return; } // (a second button comes as a move, not as a press)
+    if (shape) { moveShape(ev); return; }
     if (ink) { addInk(inkPoint(ev)); return; }
     if (view.tdrag) { dragTransform(ev); return; }
     if (view.selDrag?.edge) {
@@ -1261,6 +1466,7 @@ function startViewer() {
   const endDrag = (ev) => {
     pointerDown = false;
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
+    if (shape) { const k = shape; shape = null; finishShape(k).then(() => updateHover(ev.shiftKey)); return; } // (see the pencil below)
     if (ink) { const k = ink; ink = null; finishInk(k).then(() => updateHover(ev.shiftKey)); return; } // the button is up: drawing stops now, not when Go is done
     if (view.tdrag) { finishTransform().then(() => updateHover(ev.shiftKey)); return; }
     if (view.selDrag) { // a selection dragged less than 3 screen pixels is a click, not a selection
@@ -1280,7 +1486,8 @@ function startViewer() {
     if (!view.free && (Math.abs(view.sx - 1) > 0.005 || Math.abs(view.sy - 1) > 0.005)) zoomTo100(); else { view.free = false; draw(); }
   });
   window.addEventListener('keydown', (ev) => {
-    if (ev.target instanceof HTMLInputElement && ev.target.type !== 'range') return; // typing in a field is not a command
+    if (ev.key === 'Escape') ev.preventDefault(); // a handled key is not passed on to the system, which leaves full screen with it (see also DisableEscapeExitsFullscreen in main.go)
+    if ((ev.target instanceof HTMLInputElement && ev.target.type !== 'range') || ev.target instanceof HTMLTextAreaElement || ev.target instanceof HTMLSelectElement) return; // typing in a field is not a command
     if (ev.key === 'Shift') { document.body.classList.add('shift'); updateHover(true); return; }
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'c' || ev.key === 'C' || ev.key === 'Insert')) {
       ev.preventDefault(); copySelection(); return; // Ctrl+C, Cmd+C and Ctrl+Insert
@@ -1300,8 +1507,17 @@ function startViewer() {
     }
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
     if (ev.key === 'Enter') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; }
+    if (ev.key === 'Escape' && cancelDraw()) return;
+    if (ev.key === 'Escape' && !ev.repeat) { // two presses within 250 ms: the picture is closed, or the window when there is none (the first one did its own job already)
+      const now = performance.now();
+      if (now - lastEsc < 250) { lastEsc = 0; ev.preventDefault(); if (pic.naturalWidth) closeImage(); else ConfirmQuit().then((ok) => { if (ok) CloseWindow(); }).catch(() => {}); return; } // (the home screen asks before it quits)
+      lastEsc = now;
+    }
     if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
-    if (ev.key === 'Escape') { ExitFullscreen(); settleFullscreen(); clearSelection(); return; }
+    if (ev.key === 'Escape') { clearSelection(); return; } // (Esc does not leave full screen: F and Enter do, and two Escs close the picture)
+    if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; } // (also on the home screen)
+    if (ev.key === 'o' || ev.key === 'O') { ev.preventDefault(); choose(); return; } // (asks about unsaved changes first, then the Open dialog)
+    if (ev.key === 'n' || ev.key === 'N') { ev.preventDefault(); createImage(); return; }
     if (ev.key === 'e' || ev.key === 'E' || ev.key === 'Tab') { ev.preventDefault(); setEdit(!editOn()); return; } // the edit bar (Tab does the same)
     if (!pic.naturalWidth) return;
     const b = stageSize();
@@ -1315,14 +1531,13 @@ function startViewer() {
       else { rotate(dir); commit(); }
     }
     else if (ev.key === 's' || ev.key === 'S') saveAs();
-    else if (ev.key === 'f' || ev.key === 'F') { ToggleFullscreen(); settleFullscreen(); }
     else if (ev.key === 'd' || ev.key === 'D') deleteImage();
     else if (ev.key === '+' || ev.key === '=') zoomAt(1.25, b.w / 2, b.h / 2);
     else if (ev.key === '-') zoomAt(0.8, b.w / 2, b.h / 2);
   });
 }
 
-document.addEventListener('copy', (ev) => { ev.preventDefault(); copySelection(); });
+document.addEventListener('copy', (ev) => { if (ev.target === $('textbox')) return; ev.preventDefault(); copySelection(); });
 document.addEventListener('visibilitychange', () => Trace(`visibility ${document.visibilityState}`));
 // macOS may still be hiding the app when the page starts (see App.startup): ask to be shown until the page is visible.
 async function revealWhenHidden() {
