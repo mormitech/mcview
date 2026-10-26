@@ -1,7 +1,8 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
+import {initChat, toggleChat} from './chat.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -46,7 +47,7 @@ document.addEventListener('click', (ev) => {
 //   4  stretch   - every picture is stretched border to border, proportions or not
 // The scroll wheel (or a pinch on the trackpad) zooms around the pointer (on a Mac two fingers on the trackpad move the picture instead),
 // dragging moves the picture, + and - zoom: that leaves
-// the mode until the next picture or the next of the keys 1 to 6. A double click toggles between 100% and the mode.
+// the mode until the next picture or the next of the keys 1 to 6. A double click does nothing to the zoom.
 // The arrow keys go to the previous and the next picture of the folder (so do Backspace and Space, as in IrfanView), Enter toggles full screen (Esc no longer leaves it), E or Tab the edit mode (with the pixelated view), Shift and drag selects, Ctrl+C copies, Ctrl+V pastes, S saves, R turns the picture (Shift+R the other way), Ctrl+Z undoes and Ctrl+Shift+Z redoes, Ctrl+N opens a new window.
 
 const MODES = {'1': 'original', '2': 'large', '3': 'contain', '4': 'stretch', '5': 'width', '6': 'height'};
@@ -209,6 +210,8 @@ function draw() {
   renderInk();
   renderText();
   renderSelection();
+  renderPoly();
+  $('discard-img').disabled = !(view.modified || floatChanges(view.fl));
   if (view.pixelated && lastPointer) readPixel(lastPointer.x, lastPointer.y); // the picture moved under the pointer
 }
 
@@ -244,14 +247,6 @@ function zoomAt(factor, px, py) {
   draw();
 }
 
-// 100% around the middle of the window, without changing the mode.
-function zoomTo100() {
-  const b = stageSize();
-  view.free = true; view.sx = view.sy = 1;
-  view.x = (b.w - dispW()) / 2; view.y = (b.h - dispH()) / 2;
-  draw();
-}
-
 // opts.rot: the turn the picture is shown with (undo brings a picture back as it was turned); a new picture is not turned.
 // The empty window offers the picture that is on the clipboard (if there is one) next to Open file…
 function offerClipboard() {
@@ -266,14 +261,14 @@ function showImage(info, opts = {}) {
   if (!info?.url) { // no picture: the window as it is when it starts
     stopBounce(); pic.onload = null; pic.removeAttribute('src'); cancelText();
     view.name = ''; view.modified = false; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
-    pic.hidden = true; $('empty').hidden = false; setStatus(''); renderSelection(); offerClipboard();
+    polyClear(); pic.hidden = true; $('empty').hidden = false; $('stage').classList.remove('checker'); setStatus(''); renderSelection(); offerClipboard(); // (the squares belong to a picture with transparency)
     if (editOn()) setEdit(false); // no image: no edit mode (closing it, deleting the last one, undo back to the empty window)
     done();
     return loaded;
   }
   view.name = info.name; view.modified = !!info.modified; view.canAlpha = !!info.canAlpha; view.dir = info.dir; view.index = info.index; view.count = info.count; if (!opts.keepView) view.free = false; // (a picture that is the same, with something applied, keeps its zoom)
   stopBounce();
-  view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = opts.sel ? rectSel(opts.sel) : null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
+  if (!opts.keepView) polyClear(); view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = opts.sel ? rectSel(opts.sel) : null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
   pic.onload = () => {
     Trace(`img onload, visibility ${document.visibilityState}, focus ${document.hasFocus()}`);
     pic.hidden = false; $('empty').hidden = true; draw();
@@ -336,7 +331,7 @@ const editOn = () => document.body.classList.contains('edit');
 function setEdit(on) {
   if (on && !pic.naturalWidth) return; // nothing to edit
   document.body.classList.toggle('edit', on);
-  if (!on) closeDock();
+  if (!on) { closeDock(); polyClear(); }
   if (on) setTool('select');
   syncPenDock();
   $('editmark').hidden = !on;
@@ -352,12 +347,122 @@ const tool = () => (editOn() ? view.tool : 'select');
 
 function setTool(t) {
   if (t !== 'select' && view.tool !== t) clearSelection(); // drawing has no selection
+  if (view.tool === 'poly' && t !== 'poly') polyClear(); // (the polygon belongs to its tool)
   if (view.tool !== t && txt) commitText(); // a text that is being typed is applied when the tool changes
   if (t === 'pick' && view.tool !== 'pick') view.prevTool = view.tool; // the picker gives the tool back
   view.tool = t;
   syncPenDock();
-  for (const k of ['select', 'pen', 'line', 'rect', 'ellipse', 'fill', 'text', 'pick']) $(`tool-${k}`).classList.toggle('on', k === t);
+  for (const k of ['select', 'poly', 'pen', 'line', 'rect', 'ellipse', 'fill', 'text', 'pick']) $(`tool-${k}`).classList.toggle('on', k === t);
   updateHover(false);
+}
+
+// ---- Polygon select: draw round the part freely; when the button is let go, the end is joined to the start and mcView turns the line into a polygon ------------
+// What is drawn is a free-hand line (every move of the pointer), but what is kept is the polygon that follows it: the line is simplified (Ramer-Douglas-Peucker, with a
+// tolerance of about a screen pixel and a quarter, so the polygon stays within a pixel or so of what was drawn) to a few corners, in picture pixels. Once it is set:
+// Delete or Backspace fills it with the second color (a step of the history), Ctrl+C copies what is inside it (the rest transparent), Esc lets it go. The AI of the
+// chat panel can use it as a mask (selection_mask).
+const poly = {pts: [], closed: false, down: false, raw: [], button: 0};
+const polyActive = () => tool() === 'poly' || poly.closed || poly.down; // (a polygon that is set answers to its keys also when it was drawn with the right button)
+
+function polyClear() {
+  if (!poly.pts.length && !poly.closed && !poly.down) return;
+  poly.pts = []; poly.closed = false; poly.down = false; poly.raw = [];
+  renderPoly();
+}
+
+function polyScreen(p) { return [view.x + view.ox + p[0] * view.sx, view.y + view.oy + p[1] * view.sy]; }
+
+function distToSegment(p, a, b) {
+  const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  if (!l2) return Math.hypot(p[0] - a[0], p[1] - a[1]);
+  const t = Math.max(0, Math.min(1, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2));
+  return Math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy);
+}
+
+// Ramer-Douglas-Peucker: the corners of an open line that keep it within eps of the line.
+function simplifyLine(pts, eps) {
+  if (pts.length < 3) return pts.slice();
+  let dmax = 0, at = 0;
+  for (let i = 1; i < pts.length - 1; i++) { const d = distToSegment(pts[i], pts[0], pts[pts.length - 1]); if (d > dmax) { dmax = d; at = i; } }
+  if (dmax <= eps) return [pts[0], pts[pts.length - 1]];
+  return simplifyLine(pts.slice(0, at + 1), eps).slice(0, -1).concat(simplifyLine(pts.slice(at), eps));
+}
+
+// The free-hand line (picture pixels, not rounded) as a closed polygon with whole corners; null when it is not a shape (a click, a line).
+function vectorize(raw) {
+  if (raw.length < 3) return null;
+  const eps = clamp(1.25 / Math.max(view.sx, 0.01), 0.6, 12);
+  let far = 0, fd = 0; // the ring is cut in two at the point that is farthest from where it started, and each half is simplified
+  raw.forEach((q, i) => { const d = Math.hypot(q[0] - raw[0][0], q[1] - raw[0][1]); if (d > fd) { fd = d; far = i; } });
+  if (!far) return null;
+  const half1 = simplifyLine(raw.slice(0, far + 1), eps), half2 = simplifyLine(raw.slice(far).concat([raw[0]]), eps);
+  const ring = half1.slice(0, -1).concat(half2.slice(0, -1));
+  const pts = [];
+  for (const q of ring) {
+    const r = [Math.round(clamp(q[0], 0, dispW())), Math.round(clamp(q[1], 0, dispH()))], last = pts[pts.length - 1];
+    if (!last || last[0] !== r[0] || last[1] !== r[1]) pts.push(r);
+  }
+  while (pts.length > 1 && pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1]) pts.pop();
+  if (pts.length < 3) return null;
+  let area = 0; // the shoelace formula: a line drawn back on itself has no area
+  pts.forEach((q, i) => { const n = pts[(i + 1) % pts.length]; area += q[0] * n[1] - n[0] * q[1]; });
+  return Math.abs(area) / 2 >= 4 ? pts : null;
+}
+
+function renderPoly() {
+  const svg = $('poly');
+  const pts = poly.down ? poly.raw : poly.pts;
+  if (!pts.length || !pic.naturalWidth) { svg.toggleAttribute('hidden', true); svg.innerHTML = ''; return; } // (an SVG element has no .hidden property: the attribute is set)
+  svg.toggleAttribute('hidden', false);
+  svg.classList.toggle('set', poly.closed && !poly.down);
+  const d = pts.map(polyScreen).map((q) => `${q[0].toFixed(1)},${q[1].toFixed(1)}`).join(' ');
+  // while the button is down it is the line as it was drawn (open: the end is joined to the start only when the button is up)
+  svg.innerHTML = poly.down ? `<polyline class="k" points="${d}"/><polyline class="w" points="${d}"/>` : `<polygon class="fillp" points="${d}"/><polygon class="k" points="${d}"/><polygon class="w" points="${d}"/>`;
+}
+
+function polyDown(ev) {
+  poly.pts = []; poly.closed = false; poly.down = true; poly.button = ev.button;
+  poly.raw = [pointInPicture(ev.clientX, ev.clientY)];
+  renderPoly();
+}
+
+function polyMove(ev) {
+  if (!poly.down) return;
+  const p = pointInPicture(ev.clientX, ev.clientY), last = poly.raw[poly.raw.length - 1];
+  if (Math.hypot((p[0] - last[0]) * view.sx, (p[1] - last[1]) * view.sy) >= 1.5) { poly.raw.push(p); renderPoly(); }
+}
+
+function polyUp() {
+  const raw = poly.raw, pts = vectorize(raw);
+  poly.down = false; poly.raw = [];
+  if (pts) { poly.pts = pts; poly.closed = true; } else { poly.pts = []; poly.closed = false; }
+  renderPoly();
+}
+
+// A key for the polygon; true when it was used.
+function polyKey(ev) {
+  const cmd = ev.ctrlKey || ev.metaKey;
+  if (cmd && !ev.altKey && (ev.key === 'c' || ev.key === 'C') && poly.closed) { polyCopy(); return true; }
+  if (ev.key === 'Escape' && (poly.pts.length || poly.closed || poly.down)) { polyClear(); return true; }
+  if ((ev.key === 'Backspace' || ev.key === 'Delete') && poly.closed) { polyFill(); return true; }
+  return false;
+}
+
+async function polyFill() {
+  try {
+    await commitText(); if (view.fl) await flushFloat();
+    const info = await Retouch(view.rot, JSON.stringify({op: 'fill', method: 'solid', color: paint.bg, pts: poly.pts}));
+    await showImage(info, {keepView: true, rot: 0}); commit();
+  } catch (e) { problem(errText(e)); }
+}
+
+async function polyCopy() {
+  try {
+    if (view.fl) await flushFloat();
+    const b64 = await PolygonPNG(view.rot, JSON.stringify(poly.pts));
+    try { await navigator.clipboard.write([new ClipboardItem({'image/png': base64ToBlob(b64, 'image/png')})]); } catch { await CopyImageNative(b64); }
+    problem('Polygon copied to the clipboard', false, 1700);
+  } catch (e) { problem(errText(e)); }
 }
 
 let ink = null; // the stroke that is being drawn: {pts: [x, y, x, y, …], color}
@@ -423,11 +528,21 @@ async function finishInk(k) {
 // ---- Line, rectangle and ellipse: dragged out on #ink (Shift: a line at a multiple of 45°, a square or a circle), and drawn into the picture by Go from the pixels of #ink ----
 // The left button draws with the first color, the right button with the second (the rectangle: the other way round, as in Paint).
 // A stroke, line or rectangle that is being drawn is dropped at once by Esc, or by the other mouse button, even though the first is still down.
+// Esc or a right click drops what is being drawn or selected: a stroke, a shape, the frame of a selection that is being dragged, the line of the polygon select.
+// It is true when there was something to drop.
 function cancelDraw() {
-  if (!shape && !ink) return false;
-  shape = null; ink = null;
-  renderInk(); updateHover(false);
-  return true;
+  let did = false;
+  if (poly.down) { polyClear(); did = true; }
+  if (view.selDrag && !view.selDrag.edge) { // a new frame (not the move of an edge of one that is set)
+    view.selDrag = null; view.sel = null; view.hl = null; did = true;
+    draw();
+  }
+  if (shape || ink) {
+    shape = null; ink = null;
+    renderInk(); updateHover(false);
+    did = true;
+  }
+  return did;
 }
 const otherButton = (ev, d) => (ev.buttons & ~(d.button === 2 ? 2 : 1)) !== 0; // a button that is not the one the drawing was started with
 
@@ -868,6 +983,7 @@ function edgeAt(clientX, clientY, inside = false) {
 }
 
 const RIGHT_TOOLS = ['pen', 'line', 'rect', 'ellipse', 'fill', 'pick']; // the right button works in these (the second color)
+const RIGHT_LASSO = ['select', 'poly']; // in these the right button, held, draws a free-hand polygon select
 const TOOL_CURSOR = {pen: 'crosshair', line: 'crosshair', rect: 'crosshair', ellipse: 'crosshair', fill: 'crosshair', pick: 'crosshair', text: 'text'};
 const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize'};
 
@@ -1208,11 +1324,57 @@ function closeOrQuit() { if (pic.naturalWidth) closeImage(); else CloseWindow();
 // window works in, and the arrow keys go through its pictures.
 // Create Image (File menu, and the empty window): a new white 1280 × 720 image, and edit mode starts with it.
 let editAfterImage = false;
-async function createImage() {
-  try { if (!await DiscardOK('create a new image')) return; editAfterImage = true; await NewBlank(1280, 720, false); } catch (e) { editAfterImage = false; problem(errText(e)); }
+// Shift-click on Create image (or Shift+N) asks for the size and the background first; the plain click and N make the white 1280 × 720.
+async function createImage(custom = false) {
+  try {
+    let w = 1280, h = 720, rgba = '#FFFFFFFF';
+    if (custom === true) { const spec = await askNewImage(); if (!spec) return; ({w, h, rgba} = spec); }
+    if (!await DiscardOK('create a new image')) return;
+    editAfterImage = true;
+    if (custom === true) await NewBlankColor(w, h, rgba); else await NewBlank(w, h, false);
+  } catch (e) { editAfterImage = false; problem(errText(e)); }
+}
+
+// The dialog: width, height and the background (white, transparent or a color). It answers {w, h, rgba}, or null when it is cancelled.
+// What was chosen last time is offered again.
+function askNewImage() {
+  const dlg = $('newdlg'), form = $('newdlg-form'), W = $('nd-w'), H = $('nd-h'), bg = $('nd-bg'), col = $('nd-color'), err = $('nd-err');
+  try { const last = JSON.parse(localStorage.getItem('newImage') || 'null'); if (last) { W.value = last.w; H.value = last.h; bg.value = last.bg; col.value = last.color; } } catch {}
+  const showColor = () => { col.hidden = bg.value !== 'color'; };
+  showColor(); err.hidden = true; dlg.hidden = false; W.focus(); W.select();
+  return new Promise((resolve) => {
+    const close = (v) => { dlg.hidden = true; bg.onchange = null; form.onsubmit = null; dlg.onkeydown = null; $('nd-cancel').onclick = null; dlg.onmousedown = null; resolve(v); };
+    bg.onchange = showColor;
+    form.onsubmit = (ev) => {
+      ev.preventDefault();
+      const w = Math.round(+W.value), h = Math.round(+H.value);
+      if (!(w >= 1 && h >= 1)) { err.textContent = 'Width and height are 1 pixel or more.'; err.hidden = false; return; }
+      if (w * h > 150_000_000) { err.textContent = 'That is too big: up to 150 million pixels (for example 12000 × 12000).'; err.hidden = false; return; }
+      try { localStorage.setItem('newImage', JSON.stringify({w, h, bg: bg.value, color: col.value})); } catch {}
+      close({w, h, rgba: bg.value === 'transparent' ? '#00000000' : bg.value === 'color' ? col.value.toUpperCase() + 'FF' : '#FFFFFFFF'});
+    };
+    $('nd-cancel').onclick = () => close(null);
+    dlg.onmousedown = (ev) => { if (ev.target === dlg) close(null); };
+    dlg.onkeydown = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(null); } };
+  });
 }
 
 // D: the picture is deleted (the system asks first); the next picture of the folder is shown in its place, with the folder's new count.
+// Discard changes: the picture goes back to its original (the file on the disk, or the pasted or new picture) as one more step of the history, so undo brings the changes
+// back and redo discards them again.
+async function discardChanges() {
+  try {
+    await commitText();
+    if (view.fl) await flushFloat({clear: true});
+    const was = view.state;
+    const info = await DiscardChanges();
+    if (info.state === was) { problem('There are no changes to discard', false, 2000); return; }
+    await showImage(info);
+    commit();
+    problem('Changes discarded (undo brings them back)', false, 2500);
+  } catch (e) { problem(errText(e)); }
+}
+
 async function deleteImage() {
   try { const note = await DeleteImage(); if (note) problem(note, false, 2000); } catch (e) { problem(errText(e)); }
 }
@@ -1350,6 +1512,7 @@ const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 // Drag to select (with Shift on an edge of the frame, the frame is moved without touching the picture).
 function beginSelection(clientX, clientY) {
   stopSelectionFlash();
+  polyClear(); // (a new frame replaces a polygon)
   const edge = document.body.classList.contains('edit') ? null : edgeAt(clientX, clientY, true); // edit mode off: the frame alone is moved and resized
   const [qx, qy] = pointInPicture(clientX, clientY);
   if (edge) { // an edge of the frame: it is moved, not a new frame drawn
@@ -1368,7 +1531,9 @@ function beginSelection(clientX, clientY) {
 
 function startViewer() {
   initDock();
+  initChat();
   $('tool-select').onclick = () => setTool('select');
+  $('tool-poly').onclick = () => setTool('poly');
   $('tool-pen').onclick = () => setTool('pen');
   $('tool-line').onclick = () => setTool('line');
   $('tool-rect').onclick = () => setTool('rect');
@@ -1376,15 +1541,20 @@ function startViewer() {
   $('tool-fill').onclick = () => setTool('fill');
   $('tool-text').onclick = () => setTool('text');
   $('tool-pick').onclick = () => setTool('pick');
-  $('stage').addEventListener('contextmenu', (ev) => { if (RIGHT_TOOLS.includes(tool())) ev.preventDefault(); if (shape || ink) cancelDraw(); });
+  $('stage').addEventListener('contextmenu', (ev) => {
+    if (RIGHT_TOOLS.includes(tool()) || RIGHT_LASSO.includes(tool())) ev.preventDefault(); // (no system menu: the right button draws)
+    if (poly.down && poly.button === 2) return; // (the lasso that this press started)
+    if (cancelDraw()) ev.preventDefault();
+  });
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
   $('hint').textContent = 'Open a picture, paste one from the clipboard, or start a blank one. You can also open pictures with mcView from your file manager.';
   $('k-clip').textContent = `${cmd}V`;
   $('open').onclick = choose;
   $('open-clip').onclick = () => PasteNew().catch((e) => problem(errText(e)));
-  $('new-pic').onclick = createImage;
+  $('new-pic').onclick = (ev) => createImage(ev.shiftKey);
+  $('discard-img').onclick = discardChanges;
   $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
-  EventsOn('menu-create', createImage); // File → Create Image
+  EventsOn('menu-create', () => createImage()); // File → Create Image
   window.addEventListener('focus', () => { if (!$('empty').hidden) offerClipboard(); });
   offerClipboard();
   EventsOn('history-reset', () => { history.list.length = 0; history.at = -1; }); // a deleted picture cannot be brought back by undo
@@ -1399,6 +1569,7 @@ function startViewer() {
   EventsOn('menu-save', saveAs); // File → Save As…
   EventsOn('menu-close', closeOrQuit); // File → Close
   EventsOn('menu-close-image', closeImage); // File → Close Image
+  EventsOn('menu-discard', discardChanges); // File → Discard Changes
   EventsOn('menu-delete', deleteImage); // File → Delete Image…
   lastStage = stageSize();
   window.addEventListener('resize', onResize);
@@ -1414,7 +1585,7 @@ function startViewer() {
   $('stage').addEventListener('pointerdown', (ev) => {
     if (ev.target === $('textbox')) return; // (the text box is typed in)
     if (cancelDraw()) return; // a press while a drawing is on (the other button, where the system reports it as a press) drops it
-    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1 && !(ev.button === 2 && RIGHT_TOOLS.includes(tool())))) return;
+    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1 && !(ev.button === 2 && (RIGHT_TOOLS.includes(tool()) || RIGHT_LASSO.includes(tool()))))) return;
     try { $('stage').setPointerCapture(ev.pointerId); } catch {}
     if (ev.button === 1) { // the middle button pans the picture
       ev.preventDefault();
@@ -1425,10 +1596,15 @@ function startViewer() {
     }
     pointerDown = true;
     const t = tool();
+    if (ev.button === 2 && RIGHT_LASSO.includes(t)) { // the right button, held: a free-hand polygon (what the rectangle had is let go)
+      (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) { clearSelection(); polyDown(ev); } });
+      return;
+    }
     if (t === 'pen' || t === 'line' || t === 'rect' || t === 'ellipse') { // what is lifted is applied first, then the stroke starts (if the button is still down)
       (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) (t === 'pen' ? startInk : startShape)(ev, t); });
       return;
     }
+    if (t === 'poly') { (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) polyDown(ev); }); return; }
     if (t === 'fill') { fillAt(ev); return; }
     if (t === 'pick') { pickColor(ev); return; }
     if (t === 'text') { startText(ev); return; }
@@ -1447,7 +1623,10 @@ function startViewer() {
     beginSelection(ev.clientX, ev.clientY);
   });
   $('stage').addEventListener('pointermove', (ev) => {
+    if (poly.down && (poly.button === 2 ? ev.buttons & 1 : ev.buttons & 2)) { cancelDraw(); return; } // (the other button drops it)
+    if (poly.down) { polyMove(ev); return; }
     if ((shape || ink) && otherButton(ev, shape || ink)) { cancelDraw(); return; } // (a second button comes as a move, not as a press)
+    if (view.selDrag && !view.selDrag.edge && (ev.buttons & 2)) { cancelDraw(); return; } // (the same for the frame of a selection that is being drawn)
     if (shape) { moveShape(ev); return; }
     if (ink) { addInk(inkPoint(ev)); return; }
     if (view.tdrag) { dragTransform(ev); return; }
@@ -1485,6 +1664,7 @@ function startViewer() {
   });
   const endDrag = (ev) => {
     pointerDown = false;
+    if (poly.down) { polyUp(); return; }
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
     if (shape) { const k = shape; shape = null; finishShape(k).then(() => updateHover(ev.shiftKey)); return; } // (see the pencil below)
     if (ink) { const k = ink; ink = null; finishInk(k).then(() => updateHover(ev.shiftKey)); return; } // the button is up: drawing stops now, not when Go is done
@@ -1501,13 +1681,11 @@ function startViewer() {
   $('stage').addEventListener('mousedown', (ev) => { if (ev.button === 1) ev.preventDefault(); }); // no auto-scroll cursor
   $('stage').addEventListener('pointerup', endDrag);
   $('stage').addEventListener('pointercancel', endDrag);
-  $('stage').addEventListener('dblclick', () => {
-    if (!pic.naturalWidth) return;
-    if (!view.free && (Math.abs(view.sx - 1) > 0.005 || Math.abs(view.sy - 1) > 0.005)) zoomTo100(); else { view.free = false; draw(); }
-  });
   window.addEventListener('keydown', (ev) => {
+    if (!$('newdlg').hidden) return; // (the Create image dialog has its own keys)
     if (ev.key === 'Escape') ev.preventDefault(); // a handled key is not passed on to the system, which leaves full screen with it (see also DisableEscapeExitsFullscreen in main.go)
     if ((ev.target instanceof HTMLInputElement && ev.target.type !== 'range') || ev.target instanceof HTMLTextAreaElement || ev.target instanceof HTMLSelectElement) return; // typing in a field is not a command
+    if (polyActive() && polyKey(ev)) { ev.preventDefault(); return; }
     if (ev.key === 'Shift') { document.body.classList.add('shift'); updateHover(true); return; }
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'c' || ev.key === 'C' || ev.key === 'Insert')) {
       ev.preventDefault(); copySelection(); return; // Ctrl+C, Cmd+C and Ctrl+Insert
@@ -1536,8 +1714,9 @@ function startViewer() {
     if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
     if (ev.key === 'Escape') { clearSelection(); return; } // (Esc does not leave full screen: F and Enter do, and two Escs close the picture)
     if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; } // (also on the home screen)
+    if ((ev.key === 'c' || ev.key === 'C') && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); toggleChat(); return; } // the chat panel
     if (ev.key === 'o' || ev.key === 'O') { ev.preventDefault(); choose(); return; } // (asks about unsaved changes first, then the Open dialog)
-    if (ev.key === 'n' || ev.key === 'N') { ev.preventDefault(); createImage(); return; }
+    if (ev.key === 'n' || ev.key === 'N') { ev.preventDefault(); createImage(ev.shiftKey); return; }
     if (ev.key === 'e' || ev.key === 'E' || ev.key === 'Tab') { ev.preventDefault(); setEdit(!editOn()); return; } // the edit bar (Tab does the same)
     if (!pic.naturalWidth) return;
     const b = stageSize();
@@ -1573,50 +1752,21 @@ const ctl = {sleep: (ms) => new Promise((r) => setTimeout(r, ms))};
 
 const ctlClient = (x, y) => { const r = $('stage').getBoundingClientRect(); return [r.left + view.x + view.ox + (x + 0.5) * view.sx, r.top + view.y + view.oy + (y + 0.5) * view.sy]; };
 
-// One pointer event on the stage. held: a button is down (the move of a drag); button: 0 left, 1 middle, 2 right.
-function ctlPointer(type, x, y, o = {}) {
-  const [cx, cy] = ctlClient(x, y), button = o.button ?? 0, mask = button === 2 ? 2 : button === 1 ? 4 : 1;
-  $('stage').dispatchEvent(new PointerEvent(type, {
-    bubbles: true, cancelable: true, clientX: cx, clientY: cy, pointerId: 1, pointerType: 'mouse', isPrimary: true,
-    button: type === 'pointermove' ? -1 : button, buttons: type === 'pointerdown' || (type === 'pointermove' && o.held) ? mask : 0,
-    shiftKey: !!o.shift, ctrlKey: !!o.ctrl, altKey: !!o.alt, metaKey: !!o.meta,
-  }));
-}
-
-// Waits until what the pointer started is done (a stroke or a shape is drawn into the picture by Go, a step is in the history).
+// Waits until what a command started is done (a step is in the history).
 async function ctlSettle() {
   await ctl.sleep(40);
   for (let i = 0; i < 500 && (ink || fin || shape || history.busy); i++) await ctl.sleep(20);
   await ctl.sleep(120);
 }
 
-async function ctlDrag(pts, o = {}) {
-  if (!pts?.length) throw new Error('drag needs "points": [[x, y], …]');
-  ctlPointer('pointermove', pts[0][0], pts[0][1], {shift: o.shift});
-  ctlPointer('pointerdown', pts[0][0], pts[0][1], o);
-  await ctl.sleep(60); // (what is lifted is applied first, then the stroke starts)
-  for (let i = 1; i < pts.length; i++) {
-    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], n = o.steps ?? Math.max(4, Math.ceil(Math.hypot((x1 - x0) * view.sx, (y1 - y0) * view.sy) / 10));
-    for (let k = 1; k <= n; k++) { ctlPointer('pointermove', x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n, {...o, held: true}); await ctl.sleep(o.pause ?? 6); }
-  }
-  if (o.hold) await ctl.sleep(o.hold); // (a drag that is held, for a screenshot of it; "release": false leaves the button down)
-  if (o.release !== false) { const l = pts[pts.length - 1]; ctlPointer('pointerup', l[0], l[1], o); await ctlSettle(); }
-}
-
-const ctlKey = (m) => {
-  const t = m.target === 'text' ? $('textbox') : window;
-  const init = {key: m.key, shiftKey: !!m.shift, ctrlKey: !!m.ctrl, metaKey: !!m.meta, altKey: !!m.alt, bubbles: true, cancelable: true};
-  t.dispatchEvent(new KeyboardEvent('keydown', init)); t.dispatchEvent(new KeyboardEvent('keyup', init));
-};
-
-const CTL_MENU = {open: choose, save: saveAs, close: closeOrQuit, 'close-image': closeImage, create: createImage, delete: deleteImage, undo, redo, copy: () => copySelection(), paste: pasteImage};
+const CTL_MENU = {open: choose, save: saveAs, close: closeOrQuit, 'close-image': closeImage, create: () => createImage(), delete: deleteImage, discard: discardChanges, undo, redo, copy: () => copySelection(), paste: pasteImage};
 
 function ctlState() {
   const sel = selectionRect();
   return {
     ok: true, name: view.name, dir: view.dir, index: view.index, count: view.count, size: pic.naturalWidth ? [dispW(), dispH()] : null,
     loaded: !!pic.naturalWidth && pic.complete, mode: view.mode, zoom: view.sx, zoomY: view.sy, pixelated: view.pixelated, rot: view.rot,
-    edit: editOn(), tool: tool(), modified: !!(view.modified || floatChanges(view.fl)), selection: sel, text: txt ? {x: txt.x, y: txt.y, value: $('textbox').value} : null,
+    edit: editOn(), tool: tool(), modified: !!(view.modified || floatChanges(view.fl)), selection: sel, polygon: poly.closed ? poly.pts : null, text: txt ? {x: txt.x, y: txt.y, value: $('textbox').value} : null,
     paint: {fg: paint.fg, bg: paint.bg, width: paint.width, style: paint.style, fill: paint.fill, tolerance: paint.tol, font: paint.font, size: paint.size, bold: paint.bold, italic: paint.italic},
     full: document.body.classList.contains('full'), dock: $('dock').classList.contains('open'), info: toldInfo, status: $('status').textContent, history: {at: history.at, length: history.list.length},
   };
@@ -1626,10 +1776,13 @@ async function ctlRun(m) {
   switch (m.cmd) {
     case 'state': return ctlState();
     case 'wait': await ctl.sleep(m.ms ?? 200); return {ok: true};
-    case 'key': ctlKey(m); await ctlSettle(); return {ok: true}; // key: "e", "ArrowRight", "Escape"…; shift, ctrl, meta, alt; target: "text" for the text box
     case 'menu': { const f = CTL_MENU[m.name]; if (!f) throw new Error(`no menu item "${m.name}": ${Object.keys(CTL_MENU).join(', ')}`); await f(); await ctlSettle(); return {ok: true}; }
     case 'edit': setEdit(m.on !== false); await ctl.sleep(250); return ctlState();
-    case 'tool': if (!editOn()) setEdit(true); setTool(m.name); await ctl.sleep(250); return ctlState(); // select, pen, line, rect, ellipse, fill, text, pick
+    case 'polygon': { // a closed polygon selection {pts: [[x, y], …]}, or none ({pts: []}) to let it go
+      if (!m.pts?.length) { polyClear(); return ctlState(); }
+      if (!editOn()) setEdit(true); setTool('poly'); poly.pts = m.pts.map((p) => [p[0], p[1]]); poly.closed = true; poly.down = false; poly.raw = []; renderPoly(); return ctlState();
+    }
+    case 'tool': if (!editOn()) setEdit(true); setTool(m.name); await ctl.sleep(250); return ctlState(); // select, poly, pen, line, rect, ellipse, fill, text, pick
     case 'mode': setMode(MODES[String(m.mode)] || m.mode); commit(); await ctl.sleep(300); return ctlState(); // 1 to 6
     case 'zoom': { // an exact zoom (1 is 100%) with the picture pixel {x, y} (the middle by default) in the middle of the window
       const b = stageSize(), s = m.scale, cx = m.x ?? dispW() / 2, cy = m.y ?? dispH() / 2;
@@ -1645,21 +1798,58 @@ async function ctlRun(m) {
       for (const [k, key] of [['width', 'width'], ['style', 'style'], ['fill', 'fill'], ['tolerance', 'tol'], ['font', 'font'], ['size', 'size'], ['bold', 'bold'], ['italic', 'italic']]) if (m[k] !== undefined) paint[key] = m[k];
       showPenWidth(); showToolOptions(); $('pen-w').value = paint.width; renderText(); return {ok: true};
     case 'palette': if (m.open) openDock(m.open === 'bg' ? 'bg' : 'fg'); else closeDock(); await ctl.sleep(300); return {ok: true};
-    case 'move': ctlPointer('pointermove', m.x, m.y, m); await ctl.sleep(m.settle ?? 200); return {ok: true}; // the pointer over a pixel (the readout, the cursor)
-    case 'click': ctlPointer('pointermove', m.x, m.y, m); ctlPointer('pointerdown', m.x, m.y, m); await ctl.sleep(60); ctlPointer('pointerup', m.x, m.y, m); await ctlSettle(); return {ok: true};
-    case 'dblclick': $('stage').dispatchEvent(new MouseEvent('dblclick', {bubbles: true, clientX: ctlClient(m.x, m.y)[0], clientY: ctlClient(m.x, m.y)[1]})); await ctl.sleep(300); return {ok: true};
-    case 'drag': await ctlDrag(m.points, m); return ctlState(); // {points: [[x, y], …], button, shift, steps, pause, hold, release}
-    case 'release': ctlPointer('pointerup', m.x, m.y, m); await ctlSettle(); return ctlState();
-    case 'select': await ctlDrag([[m.x0, m.y0], [m.x1, m.y1]], m); return ctlState(); // the select tool is used
-    case 'text': { // a text put in the picture at the pixel {x, y} with the text tool: {x, y, value, commit (default true)}
-      if (!editOn()) setEdit(true); setTool('text');
-      ctlPointer('pointerdown', m.x, m.y, {}); ctlPointer('pointerup', m.x, m.y, {}); await ctl.sleep(120);
-      if (!txt) throw new Error('the text could not be placed: the pixel is outside the picture');
-      const tb = $('textbox'); tb.value = m.value; tb.dispatchEvent(new Event('input')); await ctl.sleep(150);
-      if (m.commit !== false) { await commitText(); await ctlSettle(); }
+    case 'select': { // the frame of a selection {x0, y0, x1, y1}, both corners pixels of the picture
+      if (!editOn()) setEdit(true); setTool('select');
+      if (view.fl) await flushFloat({clear: true});
+      view.sel = {x0: Math.min(m.x0, m.x1), y0: Math.min(m.y0, m.y1), x1: Math.max(m.x0, m.x1) + 1, y1: Math.max(m.y0, m.y1) + 1}; view.selDrag = null; draw(); commit(); return ctlState();
+    }
+    case 'shape': { // a line, rect, ellipse or path put into the picture: {kind, x0, y0, x1, y1, pts, color, bg, width, style, fill}, one step of the history
+      await commitText(); if (view.fl) await flushFloat();
+      const info = await DrawShape(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(); return ctlState();
+    }
+    case 'resize': { // the canvas made w × h, the picture where the anchor says: {w, h, anchor, bg}, one step of the history
+      await commitText(); if (view.fl) await flushFloat();
+      const info = await ResizeCanvas(view.rot, m.w, m.h, m.anchor || '', m.bg || ''); await showImage(info, {rot: 0}); commit(); return ctlState();
+    }
+    case 'crop': { // only the part {x, y, w, h} is kept, one step of the history
+      await commitText(); if (view.fl) await flushFloat();
+      const info = await CropPicture(view.rot, m.x, m.y, m.w, m.h); await showImage(info, {rot: 0}); commit(); return ctlState();
+    }
+    case 'retouch': { // clone a part, blend its edges or fill a gap from its surroundings: {op: clone|blend|fill, …}, one step of the history
+      await commitText(); if (view.fl) await flushFloat();
+      const info = await Retouch(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(); return {...ctlState(), note: info.note || ''};
+    }
+    case 'fill': { // the paint bucket at the pixel {x, y}: {color, tolerance (0 to 100)}
+      await commitText(); if (view.fl) await flushFloat({clear: true});
+      const info = await FloodFill(view.rot, m.x, m.y, m.color, Math.round((m.tolerance ?? paint.tol) * 2.55));
+      if (info.state !== view.state) { await showImage(info, {keepView: true, rot: 0}); commit(); }
       return ctlState();
     }
-    case 'pixel': { const at = [m.x, m.y]; ctlPointer('pointermove', at[0], at[1], {}); await ctl.sleep(m.settle ?? 300); const p = await fetchPixel(m.x, m.y); return {ok: true, pixel: p}; }
+    case 'text': { // a text put into the picture with its top left corner at the pixel {x, y}: {value, color}, the font and size are the options
+      await commitText(); if (view.fl) await flushFloat({clear: true});
+      if (m.x < 0 || m.y < 0 || m.x >= dispW() || m.y >= dispH()) throw new Error('the text could not be placed: the pixel is outside the picture');
+      txt = {x: m.x, y: m.y, color: m.color || paint.fg}; $('textbox').value = m.value;
+      await commitText(); return ctlState();
+    }
+    case 'pixel': { if (pixelState === 'preparing') await preparePixels(); return {ok: true, pixel: await fetchPixel(m.x, m.y)}; }
+    case 'saveto': { // save the picture to a full path without the dialog: {path, overwrite}
+      await commitText(); if (view.fl) await flushFloat();
+      const note = await SaveToPath(m.path, view.rot, !!m.overwrite); await ctlSettle(); return {ok: true, note};
+    }
+    case 'pixels': { // set single pixels: {list: [[x, y, "#rrggbbaa"], …]}, one step of the history
+      await commitText(); if (view.fl) await flushFloat();
+      const info = await PaintPixels(view.rot, JSON.stringify(m.list)); await showImage(info, {keepView: true, rot: 0}); commit(); await ctlSettle(); return ctlState();
+    }
+    case 'new': { // a new blank picture {w, h, color: "#rrggbbaa"}; edit mode starts with it, and a small one is shown big, in whole pixels
+      editAfterImage = true;
+      try { await NewBlankColor(m.w, m.h, m.color || '#FFFFFFFF'); } catch (e) { editAfterImage = false; throw e; }
+      await ctl.sleep(600);
+      if (Math.max(m.w, m.h) <= 256) {
+        const b = stageSize(), s = Math.max(1, Math.floor(Math.min(b.w * 0.85 / m.w, b.h * 0.85 / m.h)));
+        view.free = true; view.sx = view.sy = s; view.ox = view.oy = 0; view.x = (b.w - m.w * s) / 2; view.y = (b.h - m.h * s) / 2; draw();
+      }
+      await ctl.sleep(200); return ctlState();
+    }
     case 'eval': throw new Error('"eval" does not exist: use the commands');
   }
   throw new Error(`unknown command "${m.cmd}"`);
@@ -1673,7 +1863,8 @@ EventsOn('control', async (id, m) => {
 
 (async () => {
   Trace(`js start, visibility ${document.visibilityState}`);
-  if (await Mode() === 'about') { showAbout(); return; }
+  const mode = await Mode();
+  if (mode === 'about') { showAbout(); return; }
   revealWhenHidden();
   startViewer();
   showImage(await Image());

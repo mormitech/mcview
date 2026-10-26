@@ -7,7 +7,7 @@
 </head>
 <body>
 <main id="viewer">
-    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div></div>
+    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div><svg id="poly" hidden aria-hidden="true"></svg></div>
     <div id="empty">
         <img class="logo" src="./src/assets/mormitech-mark.svg" alt="" width="120">
         <h1>mcView</h1>
@@ -15,11 +15,12 @@
         <div id="empty-actions">
             <button id="open" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></svg><b>Open file…</b><small>Browse for a picture</small><kbd>O</kbd></button>
             <button id="open-clip" class="card" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg><b>Open from clipboard</b><small>The picture you copied</small><kbd id="k-clip">⌘V</kbd></button>
-            <button id="new-pic" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 9.5v5M9.5 12h5"/></svg><b>Create image</b><small>A blank 1280 × 720</small><kbd>N</kbd></button>
+            <button id="new-pic" class="card" title="Shift-click: choose the size and the background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 9.5v5M9.5 12h5"/></svg><b>Create image</b><small><span class="s-def">A blank 1280 × 720<br>Hold Shift for custom</span><span class="s-cus">Click to customize</span></small><kbd>N</kbd></button>
         </div>
     </div>
     <div id="tools" aria-label="Edit tools">
         <button class="tool on" id="tool-select" title="Select" aria-label="Select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="1" stroke-dasharray="3 2.5"/></svg></button>
+        <button class="tool" id="tool-poly" title="Polygon select: draw round the part with the mouse; when you let go, the end joins the start and mcView makes it a polygon. Delete fills it with the second color, Ctrl+C copies it, Esc lets it go" aria-label="Polygon select"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7.5l9-3 4.5 5.5-3.5 8.5-10-1.5z" stroke-dasharray="3 2.5"/><circle cx="5.5" cy="7.5" r="1.3" class="dot"/><circle cx="14.5" cy="4.5" r="1.3" class="dot"/><circle cx="19" cy="10" r="1.3" class="dot"/><circle cx="15.5" cy="18.5" r="1.3" class="dot"/><circle cx="5.5" cy="17" r="1.3" class="dot"/></svg></button>
         <button class="tool" id="tool-pen" title="Pencil" aria-label="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.4L16.5 4.3a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.4 18.8z"/><path d="M14.5 6.3l3.2 3.2"/></svg></button>
         <button class="tool" id="tool-line" title="Line" aria-label="Line"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
         <button class="tool" id="tool-rect" title="Rectangle" aria-label="Rectangle"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="1"/></svg></button>
@@ -46,8 +47,28 @@
         <div class="grp" data-for="fill"><label for="fill-tol">Tolerance</label><input type="range" id="fill-tol" min="0" max="100" value="10"><span id="fill-tolv" class="mono">10%</span><span class="hint">Click fills the area of the same color with the first color, right click with the second. More tolerance takes in colors that are close.</span></div>
         <div class="grp" data-for="pick"><span class="hint">Click takes the color under the pointer as the first color, right click as the second. The tool you had comes back.</span></div>
     </div>
-    <div id="status" hidden><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <button id="chat-toggle" title="Chat with Claude (C)" aria-label="Chat with Claude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/></svg></button>
+    <div id="status" hidden><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span><button id="discard-img" title="Discard all changes (undo brings them back)" aria-label="Discard changes" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M4.5 4.5v4.2h4.2"/></svg></button><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
 </main>
+<aside id="chat" aria-label="Chat with Claude" aria-hidden="true">
+    <div id="chat-resize" title="Drag to resize" role="separator" aria-orientation="vertical"></div>
+    <header><b>Claude</b><span id="chat-who" class="who"></span><span class="sp"></span><button id="chat-new" title="New conversation" aria-label="New conversation">New</button><button id="chat-close" title="Minimize" aria-label="Minimize chat"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9"/></svg></button></header>
+    <section id="chat-setup"><p id="chat-msg"></p><div id="chat-actions"></div><p id="chat-url" class="muted"></p></section>
+    <section id="chat-main" hidden>
+        <div id="chat-log"></div>
+        <div id="chat-form"><textarea id="chat-text" rows="1" placeholder="Ask Claude about this picture…" spellcheck="false"></textarea><button id="chat-send" class="primary">Send</button><button id="chat-stop" hidden>Stop</button></div>
+    </section>
+</aside>
+<div id="newdlg" hidden role="dialog" aria-modal="true" aria-labelledby="newdlg-title">
+    <form class="box" id="newdlg-form" autocomplete="off">
+        <h2 id="newdlg-title">Create image</h2>
+        <div class="row"><label for="nd-w">Width</label><input type="number" id="nd-w" min="1" max="30000" value="1280"><span class="unit">px</span></div>
+        <div class="row"><label for="nd-h">Height</label><input type="number" id="nd-h" min="1" max="30000" value="720"><span class="unit">px</span></div>
+        <div class="row"><label for="nd-bg">Background</label><select id="nd-bg"><option value="white">White</option><option value="transparent">Transparent</option><option value="color">Color…</option></select><input type="color" id="nd-color" value="#ffffff" hidden></div>
+        <p class="err" id="nd-err" hidden></p>
+        <div class="btns"><button type="button" id="nd-cancel">Cancel</button><button type="submit" id="nd-ok" class="primary">Create</button></div>
+    </form>
+</div>
 <div id="about" hidden></div>
 <script src="./src/main.js" type="module"></script>
 </body>

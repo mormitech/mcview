@@ -53,21 +53,24 @@ def main(samples, out="docs/screenshots", app="build/bin/mcview.app"):
     mc.cmd("tool", name="pen")
     mc.cmd("option", width=14)
     ring = [px(0.78, 0.36), px(0.79, 0.31), px(0.825, 0.295), px(0.862, 0.315), px(0.866, 0.37), px(0.83, 0.405), px(0.79, 0.385), px(0.78, 0.35)]  # round the palm trees on the cliff
-    mc.cmd("drag", points=ring)
+    mc.cmd("shape", kind="path", pts=ring, color="#ED1C24", width=14)
     mc.cmd("color", fg="#FFF200")
     mc.cmd("tool", name="ellipse")
     mc.cmd("option", width=10, style="solid", fill="outline")
-    mc.cmd("drag", points=[px(0.60, 0.53), px(0.72, 0.66)])
+    a, b = px(0.60, 0.53), px(0.72, 0.66)
+    mc.cmd("shape", kind="ellipse", x0=a[0], y0=a[1], x1=b[0], y1=b[1], color="#FFF200", width=10, style="solid", fill="outline")
     mc.cmd("color", fg="#FFFFFF")
     mc.cmd("tool", name="rect")
     mc.cmd("option", width=8, style="dashed", fill="outline")
-    mc.cmd("drag", points=[px(0.30, 0.10), px(0.58, 0.30)])
+    a, b = px(0.30, 0.10), px(0.58, 0.30)
+    mc.cmd("shape", kind="rect", x0=a[0], y0=a[1], x1=b[0], y1=b[1], color="#FFFFFF", width=8, style="dashed", fill="outline")
     mc.cmd("tool", name="line")
     mc.cmd("option", width=10, style="solid")
-    mc.cmd("drag", points=[px(0.24, 0.50), px(0.40, 0.44)])
+    a, b = px(0.24, 0.50), px(0.40, 0.44)
+    mc.cmd("shape", kind="line", x0=a[0], y0=a[1], x1=b[0], y1=b[1], color="#FFFFFF", width=10, style="solid")
     mc.cmd("color", fg="#FFF200")
     mc.cmd("option", font="system-ui, sans-serif", size=190, bold=True)
-    mc.cmd("text", x=px(0.06, 0)[0], y=px(0, 0.80)[1], value="Evening walk")
+    mc.cmd("text", x=px(0.06, 0)[0], y=px(0, 0.80)[1], value="Evening walk", color="#FFF200")
     mc.cmd("tool", name="rect")  # the ribbon of a shape tool stays on the screen
     shot("05-edit-draw")
 
@@ -81,7 +84,7 @@ def main(samples, out="docs/screenshots", app="build/bin/mcview.app"):
     mc.cmd("color", fg="#ED1C24")
     mc.cmd("option", width=2)
     mc.cmd("zoom", scale=4, x=people[0], y=people[1])
-    mc.cmd("drag", points=[[people[0] - 70, people[1] + 70], [people[0] - 20, people[1] + 50], [people[0] + 40, people[1] + 70]])
+    mc.cmd("shape", kind="path", pts=[[people[0] - 70, people[1] + 70], [people[0] - 20, people[1] + 50], [people[0] + 40, people[1] + 70]], color="#ED1C24", width=2)
     shot("07-zoom-draw")
 
     # the colors
@@ -93,7 +96,7 @@ def main(samples, out="docs/screenshots", app="build/bin/mcview.app"):
     # a selection, which is on the clipboard at once
     mc.cmd("tool", name="select")
     a, b = px(0.52, 0.30), px(0.80, 0.62)
-    mc.cmd("select", x0=a[0], y0=a[1], x1=b[0], y1=b[1], hold=250)
+    mc.cmd("select", x0=a[0], y0=a[1], x1=b[0], y1=b[1])
     shot("09-selection")
 
     # the home screen

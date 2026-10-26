@@ -4,6 +4,16 @@ import {main} from '../models';
 
 export function BakeFloat():Promise<main.ImageInfo>;
 
+export function ChatInfo():Promise<Record<string, any>>;
+
+export function ChatLogin():Promise<void>;
+
+export function ChatReset():Promise<void>;
+
+export function ChatSend(arg1:string):Promise<void>;
+
+export function ChatStop():Promise<void>;
+
 export function ChooseImage():Promise<void>;
 
 export function ClearFloat():Promise<void>;
@@ -18,11 +28,17 @@ export function ControlReply(arg1:number,arg2:string):Promise<void>;
 
 export function CopyImageNative(arg1:string):Promise<void>;
 
+export function CropPicture(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number):Promise<main.ImageInfo>;
+
 export function DeleteImage():Promise<string>;
+
+export function DiscardChanges():Promise<main.ImageInfo>;
 
 export function DiscardOK(arg1:string):Promise<boolean>;
 
 export function DrawLayer(arg1:number,arg2:number,arg3:number,arg4:string):Promise<main.ImageInfo>;
+
+export function DrawShape(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 
@@ -44,9 +60,13 @@ export function MovePasted(arg1:number,arg2:number,arg3:number,arg4:number,arg5:
 
 export function NewBlank(arg1:number,arg2:number,arg3:boolean):Promise<void>;
 
+export function NewBlankColor(arg1:number,arg2:number,arg3:string):Promise<void>;
+
 export function NewWindow():Promise<void>;
 
 export function OpenImage(arg1:string):Promise<void>;
+
+export function PaintPixels(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function PasteLayer(arg1:number,arg2:number,arg3:number):Promise<main.PastedLayer>;
 
@@ -54,13 +74,19 @@ export function PasteNew():Promise<void>;
 
 export function PixelAt(arg1:number,arg2:number,arg3:number,arg4:number):Promise<main.Pixel>;
 
+export function PolygonPNG(arg1:number,arg2:string):Promise<string>;
+
 export function PreparePixels():Promise<string>;
+
+export function ResizeCanvas(arg1:number,arg2:number,arg3:number,arg4:string,arg5:string):Promise<main.ImageInfo>;
 
 export function RestoreFloat(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:number,arg11:boolean):Promise<main.ImageInfo>;
 
 export function RestoreLayer(arg1:number,arg2:number,arg3:string,arg4:number,arg5:number,arg6:number,arg7:number,arg8:boolean):Promise<main.ImageInfo>;
 
 export function RestoreState(arg1:number):Promise<main.ImageInfo>;
+
+export function Retouch(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function Reveal():Promise<void>;
 
@@ -69,6 +95,8 @@ export function RotatePNG(arg1:string,arg2:number):Promise<string>;
 export function SaveAs(arg1:number):Promise<string>;
 
 export function SaveSelectionAs(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number):Promise<string>;
+
+export function SaveToPath(arg1:string,arg2:number,arg3:boolean):Promise<string>;
 
 export function SaveWindow():Promise<void>;
 

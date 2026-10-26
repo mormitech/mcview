@@ -11,23 +11,24 @@ func TestVersion(t *testing.T) {
 func TestWindowFlags(t *testing.T) {
 	for _, c := range []struct {
 		args  []string
-		about bool
+		mode  string
 		theme string
 		file  string
 		casc  int
 	}{
-		{nil, false, "", "", 0},
-		{[]string{"--about"}, true, "", "", 0},
-		{[]string{"--theme", "dark", "--about"}, true, "dark", "", 0},
-		{[]string{"-psn_0_12345"}, false, "", "", 0}, // what macOS adds when it launches an app
-		{[]string{"/home/me/pic.jpg"}, false, "", "/home/me/pic.jpg", 0},
-		{[]string{"--cascade", "3"}, false, "", "", 3},
-		{[]string{"--cascade", "2", "--theme", "dark", "/p/a b.png"}, false, "dark", "/p/a b.png", 2},
-		{[]string{"--theme", "light", `C:\Users\me\My Pictures\a b.png`}, false, "light", `C:\Users\me\My Pictures\a b.png`, 0},
+		{nil, "", "", "", 0},
+		{[]string{"--about"}, "about", "", "", 0},
+		{[]string{"--theme", "light", "--about"}, "about", "light", "", 0},
+		{[]string{"--theme", "dark", "--about"}, "about", "dark", "", 0},
+		{[]string{"-psn_0_12345"}, "", "", "", 0}, // what macOS adds when it launches an app
+		{[]string{"/home/me/pic.jpg"}, "", "", "/home/me/pic.jpg", 0},
+		{[]string{"--cascade", "3"}, "", "", "", 3},
+		{[]string{"--cascade", "2", "--theme", "dark", "/p/a b.png"}, "", "dark", "/p/a b.png", 2},
+		{[]string{"--theme", "light", `C:\Users\me\My Pictures\a b.png`}, "", "light", `C:\Users\me\My Pictures\a b.png`, 0},
 	} {
-		about, theme, file, casc := windowFlags(c.args)
-		if about != c.about || theme != c.theme || file != c.file || casc != c.casc {
-			t.Errorf("windowFlags(%v) = %v, %q, %q, %d; want %v, %q, %q, %d", c.args, about, theme, file, casc, c.about, c.theme, c.file, c.casc)
+		mode, theme, file, casc := windowFlags(c.args)
+		if mode != c.mode || theme != c.theme || file != c.file || casc != c.casc {
+			t.Errorf("windowFlags(%v) = %q, %q, %q, %d; want %q, %q, %q, %d", c.args, mode, theme, file, casc, c.mode, c.theme, c.file, c.casc)
 		}
 	}
 }

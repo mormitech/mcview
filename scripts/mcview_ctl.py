@@ -4,13 +4,13 @@
 As a library:
     from mcview_ctl import McView
     mc = McView.start("build/bin/mcview.app", "/tmp/Pictures/coast.jpg")
-    mc.cmd("key", key="e")
+    mc.cmd("edit")
     mc.shot("edit.png")
     mc.quit()
 
 From the shell (the app has to be running with --control):
     scripts/mcview_ctl.py '{"cmd": "state"}'
-    scripts/mcview_ctl.py key e          # the same as {"cmd": "key", "key": "e"}
+    scripts/mcview_ctl.py edit           # the same as {"cmd": "edit"}
     scripts/mcview_ctl.py --batch commands.json
 """
 import json
@@ -124,7 +124,7 @@ def main(argv):
         return 0
     name, rest = argv[1], argv[2:]
     args = {}
-    positional = {"key": ["key"], "tool": ["name"], "mode": ["mode"], "menu": ["name"], "open": ["path"], "edit": [], "wait": ["ms"]}.get(name, [])
+    positional = {"tool": ["name"], "mode": ["mode"], "menu": ["name"], "open": ["path"], "edit": [], "wait": ["ms"]}.get(name, [])
     for k, v in zip(positional, rest):
         args[k] = int(v) if v.isdigit() and k in ("ms",) else v
     print(json.dumps(mc.cmd(name, **args), indent=1))

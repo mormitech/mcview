@@ -62,9 +62,24 @@ func TestPastedPictureIsNotAskedAboutWhenStepping(t *testing.T) {
 	if note, _ := a.Step(1); note == "" || asked != 0 {
 		t.Errorf("a picture without a file keeps its note (%q) and asks nothing (%d)", note, asked)
 	}
-	// closing the window is where it is asked
-	if !a.discardOK("close the window") || asked != 1 {
-		t.Errorf("closing asks once: %d", asked)
+	// nothing was done to it, so closing asks nothing either (the clipboard still has the picture)
+	if a.current().Modified || !a.discardOK("close the window") || asked != 0 {
+		t.Errorf("a pasted picture that nothing was done to asks nothing: modified %v, asked %d", a.current().Modified, asked)
+	}
+	// the first change makes it modified, and then closing asks
+	pasted := a.current().State
+	if _, err := a.PaintPixels(0, `[[0,0,"#FF0000FF"]]`); err != nil {
+		t.Fatal(err)
+	}
+	if !a.current().Modified || !a.discardOK("close the window") || asked != 1 {
+		t.Errorf("a changed pasted picture asks once: modified %v, asked %d", a.current().Modified, asked)
+	}
+	// undo back to the pasted picture: it is unmodified again
+	if _, err := a.RestoreState(pasted); err != nil {
+		t.Fatal(err)
+	}
+	if a.current().Modified {
+		t.Errorf("undo back to the pasted picture leaves it modified")
 	}
 }
 

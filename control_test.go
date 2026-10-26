@@ -51,7 +51,7 @@ func TestControlModeNeedsTheTokenAndAnswersDialogs(t *testing.T) {
 	if fi, _ := os.Stat(file); runtime.GOOS != "windows" && fi.Mode().Perm() != 0o600 { // (Windows has no such permission bits)
 		t.Errorf("the control file is %v", fi.Mode().Perm())
 	}
-	if code, m := call(c.token, `{"cmd":"key","key":"e"}`); code != 200 || m["echo"] != "key" {
+	if code, m := call(c.token, `{"cmd":"wait","ms":1}`); code != 200 || m["echo"] != "wait" {
 		t.Errorf("a command for the page: %d %v", code, m)
 	}
 	// a browser page cannot reach it (it sends an Origin)

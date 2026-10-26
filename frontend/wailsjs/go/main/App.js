@@ -6,6 +6,26 @@ export function BakeFloat() {
   return window['go']['main']['App']['BakeFloat']();
 }
 
+export function ChatInfo() {
+  return window['go']['main']['App']['ChatInfo']();
+}
+
+export function ChatLogin() {
+  return window['go']['main']['App']['ChatLogin']();
+}
+
+export function ChatReset() {
+  return window['go']['main']['App']['ChatReset']();
+}
+
+export function ChatSend(arg1) {
+  return window['go']['main']['App']['ChatSend'](arg1);
+}
+
+export function ChatStop() {
+  return window['go']['main']['App']['ChatStop']();
+}
+
 export function ChooseImage() {
   return window['go']['main']['App']['ChooseImage']();
 }
@@ -34,8 +54,16 @@ export function CopyImageNative(arg1) {
   return window['go']['main']['App']['CopyImageNative'](arg1);
 }
 
+export function CropPicture(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['CropPicture'](arg1, arg2, arg3, arg4, arg5);
+}
+
 export function DeleteImage() {
   return window['go']['main']['App']['DeleteImage']();
+}
+
+export function DiscardChanges() {
+  return window['go']['main']['App']['DiscardChanges']();
 }
 
 export function DiscardOK(arg1) {
@@ -44,6 +72,10 @@ export function DiscardOK(arg1) {
 
 export function DrawLayer(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['DrawLayer'](arg1, arg2, arg3, arg4);
+}
+
+export function DrawShape(arg1, arg2) {
+  return window['go']['main']['App']['DrawShape'](arg1, arg2);
 }
 
 export function DrawStroke(arg1, arg2, arg3, arg4) {
@@ -86,12 +118,20 @@ export function NewBlank(arg1, arg2, arg3) {
   return window['go']['main']['App']['NewBlank'](arg1, arg2, arg3);
 }
 
+export function NewBlankColor(arg1, arg2, arg3) {
+  return window['go']['main']['App']['NewBlankColor'](arg1, arg2, arg3);
+}
+
 export function NewWindow() {
   return window['go']['main']['App']['NewWindow']();
 }
 
 export function OpenImage(arg1) {
   return window['go']['main']['App']['OpenImage'](arg1);
+}
+
+export function PaintPixels(arg1, arg2) {
+  return window['go']['main']['App']['PaintPixels'](arg1, arg2);
 }
 
 export function PasteLayer(arg1, arg2, arg3) {
@@ -106,8 +146,16 @@ export function PixelAt(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['PixelAt'](arg1, arg2, arg3, arg4);
 }
 
+export function PolygonPNG(arg1, arg2) {
+  return window['go']['main']['App']['PolygonPNG'](arg1, arg2);
+}
+
 export function PreparePixels() {
   return window['go']['main']['App']['PreparePixels']();
+}
+
+export function ResizeCanvas(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['ResizeCanvas'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function RestoreFloat(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) {
@@ -120,6 +168,10 @@ export function RestoreLayer(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) {
 
 export function RestoreState(arg1) {
   return window['go']['main']['App']['RestoreState'](arg1);
+}
+
+export function Retouch(arg1, arg2) {
+  return window['go']['main']['App']['Retouch'](arg1, arg2);
 }
 
 export function Reveal() {
@@ -136,6 +188,10 @@ export function SaveAs(arg1) {
 
 export function SaveSelectionAs(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['SaveSelectionAs'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function SaveToPath(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveToPath'](arg1, arg2, arg3);
 }
 
 export function SaveWindow() {

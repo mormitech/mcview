@@ -43,7 +43,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Zoom modes** on the keys **1** to **4**, as in IrfanView; the mode stays when you go to another picture and until you quit (a new window starts in **2**):
   **1** original size (100%, however small or big), **2** fit the window with a margin (85%; small pictures stay 100%), **3** fit every picture to
   the window borders, keeping its proportions, **4** stretch every picture to the window borders, **5** zoom until the side edges touch the window (the top and bottom may go over), **6** zoom until the top and bottom edges touch it (the sides may go over). **+** and **-** zoom, a mouse wheel zooms, dragging
-  moves the picture, double-click toggles 100%; on a Mac two fingers on the trackpad move the picture and a pinch zooms. Pull a big picture past its edge and it gives a little, then eases back.
+  moves the picture (a double click never changes the zoom); on a Mac two fingers on the trackpad move the picture and a pinch zooms. Pull a big picture past its edge and it gives a little, then eases back.
 - **Arrow keys** (Space for next, Backspace for previous) go through the pictures of the folder in alphabetical order, and go round. The title of the window
   says the size, the place in the folder (`3 / 5`) and the zoom.
 - **Rotate the view.** **R** turns the picture a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file is not changed until you save.
@@ -153,9 +153,13 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mcview picture.jpg`). `--theme dark` (or `light`)
 forces the look instead of the system's.
 
-**Control mode.** `mcview --control 0 picture.jpg` lets another program drive every feature (keys, menus, tools, pointer drags in picture pixels, zoom,
+**Control mode.** `mcview --control 0 picture.jpg` lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom,
 the answers of the dialogs) over a local, token-protected connection: for demo screenshots and scripted tests. See [docs/control.md](docs/control.md);
 `scripts/demo_screenshots.py` makes the screenshots of the manual that way.
+
+**Chat panel.** The speech bubble at the top right of a picture window (or the key **C**) opens a chat with Claude about the picture, and Claude can change it with picture tools: snapshots, drawing, fills, selecting, clone and healing patches, masks, resizing and cropping. It runs the Claude Code on the computer with the user's subscription (no API key), signs in through the browser, and reaches the picture through a private tool server that exists only for this window. See [docs/chat.md](docs/chat.md).
+
+**Polygon select.** In edit mode the second tool of the rail selects freely: draw round the part with the mouse, and when you let go the end is joined to the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Delete fills it with the second color, Ctrl+C copies what is inside it, Esc lets it go. **File → Discard Changes** (also a button in the edit bar) takes the picture back to its original, and undo brings the changes back.
 
 **Slow start?** Start the app with `MCVIEW_TRACE=/tmp/mcview-trace.txt` (macOS: `open --env MCVIEW_TRACE=/tmp/t.txt -a mcview.app picture.jpg`): each step of the
 start, in Go and in the UI, is written to that file with a time in milliseconds.

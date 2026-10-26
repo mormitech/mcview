@@ -31,19 +31,27 @@ type App struct {
 	pix      pixelCache           // the decoded picture for the pixel readout (see pixel.go)
 	infoWins map[string]*exec.Cmd // the windows of their own that are open, by key
 
-	clip      image.Image // a picture pasted from the clipboard, which has no file yet (image is "" then); see clip.go
-	clipPNG   []byte      // the same as a PNG, for the web view
-	workDir   string      // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
-	titleInfo string      // size, place in the folder and zoom of the picture, for the title
-	ctl       *control    // control mode (see control.go); nil when it is not asked for
-	blank     bool        // the picture is a new blank one that nothing was done to: it is not modified, and closing it asks nothing (see NewBlank)
-	edit      bool        // edit mode is on: the title says so
-	lastPaste time.Time   // the menu and the key can both ask for one paste
-	lastNew   time.Time   // the same for a new window
-	deleting  bool        // the question about deleting a picture is open
-	saving    bool        // the Save As dialog is open
-	spawned   int         // the windows this one started, so that each opens a little further down and right
-	cascade   int         // --cascade: how many steps of that this window was started at
+	clip        image.Image    // a picture pasted from the clipboard, which has no file yet (image is "" then); see clip.go
+	clipPNG     []byte         // the same as a PNG, for the web view
+	workDir     string         // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
+	titleInfo   string         // size, place in the folder and zoom of the picture, for the title
+	ctl         *control       // the commands of the window (see control.go); nil until control mode or the chat panel needs it
+	masks       maskStore      // the areas the chat panel's tools named (see masks.go)
+	cloneLog    []cloneEntry   // where parts were copied from and to (see retouch.go)
+	deleteItem  *menu.MenuItem // File → Delete Image…: only on while the picture has a file (see updateMenuItems)
+	discardItem *menu.MenuItem // File → Discard Changes: only on while the picture is modified
+	saveItem    *menu.MenuItem // File → Save As…: only on while there is a picture
+	closeItem   *menu.MenuItem // File → Close Image: only on while there is a picture
+	origImg     *image.NRGBA   // the picture with no file as it was made or pasted, for Discard Changes (see revert.go)
+	chat        chatState      // the chat panel: Claude Code in the background (see chat.go)
+	blank       bool           // the picture is a new blank one or one from the clipboard that nothing was done to: it is not modified, and closing it asks nothing (see setClip)
+	edit        bool           // edit mode is on: the title says so
+	lastPaste   time.Time      // the menu and the key can both ask for one paste
+	lastNew     time.Time      // the same for a new window
+	deleting    bool           // the question about deleting a picture is open
+	saving      bool           // the Save As dialog is open
+	spawned     int            // the windows this one started, so that each opens a little further down and right
+	cascade     int            // --cascade: how many steps of that this window was started at
 
 	states    map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
 	stateID   int              // the number of the one it is in; 0 is the empty window
@@ -164,6 +172,7 @@ func (a *App) titleWindow() {
 	if a.ctx == nil || a.mode != "" {
 		return
 	}
+	a.updateMenuItems()
 	if cur := a.current(); cur.Name != "" {
 		name := cur.Name
 		if cur.Modified {
@@ -172,6 +181,25 @@ func (a *App) titleWindow() {
 		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mcView v"+version()+a.editMark())
 	} else { // undo can take the window back to empty
 		wruntime.WindowSetTitle(a.ctx, "mcView v"+version()+a.editMark())
+	}
+}
+
+// updateMenuItems turns off the items of the File menu that have nothing to work on: Save As… and Close Image without a picture, Delete Image… without a picture or
+// with one that has no file (made here, or from the clipboard).
+func (a *App) updateMenuItems() {
+	a.mu.Lock()
+	del, save, closeImg, discard := a.deleteItem, a.saveItem, a.closeItem, a.discardItem
+	a.mu.Unlock()
+	cur := a.current()
+	changed := false
+	for item, off := range map[*menu.MenuItem]bool{del: cur.Path == "", save: cur.URL == "", closeImg: cur.URL == "", discard: !cur.Modified} {
+		if item != nil && item.Disabled != off {
+			item.Disabled = off
+			changed = true
+		}
+	}
+	if changed {
+		wruntime.MenuUpdateApplicationMenu(a.ctx)
 	}
 }
 
@@ -294,17 +322,20 @@ func (a *App) newWindow() {
 func (a *App) NewWindow() { a.newWindow() }
 
 // showAbout opens the About window. It is closed together with the app, and is not opened twice.
-func (a *App) showAbout() {
+func (a *App) showAbout() { a.showInfo("about") }
+
+// showInfo starts the window of its own for kind ("about"): a copy of this program with --kind. One of each at a time.
+func (a *App) showInfo(kind string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	if c := a.infoWins["about"]; c != nil && c.ProcessState == nil {
+	if c := a.infoWins[kind]; c != nil && c.ProcessState == nil {
 		return
 	}
 	exe, err := os.Executable()
 	if err != nil {
 		return
 	}
-	args := []string{"--about"}
+	args := []string{"--" + kind}
 	if a.theme != "" {
 		args = append([]string{"--theme", a.theme}, args...)
 	}
@@ -315,17 +346,18 @@ func (a *App) showAbout() {
 	if a.infoWins == nil {
 		a.infoWins = map[string]*exec.Cmd{}
 	}
-	a.infoWins["about"] = cmd
+	a.infoWins[kind] = cmd
 	go func() {
 		cmd.Wait()
 		a.mu.Lock()
-		delete(a.infoWins, "about")
+		delete(a.infoWins, kind)
 		a.mu.Unlock()
 	}()
 }
 
 // shutdown closes the About window together with the app.
 func (a *App) shutdown(ctx context.Context) {
+	a.stopChat()
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	for _, c := range a.infoWins {

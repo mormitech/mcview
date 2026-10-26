@@ -3,6 +3,27 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.37.7 – 2026-10-26
+
+Everything since 0.31.0, in one release: a chat with Claude next to the picture, and the tools to remove things from a photo.
+
+### Added
+- **Chat panel** (the speech bubble at the top right of a picture window, or **C**): chat with Claude about the picture and ask it to change it. It runs the Claude Code that is installed on the computer, in the background, with the user's Claude subscription (no API key and no terminal). If the user is not signed in, the panel offers **Sign in with Claude**, which opens a browser tab; Claude Code keeps the sign-in and mcView never sees it. Claude gets the picture tools of the window and nothing else (no files, no shell, no web). Answers stream in and are shown formatted (Markdown); the tools it uses are one line (`Processing… · 14 actions · 1 failed`, a click opens the list); **Stop** ends an answer, **New** starts a new conversation. The panel slides in and out, is minimized with the bar button, can be resized by dragging its left border (the width is remembered), and its message box grows with what is typed. See `docs/chat.md`.
+- **Picture tools for the chat**, from a private tool server of the window (it listens on `127.0.0.1` only while the chat is used, with a token that exists only inside the program, and serves that window only): `snapshot` (also zoomed in whole pixels, with an outline or a tinted mask, and the original file next to the picture now), the drawing tools (`draw_arrow`, `draw_line`, `draw_rect`, `draw_ellipse`, `draw_path`, `add_text`, `flood_fill`), `set_pixels`, `new_image`, `get_image`, `resize_canvas` and `crop`, selecting, copy and paste, and undo and redo. Every tool changes the picture at once; nothing moves a pointer or presses a key.
+- **Retouching with Claude**: masks (`select_by_color` outlines an object by its color, `create_mask` takes polygons of any number of points, `edit_mask`, `selection_mask` for what the user selected), `clone_region` (flip, any angle, scale, soft edge, opacity, and a seamless healing-brush mode), `blend_edges` (smooth, color match, Poisson), `fill_region` (patches from the surroundings, or smooth, nearest, average, solid, with grain and with limits on where it may copy from), `seam_score`, `discard_changes`. Claude is told to trace letters and small details exactly and to remove them one by one, never with a rectangle, and what to do when the user marks part of the picture.
+- **Polygon select** (the second tool of the edit rail): draw round the part freely; when the button is up the end is joined to the start and mcView turns the line into a polygon with a few corners, within about a pixel of what was drawn. **Hold the right mouse button** with the select tool or this tool to do the same. Delete fills the polygon with the second color, Ctrl+C copies what is inside it (the rest transparent), Esc lets it go. **Esc or a right click while a selection is being drawn drops it** (the rectangle too).
+- **File → Discard Changes** and a button in the edit bar: the picture goes back to the file on the disk (or to the pasted or new picture) as a step of the history, so undo brings the changes back and redo discards them again.
+- **Create image with your own settings**: Shift-click on *Create image* (or Shift+N) asks for the width, the height and the background (white, transparent or a color). The card says "Hold Shift for custom" and "Click to customize" while Shift is down. The plain click, N and File → Create Image still make the white 1280 × 720 picture.
+
+### Changed
+- **Control mode** no longer simulates a mouse or a keyboard: its pointer and key commands (`move`, `click`, `dblclick`, `drag`, `release`, `key`, `press`) are gone, and `shape`, `fill`, `select`, `text`, `pixel`, `polygon` and others put their result in at once. `scripts/demo_screenshots.py` uses them.
+- A picture that came from the clipboard is not "modified" until something is done to it, like a new blank image: no ● in the title, and closing it (Esc twice, Close Image, closing the window) or going to another picture asks nothing. The first change makes it modified, and undo back to it makes it unmodified again.
+- File → Delete Image… is greyed out when there is nothing to delete (no picture, or a picture without a file), and Save As… and Close Image are greyed out without a picture.
+- Double-clicking the picture no longer changes the zoom. Use **1** for 100%, **F** or **2** to fit, the wheel, a pinch, **+** and **-**.
+
+### Fixed
+- Closing a picture with transparency left the squares of the transparency on the home screen.
+
 ## 0.31.0 – 2026-10-26
 
 Everything since 0.12.27, in one release: an editor next to the viewer.
@@ -16,7 +37,7 @@ Everything since 0.12.27, in one release: an editor next to the viewer.
 - **Zoom modes 5 and 6**, as in IrfanView: the side edges touch the window, or the top and bottom edges. Mode 2 fits the picture to 85% of the window and is what every window starts with.
 - **Paste as a new picture** when edit mode is off (undo brings the old one back).
 - **Help → mcView Help** opens the manual (mormitech.com/tools/mcview/docs), with F1 on Windows and Linux; on macOS it is a Help menu after Window.
-- **Control mode**: `mcview --control 0` lets another program drive every feature (keys, menus, tools, pointer drags in picture pixels, zoom, options, full screen, the answers of the dialogs) over a local, token-protected connection. For demo screenshots and scripted tests; see `docs/control.md`, `scripts/mcview_ctl.py` and `scripts/demo_screenshots.py`. Off unless asked for.
+- **Control mode**: `mcview --control 0` lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom, options, full screen, the answers of the dialogs) over a local, token-protected connection. For demo screenshots and scripted tests; see `docs/control.md`, `scripts/mcview_ctl.py` and `scripts/demo_screenshots.py`. Off unless asked for.
 
 ### Changed
 - The window title says the picture's size, its place in the folder and the zoom; the bottom bar has no status line in view mode and repeats them only in full screen (where there is no title).
