@@ -8,9 +8,15 @@ export function ChooseImage():Promise<void>;
 
 export function ClearFloat():Promise<void>;
 
+export function ClipboardHasImage():Promise<boolean>;
+
 export function CloseWindow():Promise<void>;
 
 export function CopyImageNative(arg1:string):Promise<void>;
+
+export function DeleteImage():Promise<string>;
+
+export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 
 export function ExitFullscreen():Promise<void>;
 
@@ -26,11 +32,15 @@ export function Mode():Promise<string>;
 
 export function MovePasted(arg1:number,arg2:number,arg3:number,arg4:number,arg5:boolean):Promise<void>;
 
+export function NewBlank(arg1:number,arg2:number,arg3:boolean):Promise<void>;
+
 export function NewWindow():Promise<void>;
 
 export function OpenImage(arg1:string):Promise<void>;
 
 export function PasteLayer(arg1:number,arg2:number,arg3:number):Promise<main.PastedLayer>;
+
+export function PasteNew():Promise<void>;
 
 export function PixelAt(arg1:number,arg2:number,arg3:number,arg4:number):Promise<main.Pixel>;
 
@@ -48,13 +58,21 @@ export function RotatePNG(arg1:string,arg2:number):Promise<string>;
 
 export function SaveAs(arg1:number):Promise<string>;
 
+export function SaveSelectionAs(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number):Promise<string>;
+
 export function SaveWindow():Promise<void>;
 
 export function SelectionPNG(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number):Promise<string>;
 
+export function SetEditMode(arg1:boolean):Promise<void>;
+
 export function SetFloat(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:boolean):Promise<void>;
 
+export function SetMenuBar(arg1:boolean):Promise<void>;
+
 export function SetPasted(arg1:number,arg2:string,arg3:number,arg4:number,arg5:number,arg6:number,arg7:boolean):Promise<void>;
+
+export function SetTitleInfo(arg1:string):Promise<void>;
 
 export function SetTurn(arg1:number):Promise<void>;
 

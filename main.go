@@ -76,6 +76,7 @@ func main() {
 	var appMenuBar *menu.Menu
 	if !about { // the About window has no menu of its own
 		appMenuBar = appMenu(app)
+		app.menuBar = appMenuBar
 	}
 
 	trace("wails.Run")

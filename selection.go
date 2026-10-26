@@ -15,7 +15,7 @@ import (
 )
 
 // SelectionPNG is the part x, y, w × h of the picture as it is shown (the web view's natural size dispW × dispH), cut out of the
-// decoded file, as a PNG in base64: what Ctrl+C puts on the clipboard. Like the pixel readout it has the colours of the file, with no
+// decoded file, as a PNG in base64: what Ctrl+C puts on the clipboard. Like the pixel readout it has the colors of the file, with no
 // conversion. For a type Go cannot decode it returns "" and the UI cuts the part out of what the web view drew.
 func (a *App) SelectionPNG(x, y, w, h, dispW, dispH int) (string, error) {
 	pc, source, err := a.decoded()
@@ -37,7 +37,7 @@ func (a *App) SelectionPNG(x, y, w, h, dispW, dispH int) (string, error) {
 	if sub, ok := pc.img.(interface {
 		SubImage(image.Rectangle) image.Image
 	}); ok && pc.orient == 1 {
-		out = sub.SubImage(image.Rect(b.Min.X+x, b.Min.Y+y, b.Min.X+x+w, b.Min.Y+y+h)) // no copy, and no colour conversion
+		out = sub.SubImage(image.Rect(b.Min.X+x, b.Min.Y+y, b.Min.X+x+w, b.Min.Y+y+h)) // no copy, and no color conversion
 	} else {
 		n := image.NewNRGBA(image.Rect(0, 0, w, h))
 		for j := 0; j < h; j++ {
@@ -55,7 +55,7 @@ func (a *App) SelectionPNG(x, y, w, h, dispW, dispH int) (string, error) {
 	return base64.StdEncoding.EncodeToString(buf.Bytes()), nil
 }
 
-// RotatePNG turns a PNG (in base64) clockwise by quarter turns, 1 to 3, without any colour conversion: a selection that is copied
+// RotatePNG turns a PNG (in base64) clockwise by quarter turns, 1 to 3, without any color conversion: a selection that is copied
 // from a turned view (R) has to be turned the way it is shown. The turn is only of the view; no file is changed.
 func (a *App) RotatePNG(pngBase64 string, quarters int) (string, error) {
 	quarters = (quarters%4 + 4) % 4

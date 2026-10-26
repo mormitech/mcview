@@ -127,6 +127,79 @@ func (a *App) bakeFloat(emit bool) error {
 	return a.setPixelsEmit(base, a.current().Path, emit)
 }
 
+// DrawStroke is the pencil: a stroke through the pixels pts (x, y, x, y, … of the picture as shown, turned rot quarters) is drawn width pixels wide, round, in
+// the color col ("#rrggbb"), and the picture of this window becomes the one with it. It returns the picture (not emitted, as BakeFloat).
+func (a *App) DrawStroke(rot int, pts []int, col string, width int) (ImageInfo, error) {
+	var r, g, b uint8
+	if _, err := fmt.Sscanf(col, "#%02x%02x%02x", &r, &g, &b); err != nil {
+		return ImageInfo{}, fmt.Errorf("color %q is not #rrggbb", col)
+	}
+	base, err := a.shownPixels(rot)
+	if err != nil {
+		return ImageInfo{}, err
+	}
+	c := color.NRGBA{r, g, b, 255}
+	bb := base.Bounds()
+	width = max(1, min(width, 200))
+	lim := (float64(width)/2 - 0.25) * (float64(width)/2 - 0.25) // the same round tip as the one the UI shows (see stampOffsets in main.js)
+	mid := float64(width-1) / 2
+	put := func(x, y int) {
+		for j := 0; j < width; j++ {
+			for i := 0; i < width; i++ {
+				if (float64(i)-mid)*(float64(i)-mid)+(float64(j)-mid)*(float64(j)-mid) > lim {
+					continue
+				}
+				if p := image.Pt(x+i-(width-1)/2, y+j-(width-1)/2); p.In(bb) {
+					base.SetNRGBA(p.X, p.Y, c)
+				}
+			}
+		}
+	}
+	for i := 0; i+1 < len(pts); i += 2 {
+		x0, y0 := pts[i], pts[i+1]
+		if i == 0 {
+			put(x0, y0)
+			continue
+		}
+		x1, y1 := pts[i-2], pts[i-1] // the line from the point before (Bresenham)
+		dx, dy := abs(x0-x1), -abs(y0-y1)
+		sx, sy := 1, 1
+		if x1 > x0 {
+			sx = -1
+		}
+		if y1 > y0 {
+			sy = -1
+		}
+		e := dx + dy
+		for {
+			put(x1, y1)
+			if x1 == x0 && y1 == y0 {
+				break
+			}
+			e2 := 2 * e
+			if e2 >= dy {
+				e += dy
+				x1 += sx
+			}
+			if e2 <= dx {
+				e += dx
+				y1 += sy
+			}
+		}
+	}
+	if err := a.setPixelsEmit(base, a.current().Path, false); err != nil {
+		return ImageInfo{}, err
+	}
+	return a.Image(), nil
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
+}
+
 // PastedLayer is what PasteLayer puts on the picture: the clipboard picture as a PNG in base64, its size, and where it is laid.
 type PastedLayer struct {
 	PNG string `json:"png"`
@@ -155,6 +228,23 @@ func (a *App) PasteLayer(rot, x, y int) (PastedLayer, error) {
 		return PastedLayer{}, err
 	}
 	return a.pasteClipboard(img, rot, x, y)
+}
+
+// PasteNew is Ctrl+V with edit mode off: the clipboard picture becomes the picture of the window, whatever its size, and the one that was open is
+// dropped (undo brings it back: the window shows the new picture by itself, which is a step of the history).
+func (a *App) PasteNew() error {
+	a.mu.Lock()
+	if time.Since(a.lastPaste) < 400*time.Millisecond {
+		a.mu.Unlock()
+		return nil
+	}
+	a.lastPaste = time.Now()
+	a.mu.Unlock()
+	img, err := readClipboardImage()
+	if err != nil {
+		return err
+	}
+	return a.setClip(img)
 }
 
 func (a *App) pasteClipboard(img image.Image, rot, x, y int) (PastedLayer, error) {

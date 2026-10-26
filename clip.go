@@ -63,13 +63,31 @@ func isDir(path string) bool {
 	return err == nil && fi.IsDir()
 }
 
+// ClipboardHasImage is whether the clipboard has a picture now (the empty window offers it).
+func (a *App) ClipboardHasImage() bool {
+	img, err := readClipboardImage()
+	return err == nil && img != nil && img.Bounds().Dx() > 0 && img.Bounds().Dy() > 0
+}
+
+// NewBlank makes a new picture of w × h pixels, white or transparent, the picture of this window (it has no file yet, like a clipboard picture).
+func (a *App) NewBlank(w, h int, transparent bool) error {
+	if w < 1 || h < 1 || w*h > maxPixels {
+		return fmt.Errorf("a picture of %d × %d is too small or too big", w, h)
+	}
+	n := image.NewNRGBA(image.Rect(0, 0, w, h))
+	if !transparent {
+		draw.Draw(n, n.Bounds(), image.White, image.Point{}, draw.Src)
+	}
+	return a.setPixels(n, "")
+}
+
 // setClip makes a picture without a file the picture of this window.
 func (a *App) setClip(img image.Image) error {
 	b := img.Bounds()
 	if b.Dx() < 1 || b.Dy() < 1 || b.Dx()*b.Dy() > maxPixels {
 		return fmt.Errorf("the picture on the clipboard is %d × %d: too small or too big", b.Dx(), b.Dy())
 	}
-	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy())) // the colours as they are, not premultiplied
+	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy())) // the colors as they are, not premultiplied
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
 	return a.setPixels(n, "")
 }
@@ -84,8 +102,8 @@ func (a *App) setPixelsEmit(img *image.NRGBA, file string, emit bool) error {
 		return err
 	}
 	png := buf.Bytes()
-	if file != "" { // the colours are shown as they were in the file
-		png = withChunks(png, colourChunks(file))
+	if file != "" { // the colors are shown as they were in the file
+		png = withChunks(png, colorChunks(file))
 	}
 	a.mu.Lock()
 	a.image = file

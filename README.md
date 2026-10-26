@@ -28,9 +28,9 @@ frontend built with Vite.
   A mouse wheel zooms; on a Mac two fingers on the trackpad move the picture, and a pinch zooms.
 - **Arrow keys** (and Space for next, Backspace for previous). Left and right show the previous and the next picture of the folder, in alphabetical order, and go round (after the last comes the
   first). The bar at the bottom shows the folder, and which picture of it you are looking at.
-- **Pixel view and colour readout.** Tab switches between smoothed and pixelated (every pixel a sharp square); in the pixelated view the
+- **Pixel view and color readout.** Tab switches between smoothed and pixelated (every pixel a sharp square); in the pixelated view the
   bar at the bottom shows position, R G B A and hex of the pixel under the pointer, as `[x, y]  (r, g, b) - #rrggbb`. The numbers are the ones in the file (mcView decodes
-  it itself, with no colour conversion), except for AVIF, SVG and ICO, where they are read from what the web view drew and the bar says so.
+  it itself, with no color conversion), except for AVIF, SVG and ICO, where they are read from what the web view drew and the bar says so.
 - **Rotate the view.** R turns the picture a quarter clockwise, Shift+R counterclockwise (a quick animation). Only the view turns; the file is not changed.
 - **Paste.** Ctrl+V lays the clipboard picture over the picture, near the top left corner of what you see, as a floating part you can drag and stretch (Delete, Backspace or Esc take it away; a click beside it lays it down); the name gets a ● until you save it. A clipboard picture that is about as big as the picture asks whether it is a new image; a window with no picture takes it as its picture.
 - **Move and stretch a selection (like Paint).** Without Shift, drag an edge of the selection to stretch the selected part, or its top left corner to move it (the place it

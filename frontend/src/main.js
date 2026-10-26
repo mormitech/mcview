@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DeleteImage, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -39,27 +39,22 @@ document.addEventListener('click', (ev) => {
 
 // ---- Viewer ----------------------------------------------------------------------------------------------
 // How the picture sits in the window is one of four modes, the way IrfanView has them on the keys 1 to 4, and the mode stays when
-// the next or the previous picture is shown (and the next time mcView starts):
+// the next or the previous picture is shown (until the window is closed; every new window starts with 2):
 //   1  original  - the pixels of the picture, 100%, however small or big it is (a big one is centred and can be moved)
-//   2  large     - a picture bigger than the window is shrunk to fit it, a smaller one stays 100% (the default)
+//   2  large     - every picture is zoomed, up or down, to fill 85% of the window, keeping its proportions (the default)
 //   3  contain   - every picture is zoomed, up or down, to touch the borders of the window, keeping its proportions
 //   4  stretch   - every picture is stretched border to border, proportions or not
 // The scroll wheel (or a pinch on the trackpad) zooms around the pointer (on a Mac two fingers on the trackpad move the picture instead),
 // dragging moves the picture, + and - zoom: that leaves
 // the mode until the next picture or the next of the keys 1 to 4. A double click toggles between 100% and the mode.
-// The arrow keys go to the previous and the next picture of the folder (so do Backspace and Space, as in IrfanView), Enter toggles full screen (Esc leaves it), Tab the pixelated view, Shift and drag selects, Ctrl+C copies, Ctrl+V pastes, S saves, R turns the picture (Shift+R the other way), Ctrl+Z undoes and Ctrl+Shift+Z redoes, Ctrl+N opens a new window.
+// The arrow keys go to the previous and the next picture of the folder (so do Backspace and Space, as in IrfanView), Enter toggles full screen (Esc leaves it), E or Tab the edit mode (with the pixelated view), Shift and drag selects, Ctrl+C copies, Ctrl+V pastes, S saves, R turns the picture (Shift+R the other way), Ctrl+Z undoes and Ctrl+Shift+Z redoes, Ctrl+N opens a new window.
 
 const MODES = {'1': 'original', '2': 'large', '3': 'contain', '4': 'stretch'};
 const pic = $('pic');
-const view = {name: '', dir: '', index: 0, count: 0, mode: savedMode(), pixelated: false, state: 0, modified: false, canAlpha: false, fl: null, tdrag: null, hlMode: '', token: 0, sel: null, selDrag: null, rot: 0, angle: 0, free: false, ox: 0, oy: 0, sx: 1, sy: 1, x: 0, y: 0, drag: null};
+const view = {tool: 'select', name: '', dir: '', index: 0, count: 0, mode: 'large', pixelated: false, state: 0, modified: false, canAlpha: false, fl: null, tdrag: null, hlMode: '', token: 0, sel: null, selDrag: null, rot: 0, angle: 0, free: false, ox: 0, oy: 0, sx: 1, sy: 1, x: 0, y: 0, drag: null};
 const CHECKER = 'repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%)'; // the squares of a picture with transparent parts, a bluish one and a white one
 let problemTimer = 0;
 let pointerDown = false;
-
-function savedMode() {
-  try { const m = localStorage.getItem('mcview.mode'); if (Object.values(MODES).includes(m)) return m; } catch {}
-  return 'large';
-}
 
 // R turns the picture clockwise by a quarter, Shift+R counterclockwise: only the view (the file is not touched). view.rot is the number
 // of quarter turns, 0 to 3; view.angle counts them without wrapping, so that the animation always turns the short way. Everything below
@@ -115,7 +110,7 @@ function modeScale() {
   const b = stageSize(), w = dispW(), h = dispH(), fit = Math.min(b.w / w, b.h / h);
   switch (view.mode) {
     case 'original': return [1, 1];
-    case 'large': return [Math.min(1, fit), Math.min(1, fit)];
+    case 'large': return [fit * 0.85, fit * 0.85]; // 85% of the window, up or down
     case 'contain': return [fit, fit];
     default: return [b.w / w, b.h / h];
   }
@@ -203,9 +198,20 @@ function draw() {
   const zoom = Math.abs(view.sx - view.sy) > 0.005 ? `${pct(view.sx)} × ${pct(view.sy)}` : pct(view.sx);
   const sel = selectionRect();
   setStatus(view.dir, `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}`, view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''));
+  document.body.classList.toggle('sel', !!(sel || view.fl)); // in full screen the bar stays for as long as there is a selection
+  tellInfo(pic.naturalWidth ? `${dispW()} × ${dispH()}${view.count ? `  ·  ${view.index} / ${view.count}` : ''}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}` : '');
   renderFloat();
+  renderInk();
   renderSelection();
   if (view.pixelated && lastPointer) readPixel(lastPointer.x, lastPointer.y); // the picture moved under the pointer
+}
+
+// What the status bar used to say about the picture (size, place in the folder, zoom) goes to Go, for the title of the window.
+let toldInfo = '';
+function tellInfo(text) {
+  if (text === toldInfo) return;
+  toldInfo = text;
+  SetTitleInfo(text).catch(() => {});
 }
 
 function setStatus(folder, info = '', name = '') {
@@ -220,7 +226,6 @@ function setStatus(folder, info = '', name = '') {
 function setMode(mode) {
   stopBounce();
   view.mode = mode; view.free = false;
-  try { localStorage.setItem('mcview.mode', mode); } catch {}
   draw();
 }
 
@@ -242,6 +247,11 @@ function zoomTo100() {
 }
 
 // opts.rot: the turn the picture is shown with (undo brings a picture back as it was turned); a new picture is not turned.
+// The empty window offers the picture that is on the clipboard (if there is one) next to Open file…
+function offerClipboard() {
+  ClipboardHasImage().then((has) => { if (!$('empty').hidden) $('open-clip').hidden = !has; }).catch(() => {});
+}
+
 function showImage(info, opts = {}) {
   let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
   view.state = info?.state || 0;
@@ -250,7 +260,8 @@ function showImage(info, opts = {}) {
   if (!info?.url) { // no picture: the window as it is when it starts
     stopBounce(); pic.onload = null; pic.removeAttribute('src');
     view.name = ''; view.modified = false; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
-    pic.hidden = true; $('empty').hidden = false; setStatus(''); renderSelection();
+    pic.hidden = true; $('empty').hidden = false; setStatus(''); renderSelection(); offerClipboard();
+    if (editOn()) setEdit(false); // no image: no edit mode (closing it, deleting the last one, undo back to the empty window)
     done();
     return loaded;
   }
@@ -280,13 +291,13 @@ function showImage(info, opts = {}) {
   return loaded;
 }
 
-function problem(text, bad = true) {
+function problem(text, bad = true, ms = 4000) {
   $('status').hidden = false;
   $('name').textContent = ''; $('folder').textContent = text; $('folder').title = ''; $('info').textContent = '';
   $('status').classList.toggle('bad', bad);
   clearTimeout(problemTimer);
   document.body.classList.add('peek');
-  problemTimer = setTimeout(() => { document.body.classList.remove('peek'); draw(); }, 4000);
+  problemTimer = setTimeout(() => { document.body.classList.remove('peek'); draw(); }, ms);
 }
 
 // Left and right arrow: the previous and the next picture of the folder, in alphabetical order.
@@ -303,8 +314,8 @@ async function choose() {
 
 // ---- Pixel readout ---------------------------------------------------------------------------------------
 // Tab switches the picture between smoothed and pixelated (every pixel a sharp square, nothing blended), and in the pixelated view
-// the bottom bar shows the colour of the pixel under the pointer. The numbers come from Go, which decodes the file a second time
-// (the web view converts colours for the screen, so what it shows is not the number in the file); for types Go cannot decode they are
+// the bottom bar shows the color of the pixel under the pointer. The numbers come from Go, which decodes the file a second time
+// (the web view converts colors for the screen, so what it shows is not the number in the file); for types Go cannot decode they are
 // read from what the web view drew, and the bar says so. The pixelated view stays when the next picture is shown, but not the next
 // time mcView starts.
 
@@ -312,6 +323,160 @@ let pixelState = '';   // '' not asked, 'preparing', 'go' or 'browser' (where th
 let pixelCanvas = null;
 let lastPointer = null;
 let pixelPending = null, pixelBusy = false;
+
+// Edit mode (E): the edit bar, the status bar in full screen, [edit] in the title and the status bar, and the pixelated view (leaving it smooths the picture again).
+// The pixelated view follows it, so it is not a step of the history of its own: the steps always show the view the mode has.
+const editOn = () => document.body.classList.contains('edit');
+function setEdit(on) {
+  if (on && !pic.naturalWidth) return; // nothing to edit
+  document.body.classList.toggle('edit', on);
+  if (!on) closeDock();
+  if (on) setTool('select');
+  syncPenDock();
+  $('editmark').hidden = !on;
+  SetEditMode(on).catch(() => {});
+  if (pic.naturalWidth && view.pixelated !== on) setPixelated(on); else view.pixelated = on;
+  updateHover(false);
+}
+
+// ---- Tools of the edit bar: select (the default when edit mode starts) and the pencil ----------------------------------
+// With edit mode off the selection is the only thing there is. The pencil draws one pixel wide strokes with the left button in the first color,
+// with the right button in the second; a stroke is shown on #ink while the button is down and then drawn into the picture by Go (a step of the history).
+const tool = () => (editOn() ? view.tool : 'select');
+
+function setTool(t) {
+  if (t !== 'select' && view.tool !== t) clearSelection(); // drawing has no selection
+  view.tool = t;
+  syncPenDock();
+  for (const k of ['select', 'pen']) $(`tool-${k}`).classList.toggle('on', k === t);
+  updateHover(false);
+}
+
+let ink = null; // the stroke that is being drawn: {pts: [x, y, x, y, …], color}
+
+function inkPoint(ev) {
+  const [px, py] = pointInPicture(ev.clientX, ev.clientY);
+  return [clamp(Math.floor(px), 0, dispW() - 1), clamp(Math.floor(py), 0, dispH() - 1)];
+}
+
+function renderInk() {
+  const cv = $('ink');
+  if (!ink) { cv.hidden = true; return; }
+  cv.style.left = `${view.x + view.ox}px`; cv.style.top = `${view.y + view.oy}px`;
+  cv.style.width = `${dispW() * view.sx}px`; cv.style.height = `${dispH() * view.sy}px`;
+  cv.hidden = false;
+}
+
+// The round tip of the pencil: the pixels around the point that are inside a circle of the width (Go draws the same, see DrawStroke).
+function stampOffsets(width) {
+  const lim = (width / 2 - 0.25) ** 2, mid = (width - 1) / 2, c = Math.floor((width - 1) / 2), out = [];
+  for (let j = 0; j < width; j++) for (let i = 0; i < width; i++) if ((i - mid) ** 2 + (j - mid) ** 2 <= lim) out.push([i - c, j - c]);
+  return out;
+}
+
+function startInk(ev) {
+  const cv = $('ink');
+  cv.width = dispW(); cv.height = dispH();
+  ink = {pts: [], width: paint.width, color: ev.button === 2 ? paint.bg : paint.fg, ctx: cv.getContext('2d')};
+  ink.tip = stampOffsets(ink.width);
+  ink.ctx.fillStyle = ink.color;
+  addInk(inkPoint(ev));
+  renderInk();
+}
+
+function addInk([x, y]) {
+  const n = ink.pts.length;
+  if (n && ink.pts[n - 2] === x && ink.pts[n - 1] === y) return;
+  let [x1, y1] = n ? [ink.pts[n - 2], ink.pts[n - 1]] : [x, y];
+  const dx = Math.abs(x - x1), dy = -Math.abs(y - y1), sx = x1 < x ? 1 : -1, sy = y1 < y ? 1 : -1;
+  let e = dx + dy;
+  for (;;) { // the same line Go draws (Bresenham)
+    for (const [i, j] of ink.tip) ink.ctx.fillRect(x1 + i, y1 + j, 1, 1);
+    if (x1 === x && y1 === y) break;
+    const e2 = 2 * e;
+    if (e2 >= dy) { e += dy; x1 += sx; }
+    if (e2 <= dx) { e += dx; y1 += sy; }
+  }
+  ink.pts.push(x, y);
+}
+
+async function finishInk() {
+  const k = ink;
+  try {
+    const info = await DrawStroke(view.rot, k.pts, k.color, k.width);
+    await showImage(info, {keepView: true, rot: 0});
+    commit();
+  } catch (e) { problem(errText(e)); }
+  ink = null;
+  renderInk();
+}
+
+// ---- Colors: the two wells at the bottom of the edit bar, and the palette that slides up from the status bar ----------
+// A click on a well opens the palette for that color; a click anywhere else closes it, and so does the pointer leaving it once a color was changed in it.
+const PALETTE = ['#000000', '#7F7F7F', '#880015', '#ED1C24', '#FF7F27', '#FFF200', '#22B14C', '#00A2E8', '#3F48CC', '#A349A4',
+  '#FFFFFF', '#C3C3C3', '#B97A57', '#FFAEC9', '#FFC90E', '#EFE4B0', '#B5E61D', '#99D9EA', '#7092BE', '#C8BFE7'];
+const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, native: false, width: 5};
+
+// The ribbon with the width of the pencil: there while the pencil is the tool (and the palette is not).
+function syncPenDock() {
+  const open = editOn() && view.tool === 'pen' && !$('dock').classList.contains('open');
+  if (open) $('pendock').style.bottom = `${$('status').hidden ? 0 : $('status').offsetHeight}px`;
+  $('pendock').classList.toggle('open', open);
+}
+
+function showPenWidth() {
+  $('pen-wv').textContent = `${paint.width} px`;
+  const d = Math.min(paint.width, 28);
+  $('pen-dot').style.width = $('pen-dot').style.height = `${d}px`;
+  $('pen-dot').style.background = paint.fg;
+}
+
+function showColors() {
+  showPenWidth();
+  $('well-fg').firstElementChild.style.background = paint.fg;
+  $('well-bg').firstElementChild.style.background = paint.bg;
+  for (const c of $('palette').children) c.classList.toggle('sel', c.dataset.color === paint[paint.target]);
+}
+
+function openDock(target) {
+  paint.target = target; paint.changed = false;
+  $('dock').style.bottom = `${$('status').hidden ? 0 : $('status').offsetHeight}px`;
+  $('dock-native').value = paint[target].toLowerCase();
+  $('dock').classList.add('open');
+  syncPenDock();
+  showColors();
+}
+
+function closeDock() {
+  if (paint.native) return; // the system picker is open: it closes the palette when it is done
+  $('dock').classList.remove('open');
+  syncPenDock();
+}
+
+function setColor(c) {
+  paint[paint.target] = c.toUpperCase(); paint.changed = true;
+  showColors();
+}
+
+function initDock() {
+  for (const c of PALETTE) {
+    const b = document.createElement('button'); b.className = 'cell'; b.dataset.color = c; b.title = c; b.style.background = c;
+    b.onclick = () => setColor(c);
+    $('palette').append(b);
+  }
+  $('pen-w').addEventListener('input', () => { paint.width = +$('pen-w').value; showPenWidth(); });
+  showPenWidth();
+  for (const t of ['fg', 'bg']) {
+    $(`well-${t}`).onclick = () => { if ($('dock').classList.contains('open') && paint.target === t) closeDock(); else openDock(t); };
+  }
+  $('dock-more').onclick = () => { paint.native = true; $('dock-native').click(); };
+  $('dock-native').addEventListener('input', (ev) => setColor(ev.target.value));
+  $('dock-native').addEventListener('change', () => { paint.native = false; });
+  window.addEventListener('focus', () => { paint.native = false; }); // back from the system picker, however it was closed
+  $('dock').addEventListener('mouseleave', () => { if (paint.changed) closeDock(); });
+  window.addEventListener('pointerdown', (ev) => { if (!ev.target.closest('#dock, #wells, #pendock')) closeDock(); }, true);
+  showColors();
+}
 
 function setPixelated(on) {
   view.pixelated = on;
@@ -354,15 +519,24 @@ const hex2 = (v) => v.toString(16).toUpperCase().padStart(2, '0');
 
 function showPixel(p) {
   if (!view.pixelated || !p?.ready) { if (pixelState !== 'preparing') clearPixel(); return; }
-  // [x, y]  (r, g, b) - #rrggbb; a pixel that is not opaque has its alpha as a fourth number and at the end of the hex code
-  const rgb = p.a < 255 ? `(${p.r}, ${p.g}, ${p.b}, ${p.a})` : `(${p.r}, ${p.g}, ${p.b})`;
+  // x 12  y 34 | R ▬ 255  G ▬ 128  B ▬ 0 | (#rrggbb, swatch); a pixel that is not opaque has its alpha as a fourth meter and at the end of the hex code
   const code = `#${hex2(p.r)}${hex2(p.g)}${hex2(p.b)}${p.a < 255 ? hex2(p.a) : ''}`;
-  const from = pixelState === 'browser' ? '  ·  from the screen' : '';
-  const sw = document.createElement('span'); sw.className = 'sw';
-  const fill = document.createElement('b'); fill.style.background = `rgba(${p.r},${p.g},${p.b},${p.a / 255})`; sw.append(fill);
-  const text = document.createElement('span');
-  text.textContent = `[${p.x}, ${p.y}]  ${rgb} - ${code}${from}`;
-  $('pixel').replaceChildren(sw, text);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
+  const pos = el('span', 'pos');
+  for (const [k, v] of [['x', p.x], ['y', p.y]]) { const s = el('span'); s.append(el('i', '', k), String(v)); pos.append(s); }
+  const chans = el('span', 'chans');
+  const channels = [['R', p.r, 'r'], ['G', p.g, 'g'], ['B', p.b, 'b']];
+  if (p.a < 255) channels.push(['A', p.a, 'a']);
+  for (const [name, v, cls] of channels) {
+    const meter = el('span', 'm'), fill = el('s'); fill.style.width = `${v / 255 * 100}%`; meter.append(fill);
+    const ch = el('span', `ch ${cls}`); ch.append(el('em', '', name), meter, el('span', 'n', String(v))); chans.append(ch);
+  }
+  const sw = el('span', 'sw');
+  const fill = el('b'); fill.style.background = `rgba(${p.r},${p.g},${p.b},${p.a / 255})`; sw.append(fill);
+  const chip = el('span', 'chip'); chip.append(el('span', '', code), sw);
+  const items = [pos, el('span', 'sep'), chans, el('span', 'sep'), chip];
+  if (pixelState === 'browser') items.push(el('span', 'from', 'from the screen'));
+  $('pixel').replaceChildren(...items);
   $('pixel').hidden = false;
 }
 
@@ -404,7 +578,7 @@ async function readPixel(clientX, clientY) {
 
 // ---- Selection and copy ----------------------------------------------------------------------------------
 // Shift and drag selects a part of the picture; Ctrl+C (Cmd+C on a Mac, Ctrl+Insert) puts just that part on the clipboard, or the whole
-// picture when nothing is selected. The part is cut out of the decoded file (see SelectionPNG), so it has the colours of the file.
+// picture when nothing is selected. The part is cut out of the decoded file (see SelectionPNG), so it has the colors of the file.
 // In the pixelated view the selection snaps to whole pixels; in the smoothed view it follows the pointer, and what is copied is the
 // pixels it touches. The selection is kept in picture pixels, so it stays on its place when the picture is zoomed or moved.
 
@@ -490,10 +664,12 @@ const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-r
 // ("content", like Paint: the selected part is stretched by its edges and moved by its top left corner; see below).
 function updateHover(shift) {
   if (view.selDrag?.edge || view.tdrag || view.drag) return;
-  const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, !shift) : null;
+  if (tool() === 'pen') { view.hl = null; view.hlMode = ''; $('stage').style.cursor = 'crosshair'; return; }
+  const editOn = document.body.classList.contains('edit');
+  const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, true) : null;
   const was = JSON.stringify([view.hl, view.hlMode]);
   view.hl = hit;
-  view.hlMode = hit ? (shift ? 'frame' : 'content') : '';
+  view.hlMode = hit ? (editOn ? 'content' : 'frame') : '';
   const key = hit ? (hit.t ? 't' : hit.b ? 'b' : '') + (hit.l ? 'l' : hit.r ? 'r' : '') : '';
   $('stage').style.cursor = hit?.move || (view.hlMode === 'content' && key === 'tl') ? 'move' : key ? RESIZE_CURSORS[key] : '';
   if (was !== JSON.stringify([view.hl, view.hlMode])) renderSelection();
@@ -670,7 +846,7 @@ async function cutPng(r) {
 
 let lastCopy = 0;
 
-async function copySelection() {
+async function copySelection(auto = false) {
   if (!pic.naturalWidth) return;
   const now = performance.now();
   if (now - lastCopy < 400) return; // the key and the system's copy command can both come for one press
@@ -684,7 +860,8 @@ async function copySelection() {
     } catch { await CopyImageNative(b64); }
     copiedKey = view.sel && selectionBox() ? boxKey(selectionBox()) : null;
     renderSelection();
-    problem(`Copied ${r.w} × ${r.h} pixels${view.sel ? ' (the selection)' : ''} to the clipboard`, false);
+    if (auto) problem(`Selection copied to the clipboard  ·  ${r.w} × ${r.h}`, false, 1400); // (a finished selection is copied by itself: a short note)
+    else problem(`Copied ${r.w} × ${r.h} pixels${view.sel ? ' (the selection)' : ''} to the clipboard`, false);
   } catch (e) { problem(errText(e)); }
 }
 
@@ -741,6 +918,7 @@ function onWheel(ev) {
   if (isWheelNotch(ev) && now - lastTrackpad > 120) zoom(); else panBy(ev.deltaX, ev.deltaY);
 }
 
+// With edit mode off, paste always makes the clipboard picture the picture of the window (undo brings the old one back); the rest is for edit mode on.
 // Ctrl+V (Cmd+V, Shift+Insert, Edit → Paste): the picture on the clipboard becomes the picture of the window. It has no file yet:
 // the title says [clipboard image], and S saves it.
 // Paste (Ctrl+V, Cmd+V, Edit → Paste): the picture on the clipboard is laid over the picture, near the top left corner of what is visible, as a part that
@@ -750,6 +928,7 @@ function onWheel(ev) {
 async function pasteImage() {
   try {
     if (view.fl) await flushFloat({clear: false});
+    if (!document.body.classList.contains('edit')) { await PasteNew(); return; } // edit mode off: a whole new image (the 'image' event shows it and makes it a step)
     let px = 0, py = 0;
     if (pic.naturalWidth) { const r = $('stage').getBoundingClientRect(); [px, py] = pointInPicture(r.left + 12, r.top + 12); }
     const L = await PasteLayer(view.rot, Math.ceil(px), Math.ceil(py)); // (rounded up: the first pixel that is seen whole, 12 screen pixels in from the corner)
@@ -786,8 +965,22 @@ async function closeImage() {
 
 // S (Ctrl+S, Cmd+S, File → Save As…): asks where to save the picture. Saving it to another folder makes that folder the one the
 // window works in, and the arrow keys go through its pictures.
+// Create Image (File menu, and the empty window): a new white 1280 × 720 image, and edit mode starts with it.
+let editAfterImage = false;
+async function createImage() {
+  try { editAfterImage = true; await NewBlank(1280, 720, false); } catch (e) { editAfterImage = false; problem(errText(e)); }
+}
+
+// D: the picture is deleted (the system asks first); the next picture of the folder is shown in its place, with the folder's new count.
+async function deleteImage() {
+  try { const note = await DeleteImage(); if (note) problem(note, false, 2000); } catch (e) { problem(errText(e)); }
+}
+
 async function saveAs() {
-  try { const note = await SaveAs(view.rot); if (note) problem(note, false); } catch (e) { problem(errText(e)); }
+  try {
+    if (view.fl) await flushFloat(); // what was lifted is part of what is saved
+    const r = selectionRect(); // with a selection only that part is saved, as a picture of its own; the window keeps its picture
+    const note = r ? await SaveSelectionAs(view.rot, r.x, r.y, r.w, r.h) : await SaveAs(view.rot); if (note) problem(note, false); } catch (e) { problem(errText(e)); }
 }
 
 // When the window changes its size (full screen with Enter, and back, or the window dragged bigger), a picture that was zoomed or
@@ -797,9 +990,23 @@ async function saveAs() {
 let lastStage = null, anchor = null;
 
 // Full screen has no bar at the bottom; Shift shows it for as long as it is held (and a message for a few seconds).
+// On Windows the menu bar is hidden in full screen and comes back while the pointer is at the top edge.
+let menuShown = true;
+function showMenuBar(on) { if (on !== menuShown) { menuShown = on; SetMenuBar(on).catch(() => {}); } }
 async function refreshFullscreen() {
-  try { document.body.classList.toggle('full', await IsFullscreen()); } catch {}
+  try {
+    const full = await IsFullscreen();
+    document.body.classList.toggle('full', full);
+    showMenuBar(!full);
+  } catch {}
 }
+window.addEventListener('mousemove', (ev) => {
+  if (!document.body.classList.contains('full')) return;
+  document.body.classList.toggle('nearbottom', !editOn() && ev.clientY >= window.innerHeight - 44); // the bar comes while the pointer is at the bottom (edit mode has the bar already)
+  if (ev.clientY <= 1) showMenuBar(true); else if (ev.clientY > 40) showMenuBar(false);
+});
+
+document.documentElement.addEventListener('mouseleave', () => document.body.classList.remove('nearbottom'));
 
 // The system takes a moment to get in and out of full screen; ask again until it is done.
 function settleFullscreen() { for (const ms of [100, 400, 1000, 1800]) setTimeout(refreshFullscreen, ms); }
@@ -863,16 +1070,15 @@ async function travel(to) {
   try {
     if (e.state !== view.state) { // another picture (or none): Go brings it back, the view is set as it was
       // Go brings the picture back with its lifted part in one call, so that the circle of the title does not go out for a moment
-      const info = fl?.pasted ? await RestoreLayer(e.state, e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated) : fl ? await RestoreFloat(e.state, e.rot, fl.src.x, fl.src.y, fl.src.w, fl.src.h, fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated) : await RestoreState(e.state);
+      const info = fl?.pasted ? await RestoreLayer(e.state, e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !editOn()) : fl ? await RestoreFloat(e.state, e.rot, fl.src.x, fl.src.y, fl.src.w, fl.src.h, fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !editOn()) : await RestoreState(e.state);
       const same = view.state !== 0 && info?.url && info.name === view.name && info.dir === view.dir && e.mode === view.mode; // the same picture, with a change undone or redone: the zoom stays
-      view.mode = e.mode; if (!same) view.free = false; view.pixelated = e.pixelated; pic.classList.toggle('pixelated', e.pixelated);
-      try { localStorage.setItem('mcview.mode', e.mode); } catch {}
+      view.mode = e.mode; if (!same) view.free = false; view.pixelated = editOn(); pic.classList.toggle('pixelated', editOn());
       if (fl?.url) { const fe = $('float'); fe.src = fl.url; await fe.decode().catch(() => {}); } // the lifted part is ready before the picture changes
       await showImage(info, {rot: e.rot, keepView: !!same, fl: fl?.url ? fl : null, sel});
     } else {
       if (hadFloat && !e.fl) ClearFloat().catch(() => {});
       if (e.mode !== view.mode) setMode(e.mode);
-      if (e.pixelated !== view.pixelated) setPixelated(e.pixelated);
+      if (editOn() !== view.pixelated) setPixelated(editOn());
       turnTo(e.rot);
     }
     if (hi.view && hi.pic === lo.pic && hi.rot === lo.rot && view.state) { // the view (zoom and which part is visible) the step was made in
@@ -881,7 +1087,7 @@ async function travel(to) {
     if (e.fl) { // the lifted part is back where it was dropped, and selected
       if (!view.fl) { view.fl = fl; if (fl.pasted) { $('float').onload = () => renderFloat(); $('float').src = fl.url; } else loadFloatPixels(view.fl).catch(() => {}); } // (without its pixels in the history they are cut out again)
       view.sel = rectSel(e.fl.dest);
-      if (fl.pasted) await SetPasted(e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !e.pixelated); else await sendFloat();
+      if (fl.pasted) await SetPasted(e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !editOn()); else await sendFloat();
     } else view.sel = sel ? rectSel(sel) : null; // the frame that was selected before it was lifted, or the part that was dropped and let go
     draw();
     history.at = to;
@@ -899,12 +1105,13 @@ function undoRedo(delta) {
 const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 
 // Drag to select (with Shift on an edge of the frame, the frame is moved without touching the picture).
-function beginSelection(clientX, clientY, shift) {
-  const edge = shift ? edgeAt(clientX, clientY) : null;
+function beginSelection(clientX, clientY) {
+  const edge = document.body.classList.contains('edit') ? null : edgeAt(clientX, clientY, true); // edit mode off: the frame alone is moved and resized
+  const [qx, qy] = pointInPicture(clientX, clientY);
   if (edge) { // an edge of the frame: it is moved, not a new frame drawn
     const box = selectionBox();
     view.sel = {x0: box.x0, x1: box.x1, y0: box.y0, y1: box.y1}; // the first corner is the left top one, so l and t are x0 and y0
-    view.selDrag = {edge, from: [clientX, clientY]};
+    view.selDrag = {edge, from: [clientX, clientY], p0: [qx, qy], start: {...view.sel}};
     view.hl = edge;
     draw();
     return;
@@ -916,10 +1123,21 @@ function beginSelection(clientX, clientY, shift) {
 }
 
 function startViewer() {
+  initDock();
+  $('tool-select').onclick = () => setTool('select');
+  $('tool-pen').onclick = () => setTool('pen');
+  $('stage').addEventListener('contextmenu', (ev) => { if (tool() === 'pen') ev.preventDefault(); });
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
   $('hint').textContent = `Open a picture with File → Open… (${cmd}O), paste one from the clipboard (${cmd}V), or open one with mcView from your file manager.`;
   $('open').onclick = choose;
-  EventsOn('image', (info) => { showImage(info); commit(); });
+  $('open-clip').onclick = () => PasteNew().catch((e) => problem(errText(e)));
+  $('new-pic').onclick = createImage;
+  $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
+  EventsOn('menu-create', createImage); // File → Create Image
+  window.addEventListener('focus', () => { if (!$('empty').hidden) offerClipboard(); });
+  offerClipboard();
+  EventsOn('history-reset', () => { history.list.length = 0; history.at = -1; }); // a deleted picture cannot be brought back by undo
+  EventsOn('image', (info) => { const edit = editAfterImage; editAfterImage = false; showImage(info).then(() => { if (edit) setEdit(true); }); commit(); });
   EventsOn('menu-undo', undo);
   EventsOn('menu-redo', redo);
   EventsOn('problem', (t) => problem(errText(t)));
@@ -928,6 +1146,7 @@ function startViewer() {
   EventsOn('menu-paste', pasteImage); // Edit → Paste
   EventsOn('menu-save', saveAs); // File → Save As…
   EventsOn('menu-close-image', closeImage); // File → Close Image
+  EventsOn('menu-delete', deleteImage); // File → Delete Image…
   lastStage = stageSize();
   window.addEventListener('resize', onResize);
   let saveTimer = 0; // the place and size of the window are remembered for the next start (Go also does it when the window closes)
@@ -940,7 +1159,7 @@ function startViewer() {
   window.addEventListener('keyup', (ev) => { if (ev.key === 'Shift') { document.body.classList.remove('shift'); updateHover(false); } });
   window.addEventListener('blur', () => { document.body.classList.remove('shift'); updateHover(false); });
   $('stage').addEventListener('pointerdown', (ev) => {
-    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1)) return;
+    if (!pic.naturalWidth || (ev.button !== 0 && ev.button !== 1 && !(ev.button === 2 && tool() === 'pen'))) return;
     try { $('stage').setPointerCapture(ev.pointerId); } catch {}
     if (ev.button === 1) { // the middle button pans the picture
       ev.preventDefault();
@@ -950,24 +1169,36 @@ function startViewer() {
       return;
     }
     pointerDown = true;
-    if (!ev.shiftKey && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)
+    if (tool() === 'pen') { // what is lifted is applied first, then the stroke starts (if the button is still down)
+      (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) startInk(ev); });
+      return;
+    }
+    if (document.body.classList.contains('edit') && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)
       const edge = edgeAt(ev.clientX, ev.clientY, true);
       if (edge) { startTransform(ev, edge); return; }
     }
     if (view.fl) { // what is lifted is applied first; then it is a selection like any other, or, when the button is up by then, a click that lets go of it
-      const [cx, cy, shift] = [ev.clientX, ev.clientY, ev.shiftKey];
+      const [cx, cy] = [ev.clientX, ev.clientY];
       flushFloat({clear: false}).then(() => {
         if (view.fl) return;
-        if (pointerDown) beginSelection(cx, cy, shift); else clearSelection();
+        if (pointerDown) beginSelection(cx, cy); else clearSelection();
       });
       return;
     }
-    beginSelection(ev.clientX, ev.clientY, ev.shiftKey);
+    beginSelection(ev.clientX, ev.clientY);
   });
   $('stage').addEventListener('pointermove', (ev) => {
+    if (ink) { addInk(inkPoint(ev)); return; }
     if (view.tdrag) { dragTransform(ev); return; }
     if (view.selDrag?.edge) {
       const [px, py] = pointInPicture(ev.clientX, ev.clientY), e = view.selDrag.edge;
+      if (e.move) { // the inside of the frame: the frame moves, the picture is not touched
+        const d = view.selDrag, st = d.start, W = dispW(), H = dispH();
+        const dx = clamp(Math.round(px - d.p0[0]), -st.x0, W - st.x1), dy = clamp(Math.round(py - d.p0[1]), -st.y0, H - st.y1);
+        view.sel = {x0: st.x0 + dx, x1: st.x1 + dx, y0: st.y0 + dy, y1: st.y1 + dy};
+        draw();
+        return;
+      }
       const snap = view.pixelated ? Math.round : (v) => v; // (an edge of the frame is between two pixels)
       if (e.l) view.sel.x0 = snap(px); if (e.r) view.sel.x1 = snap(px);
       if (e.t) view.sel.y0 = snap(py); if (e.b) view.sel.y1 = snap(py);
@@ -992,12 +1223,14 @@ function startViewer() {
   const endDrag = (ev) => {
     pointerDown = false;
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
+    if (ink) { finishInk().then(() => updateHover(ev.shiftKey)); return; }
     if (view.tdrag) { finishTransform().then(() => updateHover(ev.shiftKey)); return; }
     if (view.selDrag) { // a selection dragged less than 3 screen pixels is a click, not a selection
       const [fx, fy] = view.selDrag.from, moved = !!view.selDrag.edge;
       view.selDrag = null;
-      if (moved) updateHover(ev.shiftKey);
+      if (moved) { updateHover(ev.shiftKey); if (selectionRect()) copySelection(true); }
       else if (Math.abs(ev.clientX - fx) < 3 && Math.abs(ev.clientY - fy) < 3) { view.sel = null; draw(); }
+      else if (selectionRect()) copySelection(true); // a finished selection goes to the clipboard at once
     }
     if (view.drag) { startSpring(); view.drag = null; updateHover(ev.shiftKey); } // let go: the spring takes the pull away
   };
@@ -1009,6 +1242,7 @@ function startViewer() {
     if (!view.free && (Math.abs(view.sx - 1) > 0.005 || Math.abs(view.sy - 1) > 0.005)) zoomTo100(); else { view.free = false; draw(); }
   });
   window.addEventListener('keydown', (ev) => {
+    if (ev.target instanceof HTMLInputElement && ev.target.type !== 'range') return; // typing in a field is not a command
     if (ev.key === 'Shift') { document.body.classList.add('shift'); updateHover(true); return; }
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'c' || ev.key === 'C' || ev.key === 'Insert')) {
       ev.preventDefault(); copySelection(); return; // Ctrl+C, Cmd+C and Ctrl+Insert
@@ -1019,13 +1253,18 @@ function startViewer() {
     if (ev.shiftKey && ev.key === 'Insert') { ev.preventDefault(); pasteImage(); return; } // Shift+Insert
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 's' || ev.key === 'S')) { ev.preventDefault(); saveAs(); return; }
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'n' || ev.key === 'N')) { ev.preventDefault(); NewWindow(); return; } // Ctrl+N, Cmd+N
+    if (!menuShown && ev.ctrlKey && !ev.metaKey && !ev.altKey) { // the menu bar is hidden (Windows full screen), and with it the shortcuts of its items that this page does not handle
+      const k = ev.key.toLowerCase();
+      if (k === 'o') { ev.preventDefault(); choose(); return; }
+      if (k === 'w' && ev.shiftKey) { ev.preventDefault(); closeImage(); return; }
+      if (k === 'w' || k === 'q') { ev.preventDefault(); CloseWindow(); return; }
+    }
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
     if (ev.key === 'Enter') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; }
     if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
     if (ev.key === 'Escape') { ExitFullscreen(); settleFullscreen(); clearSelection(); return; }
-    if (ev.key === 'e' || ev.key === 'E') { document.body.classList.toggle('edit'); return; } // the edit bar
+    if (ev.key === 'e' || ev.key === 'E' || ev.key === 'Tab') { ev.preventDefault(); setEdit(!editOn()); return; } // the edit bar (Tab does the same)
     if (!pic.naturalWidth) return;
-    if (ev.key === 'Tab') { ev.preventDefault(); setPixelated(!view.pixelated); commit(); return; }
     const b = stageSize();
     if (ev.key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
     else if (ev.key === 'ArrowRight' || ev.key === ' ') { ev.preventDefault(); step(1); }
@@ -1037,7 +1276,8 @@ function startViewer() {
       else { rotate(dir); commit(); }
     }
     else if (ev.key === 's' || ev.key === 'S') saveAs();
-    else if (ev.key === 'f' || ev.key === 'F') { setMode('large'); commit(); }
+    else if (ev.key === 'f' || ev.key === 'F') { ToggleFullscreen(); settleFullscreen(); }
+    else if (ev.key === 'd' || ev.key === 'D') deleteImage();
     else if (ev.key === '+' || ev.key === '=') zoomAt(1.25, b.w / 2, b.h / 2);
     else if (ev.key === '-') zoomAt(0.8, b.w / 2, b.h / 2);
   });

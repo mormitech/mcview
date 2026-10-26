@@ -17,10 +17,10 @@ import (
 	_ "golang.org/x/image/webp"
 )
 
-// The pixel readout (Tab, the pixelated view) shows the exact colour of the pixel under the pointer. The web view cannot tell it: it
-// converts colours for the screen (a Display P3 or ICC-profile picture is not shown with the numbers that are in the file) and its
+// The pixel readout (Tab, the pixelated view) shows the exact color of the pixel under the pointer. The web view cannot tell it: it
+// converts colors for the screen (a Display P3 or ICC-profile picture is not shown with the numbers that are in the file) and its
 // JPEG decoder may differ in the last digit. So the picture is decoded a second time here, and the values are those of the decoded
-// file, without any colour conversion.
+// file, without any color conversion.
 
 // maxPixels is the biggest picture decoded for the readout (200 megapixels would take 800 MB as RGBA).
 const maxPixels = 150_000_000
@@ -32,7 +32,7 @@ type pixelCache struct {
 	orient int         // EXIF orientation, 1 to 8: the web view shows the picture turned that way, so the readout has to as well
 }
 
-// Pixel is the colour of one pixel, not premultiplied, 8 bits per channel (more bits are reduced). Ready is false when the picture is
+// Pixel is the color of one pixel, not premultiplied, 8 bits per channel (more bits are reduced). Ready is false when the picture is
 // not decoded yet or the position is outside it.
 type Pixel struct {
 	Ready bool `json:"ready"`
@@ -102,7 +102,7 @@ func (a *App) decoded() (pixelCache, string, error) {
 	return pc, "go", nil
 }
 
-// PixelAt is the colour at x, y of the picture as it is shown (the web view's natural size w × h, which has the EXIF turn applied).
+// PixelAt is the color at x, y of the picture as it is shown (the web view's natural size w × h, which has the EXIF turn applied).
 func (a *App) PixelAt(x, y, w, h int) Pixel {
 	a.mu.Lock()
 	pc := a.pix
