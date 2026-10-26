@@ -197,7 +197,10 @@ function draw() {
   const pct = (v) => `${Math.round(v * 100)}%`;
   const zoom = Math.abs(view.sx - view.sy) > 0.005 ? `${pct(view.sx)} × ${pct(view.sy)}` : pct(view.sx);
   const sel = selectionRect();
-  setStatus(view.dir, `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}`, view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''));
+  // the window title has the size, place and zoom; the bar repeats them only in full screen, where there is no title
+  const full = document.body.classList.contains('full');
+  const info = `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}`;
+  setStatus(view.dir, full ? `${info}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}` : sel ? `selection ${sel.w} × ${sel.h}` : '', view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''));
   document.body.classList.toggle('sel', !!(sel || view.fl)); // in full screen the bar stays for as long as there is a selection
   tellInfo(pic.naturalWidth ? `${dispW()} × ${dispH()}${view.count ? `  ·  ${view.index} / ${view.count}` : ''}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}` : '');
   renderFloat();
@@ -666,7 +669,11 @@ const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-r
 // ("content", like Paint: the selected part is stretched by its edges and moved by its top left corner; see below).
 function updateHover(shift) {
   if (view.selDrag?.edge || view.tdrag || view.drag) return;
-  if (tool() === 'pen') { view.hl = null; view.hlMode = ''; $('stage').style.cursor = 'crosshair'; return; }
+  if (tool() === 'pen') { // the pencil cursor is for the picture; beside it the pointer is an ordinary one (while a stroke is drawn it stays)
+    view.hl = null; view.hlMode = '';
+    $('stage').style.cursor = ink || (lastPointer && pixelUnder(lastPointer.x, lastPointer.y)) ? 'crosshair' : '';
+    return;
+  }
   const editOn = document.body.classList.contains('edit');
   const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, true) : null;
   const was = JSON.stringify([view.hl, view.hlMode]);
@@ -986,6 +993,9 @@ async function closeImage() {
   } catch (e) { problem(errText(e)); }
 }
 
+// Ctrl+W, Cmd+W (File → Close): the picture is closed; the window, when there is none.
+function closeOrQuit() { if (pic.naturalWidth) closeImage(); else CloseWindow(); }
+
 // S (Ctrl+S, Cmd+S, File → Save As…): asks where to save the picture. Saving it to another folder makes that folder the one the
 // window works in, and the arrow keys go through its pictures.
 // Create Image (File menu, and the empty window): a new white 1280 × 720 image, and edit mode starts with it.
@@ -1021,6 +1031,7 @@ async function refreshFullscreen() {
     const full = await IsFullscreen();
     document.body.classList.toggle('full', full);
     showMenuBar(!full);
+    if (pic.naturalWidth) draw(); // the bar says the size and zoom in full screen only
   } catch {}
 }
 window.addEventListener('mousemove', (ev) => {
@@ -1169,6 +1180,7 @@ function startViewer() {
   EventsOn('menu-copy', copySelection); // Edit → Copy
   EventsOn('menu-paste', pasteImage); // Edit → Paste
   EventsOn('menu-save', saveAs); // File → Save As…
+  EventsOn('menu-close', closeOrQuit); // File → Close
   EventsOn('menu-close-image', closeImage); // File → Close Image
   EventsOn('menu-delete', deleteImage); // File → Delete Image…
   lastStage = stageSize();
@@ -1283,7 +1295,8 @@ function startViewer() {
       const k = ev.key.toLowerCase();
       if (k === 'o') { ev.preventDefault(); choose(); return; }
       if (k === 'w' && ev.shiftKey) { ev.preventDefault(); closeImage(); return; }
-      if (k === 'w' || k === 'q') { ev.preventDefault(); CloseWindow(); return; }
+      if (k === 'w') { ev.preventDefault(); closeOrQuit(); return; }
+      if (k === 'q') { ev.preventDefault(); CloseWindow(); return; }
     }
     if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
     if (ev.key === 'Enter') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; }

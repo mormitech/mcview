@@ -16,6 +16,7 @@ type picState struct {
 	clip    image.Image
 	clipPNG []byte
 	workDir string
+	blank   bool // a new blank picture that nothing was done to
 }
 
 // newStateLocked numbers the picture the window has now, App.mu held.
@@ -23,7 +24,7 @@ func (a *App) newStateLocked() {
 	a.statesLocked()
 	a.nextState++
 	a.stateID = a.nextState
-	a.states[a.stateID] = picState{image: a.image, clip: a.clip, clipPNG: a.clipPNG, workDir: a.workDir}
+	a.states[a.stateID] = picState{image: a.image, clip: a.clip, clipPNG: a.clipPNG, workDir: a.workDir, blank: a.blank}
 }
 
 func (a *App) statesLocked() map[int]picState {
@@ -44,7 +45,7 @@ func (a *App) restoreState(n int, after func() error) (ImageInfo, error) {
 		a.mu.Unlock()
 		return ImageInfo{}, fmt.Errorf("that picture is not remembered any more")
 	}
-	a.image, a.clip, a.clipPNG, a.workDir = st.image, st.clip, st.clipPNG, st.workDir
+	a.image, a.clip, a.clipPNG, a.workDir, a.blank = st.image, st.clip, st.clipPNG, st.workDir, st.blank
 	a.stateID = n
 	a.fl = nil
 	a.imgSeq++ // its own URL, so that the web view loads it again

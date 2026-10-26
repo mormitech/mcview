@@ -62,3 +62,25 @@ func TestPastedPictureIsNotAskedAboutWhenStepping(t *testing.T) {
 		t.Errorf("closing asks once: %d", asked)
 	}
 }
+
+func TestBlankPictureIsNotModifiedUntilSomethingIsDone(t *testing.T) {
+	a := NewApp()
+	asked := 0
+	a.confirmDiscard = func(string, string) discardChoice { asked++; return choiceCancel }
+	if err := a.NewBlank(40, 30, false); err != nil {
+		t.Fatal(err)
+	}
+	if a.current().Modified || !a.discardOK("close the window") || asked != 0 {
+		t.Fatalf("a new blank picture asks nothing: modified %v, asked %d", a.current().Modified, asked)
+	}
+	blank := a.stateID
+	if _, err := a.DrawStroke(0, []int{3, 3, 20, 20}, "#ff0000", 3); err != nil {
+		t.Fatal(err)
+	}
+	if !a.current().Modified || a.discardOK("close the window") || asked != 1 {
+		t.Fatalf("a drawn picture asks: modified %v, asked %d", a.current().Modified, asked)
+	}
+	if _, err := a.RestoreState(blank); err != nil || a.current().Modified {
+		t.Fatalf("undo back to the blank picture: modified %v, %v", a.current().Modified, err)
+	}
+}

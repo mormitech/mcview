@@ -35,6 +35,7 @@ type App struct {
 	clipPNG   []byte      // the same as a PNG, for the web view
 	workDir   string      // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
 	titleInfo string      // size, place in the folder and zoom of the picture, for the title
+	blank     bool        // the picture is a new blank one that nothing was done to: it is not modified, and closing it asks nothing (see NewBlank)
 	edit      bool        // edit mode is on: the title says so
 	lastPaste time.Time   // the menu and the key can both ask for one paste
 	lastNew   time.Time   // the same for a new window

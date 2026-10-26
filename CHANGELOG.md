@@ -3,6 +3,22 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.26.4 – 2026-10-26
+
+### Changed
+- A new blank image (Create Image) is not modified: no dot in the title, and closing it (Cmd+W, Cmd+Q, the window's close button, the ✕, going to another picture) asks nothing. The first change to it, a stroke or a pasted or moved part, makes it a picture with unsaved changes; undoing back to the blank one makes it blank again.
+
+## 0.26.3 – 2026-10-26
+
+### Changed
+- Ctrl+W (Cmd+W) closes the picture when there is one, and the window when the window is empty. File → Close Window is now File → Close.
+
+## 0.26.2 – 2026-10-26
+
+### Changed
+- The pencil cursor shows only over the picture; beside it the pointer is the ordinary one.
+- The bottom bar no longer repeats the size, place in the folder and zoom (the title has them); it shows them in full screen only, where there is no title. The size of a selection is still there.
+
 ## 0.26.1 – 2026-10-26
 
 ### Changed
