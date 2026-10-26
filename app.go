@@ -35,6 +35,7 @@ type App struct {
 	clipPNG   []byte      // the same as a PNG, for the web view
 	workDir   string      // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
 	titleInfo string      // size, place in the folder and zoom of the picture, for the title
+	blank     bool        // the picture is a new blank one that nothing was done to: it is not modified, and closing it asks nothing (see NewBlank)
 	edit      bool        // edit mode is on: the title says so
 	lastPaste time.Time   // the menu and the key can both ask for one paste
 	lastNew   time.Time   // the same for a new window
@@ -47,13 +48,14 @@ type App struct {
 	stateID   int              // the number of the one it is in; 0 is the empty window
 	nextState int
 
-	openWindow     func(path string) error                 // starts a window for a picture; spawn, except in the tests
-	confirmDiscard func(name, action string) discardChoice // asks before unsaved changes are thrown away; the system's alert, except in the tests (see discard.go)
-	menuBar        *menu.Menu                              // the menu of the window (nil for the About window), put back when full screen ends
-	confirmLarge   func(w, h, pw, ph int) largeChoice      // asks what to do with a big clipboard picture; the system's alert, except in the tests (see discard.go)
-	fl             *floatSession                           // the part of the picture that is lifted and dropped somewhere else, not applied yet (see float.go)
-	saved          *winState                               // the place and size the window was left in, from the last run (see winstate.go)
-	turn           int                                     // how many quarter turns the view has (the UI tells), for the Save As that the alert can start
+	openWindow       func(path string) error                 // starts a window for a picture; spawn, except in the tests
+	confirmDiscard   func(name, action string) discardChoice // asks before unsaved changes are thrown away; the system's alert, except in the tests (see discard.go)
+	menuBar          *menu.Menu                              // the menu of the window (nil for the About window), put back when full screen ends
+	confirmOverwrite func(name string) overwriteChoice       // asks overwrite, save as or cancel for S on a changed picture; the system's alert, except in the tests (see overwrite.go)
+	confirmLarge     func(w, h, pw, ph int) largeChoice      // asks what to do with a big clipboard picture; the system's alert, except in the tests (see discard.go)
+	fl               *floatSession                           // the part of the picture that is lifted and dropped somewhere else, not applied yet (see float.go)
+	saved            *winState                               // the place and size the window was left in, from the last run (see winstate.go)
+	turn             int                                     // how many quarter turns the view has (the UI tells), for the Save As that the alert can start
 }
 
 func NewApp() *App {

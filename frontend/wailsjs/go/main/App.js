@@ -30,6 +30,10 @@ export function DeleteImage() {
   return window['go']['main']['App']['DeleteImage']();
 }
 
+export function DiscardOK(arg1) {
+  return window['go']['main']['App']['DiscardOK'](arg1);
+}
+
 export function DrawStroke(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['DrawStroke'](arg1, arg2, arg3, arg4);
 }

@@ -78,7 +78,7 @@ func (a *App) NewBlank(w, h int, transparent bool) error {
 	if !transparent {
 		draw.Draw(n, n.Bounds(), image.White, image.Point{}, draw.Src)
 	}
-	return a.setPixels(n, "")
+	return a.setPixelsBlank(n, true)
 }
 
 // setClip makes a picture without a file the picture of this window.
@@ -97,6 +97,15 @@ func (a *App) setClip(img image.Image) error {
 func (a *App) setPixels(img *image.NRGBA, file string) error { return a.setPixelsEmit(img, file, true) }
 
 func (a *App) setPixelsEmit(img *image.NRGBA, file string, emit bool) error {
+	return a.setPixelsFull(img, file, emit, false)
+}
+
+// setPixelsBlank is a new blank picture (see NewBlank): it has no changes until something is done to it, so nothing asks about it when it is closed.
+func (a *App) setPixelsBlank(img *image.NRGBA, blank bool) error {
+	return a.setPixelsFull(img, "", true, blank)
+}
+
+func (a *App) setPixelsFull(img *image.NRGBA, file string, emit, blank bool) error {
 	var buf bytes.Buffer
 	if err := (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, img); err != nil {
 		return err
@@ -108,6 +117,7 @@ func (a *App) setPixelsEmit(img *image.NRGBA, file string, emit bool) error {
 	a.mu.Lock()
 	a.image = file
 	a.clip, a.clipPNG = img, png
+	a.blank = blank
 	a.imgSeq++
 	a.pix = pixelCache{seq: a.imgSeq, img: img, orient: 1} // it is decoded already: the readout and Ctrl+C read from it
 	a.workDirLocked()
