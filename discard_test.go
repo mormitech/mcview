@@ -114,3 +114,31 @@ func TestDrawLayerPutsAPictureIntoTheWindowPicture(t *testing.T) {
 		t.Errorf("a transparent pixel of the layer must leave the white: %v", got)
 	}
 }
+
+func TestFloodFillStaysInsideItsRegion(t *testing.T) {
+	a := NewApp()
+	if err := a.NewBlank(10, 10, false); err != nil {
+		t.Fatal(err)
+	}
+	// a black wall across the picture at x = 5, with a gap nowhere
+	var wall []int
+	for y := 0; y < 10; y++ {
+		wall = append(wall, 5, y)
+	}
+	if _, err := a.DrawStroke(0, wall, "#000000", 1); err != nil {
+		t.Fatal(err)
+	}
+	before := a.stateID
+	if info, err := a.FloodFill(0, 1, 1, "#ff0000", 0); err != nil || info.State == before {
+		t.Fatalf("fill: %v, state %d (was %d)", err, info.State, before)
+	}
+	pc, _, _ := a.decoded()
+	at := func(x, y int) color.NRGBA { return color.NRGBAModel.Convert(pc.img.At(x, y)).(color.NRGBA) }
+	if at(2, 8) != (color.NRGBA{255, 0, 0, 255}) || at(8, 8) != (color.NRGBA{255, 255, 255, 255}) || at(5, 3) != (color.NRGBA{0, 0, 0, 255}) {
+		t.Errorf("left %v, right %v, wall %v", at(2, 8), at(8, 8), at(5, 3))
+	}
+	same := a.stateID
+	if info, _ := a.FloodFill(0, 1, 1, "#ff0000", 0); info.State != same {
+		t.Error("a fill with the color that is there makes no step")
+	}
+}

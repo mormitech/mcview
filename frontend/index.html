@@ -23,24 +23,27 @@
         <button class="tool" id="tool-pen" title="Pencil" aria-label="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.4L16.5 4.3a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.4 18.8z"/><path d="M14.5 6.3l3.2 3.2"/></svg></button>
         <button class="tool" id="tool-line" title="Line" aria-label="Line"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
         <button class="tool" id="tool-rect" title="Rectangle" aria-label="Rectangle"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="1"/></svg></button>
+        <button class="tool" id="tool-ellipse" title="Circle and ellipse" aria-label="Circle and ellipse"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="8" ry="5.5"/></svg></button>
+        <button class="tool" id="tool-fill" title="Fill with color" aria-label="Fill with color"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12.5l7-7 7 7-6.2 6.2a2 2 0 0 1-2.8 0z"/><path d="M4.5 12.5h14M20 16.2c1 1.4 1.5 2.2 1.5 3a1.5 1.5 0 0 1-3 0c0-.8.5-1.6 1.5-3z"/></svg></button>
         <button class="tool" id="tool-text" title="Text" aria-label="Text"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M12 6v13M9 19h6"/></svg></button>
         <button class="tool" id="tool-pick" title="Pick color" aria-label="Pick color"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5l4 4"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3l-2 2-3-3z"/><path d="M14 8L5.5 16.5V19H8l8.5-8.5"/></svg></button>
         <div id="wells"><button class="well" id="well-bg" title="Second color" aria-label="Second color"><b></b></button><button class="well" id="well-fg" title="Color" aria-label="Color"><b></b></button></div>
     </div>
     <div id="dock" aria-label="Colors"><div id="palette"></div><button id="dock-more">Edit colors…</button><input type="color" id="dock-native" tabindex="-1" aria-hidden="true"></div>
     <div id="pendock" aria-label="Tool options">
-        <div class="grp" data-for="pen line rect"><label for="pen-w">Width</label><input type="range" id="pen-w" min="1" max="64" value="5"><span id="pen-wv" class="mono">5 px</span><span id="pen-dot"></span></div>
-        <div class="grp" data-for="line rect"><span class="lbl">Style</span><div class="seg" id="seg-style">
+        <div class="grp" data-for="pen line rect ellipse"><label for="pen-w">Width</label><input type="range" id="pen-w" min="1" max="64" value="5"><span id="pen-wv" class="mono">5 px</span><span id="pen-dot"></span></div>
+        <div class="grp" data-for="line rect ellipse"><span class="lbl">Style</span><div class="seg" id="seg-style">
             <button data-v="solid" title="Solid" aria-label="Solid"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M2 6h24"/></svg></button>
             <button data-v="dashed" title="Dashed" aria-label="Dashed"><svg viewBox="0 0 28 12" aria-hidden="true"><path d="M2 6h6M11 6h6M20 6h6"/></svg></button>
             <button data-v="dotted" title="Dotted" aria-label="Dotted"><svg viewBox="0 0 28 12" aria-hidden="true"><path class="dots" d="M3 6h0M8.5 6h0M14 6h0M19.5 6h0M25 6h0"/></svg></button></div></div>
-        <div class="grp" data-for="rect"><span class="lbl">Shape</span><div class="seg" id="seg-fill">
+        <div class="grp" data-for="rect ellipse"><span class="lbl">Shape</span><div class="seg" id="seg-fill">
             <button data-v="outline" title="Outline" aria-label="Outline"><svg viewBox="0 0 20 14" aria-hidden="true"><rect x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button>
             <button data-v="both" title="Outline and fill (the second color fills)" aria-label="Outline and fill"><svg viewBox="0 0 20 14" aria-hidden="true"><rect class="fill2" x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button>
             <button data-v="fill" title="Fill (the first color)" aria-label="Fill"><svg viewBox="0 0 20 14" aria-hidden="true"><rect class="fill1" x="2.5" y="2.5" width="15" height="9" rx="1"/></svg></button></div></div>
         <div class="grp" data-for="text"><label for="txt-font">Font</label><select id="txt-font"></select><label for="txt-size">Size</label><input type="number" id="txt-size" min="6" max="400" value="32"><span class="mono">px</span>
             <button class="tog" id="txt-b" title="Bold" aria-label="Bold"><b>B</b></button><button class="tog" id="txt-i" title="Italic" aria-label="Italic"><i>I</i></button>
             <span class="hint">Click to place the text; click elsewhere to apply it, Esc to drop it.</span></div>
+        <div class="grp" data-for="fill"><label for="fill-tol">Tolerance</label><input type="range" id="fill-tol" min="0" max="100" value="10"><span id="fill-tolv" class="mono">10%</span><span class="hint">Click fills the area of the same color with the first color, right click with the second. More tolerance takes in colors that are close.</span></div>
         <div class="grp" data-for="pick"><span class="hint">Click takes the color under the pointer as the first color, right click as the second. The tool you had comes back.</span></div>
     </div>
     <div id="status" hidden><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>

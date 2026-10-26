@@ -51,7 +51,7 @@ Below, **Ctrl** is **Cmd** on a Mac.
 
 ### Editing (edit mode)
 
-**E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
+**E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail (Select, Pencil, Line, Rectangle, Ellipse, Fill, Text, Pick) and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
 **File → Create Image** makes a new white 1280 × 720 one and starts it in edit mode (a blank image counts as unchanged: it closes without a question until you do something to it).
 
 - **Select** (default): drag an edge of the selection to stretch the selected part, or its top left corner (or inside) to move it; the place it came from turns white
@@ -60,6 +60,8 @@ Below, **Ctrl** is **Cmd** on a Mac.
 - **Pencil**: drag to draw; left button the first color, right button the second. The ribbon above the bottom bar sets the width.
 - **Line** and **Rectangle**: drag them out; **Shift** makes a line at a multiple of 45° and a square. The ribbon sets the width, a solid, dashed or dotted style and, for the rectangle,
   outline, outline with fill, or fill. **Esc** or the other mouse button drops one that is being dragged.
+- **Circle and ellipse**: drag the box of the ellipse; **Shift** makes a true circle. The ribbon has the same width, style and outline/fill choices as the rectangle.
+- **Fill** (the paint bucket): click fills the area of the same color with the first color, right click with the second. The ribbon has a tolerance: 0% fills exactly that color, more takes in colors that are close (good for photos and soft edges).
 - **Text**: click, type, click elsewhere to put it in (**Ctrl+Enter** also does, **Esc** drops it). Font, size, bold and italic are in the ribbon.
 - **Pick**: click takes the color under the pointer as the first color (right click: the second), then the tool you had comes back.
 - **Colors**: the two wells at the bottom of the rail are the first and second color; click one for the palette (or *Edit colors…* for the system's picker).
@@ -127,7 +129,7 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 | `main.go`, `about.go` | the window, the menus per system, the `--about` window |
 | `window.go` | the screen-size gate: `fitSize` and `fitWindow` |
 | `app.go` | the methods the UI calls (the version, the window mode, Open…) and the extra windows |
-| `float.go`, `layer.go`, `selection.go`, `selsave.go` | the lifted and moved part, the pencil stroke, a drawn line, rectangle or text put into the picture, the selection |
+| `float.go`, `layer.go`, `fill.go`, `selection.go`, `selsave.go` | the lifted and moved part, the pencil stroke, a drawn line, rectangle, ellipse or text put into the picture, the paint bucket, the selection |
 | `clip.go`, `save.go`, `overwrite.go`, `discard.go`, `delete.go` | the clipboard and new images, Save As and its questions, unsaved changes, deleting |
 | `undo.go` | the history of picture states |
 | `image.go` | the picture types, opening a file (command line and the macOS open-file event), serving the picture to the web view |
