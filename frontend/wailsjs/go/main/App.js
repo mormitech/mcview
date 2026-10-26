@@ -26,6 +26,10 @@ export function ConfirmQuit() {
   return window['go']['main']['App']['ConfirmQuit']();
 }
 
+export function ControlReply(arg1, arg2) {
+  return window['go']['main']['App']['ControlReply'](arg1, arg2);
+}
+
 export function CopyImageNative(arg1) {
   return window['go']['main']['App']['CopyImageNative'](arg1);
 }

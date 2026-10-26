@@ -48,6 +48,15 @@ func (a *App) DiscardOK(action string) bool { return a.discardOK(action) }
 //	Windows  a message box with Yes, No, Cancel ("Do you want to save…")
 //	Linux    GTK's question dialog has two buttons only: "save?", and when it is No, "discard?"
 func (a *App) askDiscard(name, action string) discardChoice {
+	if v, ok := a.mockAnswer("discard", name+" | "+action); ok { // control mode: save, discard or (nothing queued) cancel
+		switch v {
+		case "save":
+			return choiceSave
+		case "discard":
+			return choiceDiscard
+		}
+		return choiceCancel
+	}
 	if a.ctx == nil {
 		return choiceDiscard
 	}
@@ -95,6 +104,15 @@ const (
 
 // askLarge is the alert for a big clipboard picture, in the same form as askDiscard (macOS: three buttons; Windows: Yes, No, Cancel; Linux: two questions).
 func (a *App) askLarge(w, h, pw, ph int) largeChoice {
+	if v, ok := a.mockAnswer("large", fmt.Sprintf("%d × %d over %d × %d", w, h, pw, ph)); ok { // control mode: new, over or cancel
+		switch v {
+		case "new":
+			return pasteNew
+		case "over":
+			return pasteOver
+		}
+		return pasteCancel
+	}
 	if a.ctx == nil {
 		return pasteOver
 	}

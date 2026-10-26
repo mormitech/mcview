@@ -14,7 +14,7 @@
 
 ---
 
-<!-- TODO: a screenshot of edit mode here, e.g. docs/edit-mode.png -->
+<p align="center"><img src="docs/screenshots/05-edit-draw.webp" width="780" alt="mcView in edit mode: a picture marked up with the pencil, ellipse, rectangle, line and text tools; the options ribbon is above the bottom bar"></p>
 
 ## What it does
 
@@ -24,6 +24,17 @@ small editor in the way of Paint: select, move and stretch parts, draw, type, pa
 The manual is going to live at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mcView Help opens it).
 
 Below, **Ctrl** is **Cmd** on a Mac.
+
+### Screenshots
+
+| | |
+|---|---|
+| <img src="docs/screenshots/01-view.webp" alt="Viewing a picture: the title says its size, its place in the folder and the zoom"><br>**Viewing.** The title says the size, the place in the folder (`1 / 5`) and the zoom. | <img src="docs/screenshots/04-edit-mode.webp" alt="Edit mode: the tool rail on the left"><br>**Edit mode** (**E**): the tool rail, the two colors, the pixelated view and the pixel readout. |
+| <img src="docs/screenshots/02-zoom-fit-width.webp" alt="Zoom mode 5: the side edges touch the window"><br>**Zoom mode 5**: the side edges touch the window. | <img src="docs/screenshots/03-zoom-fit-height.webp" alt="Zoom mode 6: the top and bottom edges touch the window"><br>**Zoom mode 6**: the top and bottom edges touch it. |
+| <img src="docs/screenshots/06-zoom-pixels.webp" alt="800% zoom with the pixel readout"><br>**Zoom to investigate.** At 800% every pixel is a square, and the bar shows the pixel under the pointer: x and y, R G B and the hex color. | <img src="docs/screenshots/07-zoom-draw.webp" alt="Drawing a thin line at 400% zoom"><br>**Zoom to draw exactly.** A 2 pixel pencil at 400% puts every pixel where you want it. |
+| <img src="docs/screenshots/08-palette.webp" alt="The color palette sliding up above the bottom bar"><br>**Colors.** Click a color well and the palette slides up; Edit colors… opens the system's picker. | <img src="docs/screenshots/09-selection.webp" alt="A selection with its dashed border and the clipboard mark in the middle"><br>**Selections** are on the clipboard the moment you let go, with a short highlight and their size. |
+
+The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. The screenshots are made by [`scripts/demo_screenshots.py`](scripts/demo_screenshots.py) with mcView's [control mode](docs/control.md).
 
 ### Viewing
 
@@ -141,6 +152,10 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 
 The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mcview picture.jpg`). `--theme dark` (or `light`)
 forces the look instead of the system's.
+
+**Control mode.** `mcview --control 0 picture.jpg` lets another program drive every feature (keys, menus, tools, pointer drags in picture pixels, zoom,
+the answers of the dialogs) over a local, token-protected connection: for demo screenshots and scripted tests. See [docs/control.md](docs/control.md);
+`scripts/demo_screenshots.py` makes the screenshots of the manual that way.
 
 **Slow start?** Start the app with `MCVIEW_TRACE=/tmp/mcview-trace.txt` (macOS: `open --env MCVIEW_TRACE=/tmp/t.txt -a mcview.app picture.jpg`): each step of the
 start, in Go and in the UI, is written to that file with a time in milliseconds.

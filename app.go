@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"image"
 	"os"
 	"os/exec"
@@ -34,6 +35,7 @@ type App struct {
 	clipPNG   []byte      // the same as a PNG, for the web view
 	workDir   string      // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
 	titleInfo string      // size, place in the folder and zoom of the picture, for the title
+	ctl       *control    // control mode (see control.go); nil when it is not asked for
 	blank     bool        // the picture is a new blank one that nothing was done to: it is not modified, and closing it asks nothing (see NewBlank)
 	edit      bool        // edit mode is on: the title says so
 	lastPaste time.Time   // the menu and the key can both ask for one paste
@@ -80,6 +82,13 @@ func (a *App) startup(ctx context.Context) {
 	// alone did not).
 	a.reveal()
 	a.titleWindow()
+	if port, ok := controlPort(os.Args[1:], os.Getenv("MCVIEW_CONTROL")); ok && a.mode == "" {
+		if addr, err := a.startControl(port); err != nil {
+			fmt.Fprintln(os.Stderr, "mcview: control mode:", err)
+		} else {
+			fmt.Fprintln(os.Stderr, "mcview: control mode on", addr)
+		}
+	}
 }
 
 // reveal shows the window and the app. It is called at several steps of the start, because it is a race with macOS (see startup).
@@ -222,7 +231,7 @@ func (a *App) ChooseImage() error {
 		return nil
 	}
 	dir := a.current().Dir
-	path, err := wruntime.OpenFileDialog(a.ctx, wruntime.OpenDialogOptions{
+	path, err := a.pickOpen(wruntime.OpenDialogOptions{
 		Title:            "Open file",
 		DefaultDirectory: dir,
 		Filters:          []wruntime.FileFilter{imageFilter()},

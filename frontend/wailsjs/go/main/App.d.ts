@@ -14,6 +14,8 @@ export function CloseWindow():Promise<void>;
 
 export function ConfirmQuit():Promise<boolean>;
 
+export function ControlReply(arg1:number,arg2:string):Promise<void>;
+
 export function CopyImageNative(arg1:string):Promise<void>;
 
 export function DeleteImage():Promise<string>;

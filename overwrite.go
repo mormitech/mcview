@@ -32,6 +32,15 @@ func changedName(name string, at time.Time) string {
 //	Windows  a message box with Yes (overwrite), No (save as), Cancel
 //	Linux    GTK's question dialog has two buttons only: "overwrite?", and when it is No, "save as a new file?"
 func (a *App) askOverwrite(name string) overwriteChoice {
+	if v, ok := a.mockAnswer("overwrite", name); ok { // control mode: overwrite, saveas or cancel
+		switch v {
+		case "overwrite":
+			return overwriteFile
+		case "saveas":
+			return overwriteNew
+		}
+		return overwriteCancel
+	}
 	if a.confirmOverwrite != nil {
 		return a.confirmOverwrite(name)
 	}
