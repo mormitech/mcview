@@ -3,7 +3,7 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
-## 0.37.7 – 2026-10-26
+## 0.37.8 – 2026-10-26
 
 Everything since 0.31.0, in one release: a chat with Claude next to the picture, and the tools to remove things from a photo.
 
@@ -14,6 +14,8 @@ Everything since 0.31.0, in one release: a chat with Claude next to the picture,
 - **Polygon select** (the second tool of the edit rail): draw round the part freely; when the button is up the end is joined to the start and mcView turns the line into a polygon with a few corners, within about a pixel of what was drawn. **Hold the right mouse button** with the select tool or this tool to do the same. Delete fills the polygon with the second color, Ctrl+C copies what is inside it (the rest transparent), Esc lets it go. **Esc or a right click while a selection is being drawn drops it** (the rectangle too).
 - **File → Discard Changes** and a button in the edit bar: the picture goes back to the file on the disk (or to the pasted or new picture) as a step of the history, so undo brings the changes back and redo discards them again.
 - **Create image with your own settings**: Shift-click on *Create image* (or Shift+N) asks for the width, the height and the background (white, transparent or a color). The card says "Hold Shift for custom" and "Click to customize" while Shift is down. The plain click, N and File → Create Image still make the white 1280 × 720 picture.
+
+- **The manual**, `docs/help.md`: a nice help for the app (looking at pictures, editing, selecting, the chat with Claude and what it sends, all the keys, what to do when something does not work), which *Help → mcView Help* shows on the website. The README has the polygon select, Discard Changes and the chat.
 
 ### Changed
 - **Control mode** no longer simulates a mouse or a keyboard: its pointer and key commands (`move`, `click`, `dblclick`, `drag`, `release`, `key`, `press`) are gone, and `shape`, `fill`, `select`, `text`, `pixel`, `polygon` and others put their result in at once. `scripts/demo_screenshots.py` uses them.

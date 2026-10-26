@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>A picture viewer, with a small Paint-like editor, for macOS, Windows and Linux.</b><br>
-  Early preview: it is offered in Open with… for your pictures, and edit mode (key <b>E</b>) draws, types and pastes on them.
+  Early preview: it is offered in Open with… for your pictures, edit mode (key <b>E</b>) draws, types and pastes on them, and a built-in chat (key <b>C</b>) lets Claude change them for you.
 </p>
 
 <p align="center">
@@ -19,9 +19,9 @@
 ## What it does
 
 mcView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
-small editor in the way of Paint: select, move and stretch parts, draw, type, paste, save. It is built the same way as
+small editor in the way of Paint: select (a rectangle or free-hand), move and stretch parts, draw, type, paste, save. Press **C** and you can also just tell Claude what to change in the picture. It is built the same way as
 [mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS frontend built with Vite.
-The manual is going to live at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mcView Help opens it).
+The manual is [docs/help.md](docs/help.md), also at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mcView Help opens it).
 
 Below, **Ctrl** is **Cmd** on a Mac.
 
@@ -62,12 +62,13 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 
 ### Editing (edit mode)
 
-**E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail (Select, Pencil, Line, Rectangle, Ellipse, Fill, Text, Pick) and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
-**File → Create Image** makes a new white 1280 × 720 one and starts it in edit mode (a blank image counts as unchanged: it closes without a question until you do something to it).
+**E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail (Select, Polygon select, Pencil, Line, Rectangle, Ellipse, Fill, Text, Pick) and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
+**File → Create Image** makes a new white 1280 × 720 one and starts it in edit mode; **hold Shift** (or press **Shift+N**) to choose the size and the background first. A blank image, and a picture pasted from the clipboard, count as unchanged: they close without a question until you do something to them.
 
 - **Select** (default): drag an edge of the selection to stretch the selected part, or its top left corner (or inside) to move it; the place it came from turns white
   (transparent in a picture that can have it). **Shift** and drag moves just the frame. **Ctrl+V** lays the clipboard picture over this one as a floating part you can drag and stretch
   (Delete, Backspace or Esc take it away; a click beside it lays it down).
+- **Polygon select**: draw round any shape free-hand; when you let go, the end joins the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Holding the **right mouse button** does the same with the Select tool. **Delete** fills it with the second color, **Ctrl+C** copies what is inside it, **Esc** lets it go (Esc or a right click drops a selection that is still being drawn, the rectangle too).
 - **Pencil**: drag to draw; left button the first color, right button the second. The ribbon above the bottom bar sets the width.
 - **Line** and **Rectangle**: drag them out; **Shift** makes a line at a multiple of 45° and a square. The ribbon sets the width, a solid, dashed or dotted style and, for the rectangle,
   outline, outline with fill, or fill. **Esc** or the other mouse button drops one that is being dragged.
@@ -77,7 +78,12 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Pick**: click takes the color under the pointer as the first color (right click: the second), then the tool you had comes back.
 - **Colors**: the two wells at the bottom of the rail are the first and second color; click one for the palette (or *Edit colors…* for the system's picker).
 - **Undo and redo.** **Ctrl+Z** / **Ctrl+Shift+Z** (Ctrl+Y). Every change of the picture, the mode (1–6), the pixelated view, the turn and the arrow keys can be undone; zooming, moving and the selection are not steps.
+- **Discard Changes** (File menu, or the round-arrow button in the edit bar) takes the picture back to what it was when it came into the window; undo brings the changes back.
 - Nothing is written to the file until you save. A picture with changes has a ● after its name.
+
+### Chat with Claude
+
+**C** (or the speech bubble at the top right) opens a chat panel next to the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mcView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and nothing else (no files, no shell, no web), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
 
 ### Saving, closing, deleting
 
@@ -140,6 +146,8 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 | `main.go`, `about.go` | the window, the menus per system, the `--about` window |
 | `window.go` | the screen-size gate: `fitSize` and `fitWindow` |
 | `app.go` | the methods the UI calls (the version, the window mode, Open…) and the extra windows |
+| `chat.go`, `mcp.go`, `shapes.go`, `canvas.go`, `masks.go`, `retouch.go`, `pixels_edit.go`, `saveto.go` | the chat panel (Claude Code in the background, signing in), the private tool server of a window and its tools, and what the tools do to the picture: shapes, canvas and crop, masks, clone, blend and fill |
+| `revert.go` | Discard Changes |
 | `float.go`, `layer.go`, `fill.go`, `selection.go`, `selsave.go` | the lifted and moved part, the pencil stroke, a drawn line, rectangle, ellipse or text put into the picture, the paint bucket, the selection |
 | `clip.go`, `save.go`, `overwrite.go`, `discard.go`, `delete.go` | the clipboard and new images, Save As and its questions, unsaved changes, deleting |
 | `undo.go` | the history of picture states |
