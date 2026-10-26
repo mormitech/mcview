@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Version, Mode, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 
@@ -1563,6 +1563,113 @@ document.addEventListener('visibilitychange', () => Trace(`visibility ${document
 async function revealWhenHidden() {
   for (let i = 0; i < 40 && document.visibilityState === 'hidden'; i++) { await Reveal(); await new Promise((r) => setTimeout(r, 150)); }
 }
+
+// ---- Control mode ------------------------------------------------------------------------------------------
+// With `mcview --control PORT` another program can give commands (see control.go and docs/control.md). The ones that are not about the window or the
+// dialogs come here as an event. They are done with the code of the mouse and the keys: the pointer commands send the same pointer events a mouse
+// would, so every tool, every handle and every shortcut works as it does for a person. Picture positions are pixels of the picture, as the picture is
+// shown: {x, y} names the pixel, and the pointer goes to its middle.
+const ctl = {sleep: (ms) => new Promise((r) => setTimeout(r, ms))};
+
+const ctlClient = (x, y) => { const r = $('stage').getBoundingClientRect(); return [r.left + view.x + view.ox + (x + 0.5) * view.sx, r.top + view.y + view.oy + (y + 0.5) * view.sy]; };
+
+// One pointer event on the stage. held: a button is down (the move of a drag); button: 0 left, 1 middle, 2 right.
+function ctlPointer(type, x, y, o = {}) {
+  const [cx, cy] = ctlClient(x, y), button = o.button ?? 0, mask = button === 2 ? 2 : button === 1 ? 4 : 1;
+  $('stage').dispatchEvent(new PointerEvent(type, {
+    bubbles: true, cancelable: true, clientX: cx, clientY: cy, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+    button: type === 'pointermove' ? -1 : button, buttons: type === 'pointerdown' || (type === 'pointermove' && o.held) ? mask : 0,
+    shiftKey: !!o.shift, ctrlKey: !!o.ctrl, altKey: !!o.alt, metaKey: !!o.meta,
+  }));
+}
+
+// Waits until what the pointer started is done (a stroke or a shape is drawn into the picture by Go, a step is in the history).
+async function ctlSettle() {
+  await ctl.sleep(40);
+  for (let i = 0; i < 500 && (ink || fin || shape || history.busy); i++) await ctl.sleep(20);
+  await ctl.sleep(120);
+}
+
+async function ctlDrag(pts, o = {}) {
+  if (!pts?.length) throw new Error('drag needs "points": [[x, y], …]');
+  ctlPointer('pointermove', pts[0][0], pts[0][1], {shift: o.shift});
+  ctlPointer('pointerdown', pts[0][0], pts[0][1], o);
+  await ctl.sleep(60); // (what is lifted is applied first, then the stroke starts)
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], n = o.steps ?? Math.max(4, Math.ceil(Math.hypot((x1 - x0) * view.sx, (y1 - y0) * view.sy) / 10));
+    for (let k = 1; k <= n; k++) { ctlPointer('pointermove', x0 + (x1 - x0) * k / n, y0 + (y1 - y0) * k / n, {...o, held: true}); await ctl.sleep(o.pause ?? 6); }
+  }
+  if (o.hold) await ctl.sleep(o.hold); // (a drag that is held, for a screenshot of it; "release": false leaves the button down)
+  if (o.release !== false) { const l = pts[pts.length - 1]; ctlPointer('pointerup', l[0], l[1], o); await ctlSettle(); }
+}
+
+const ctlKey = (m) => {
+  const t = m.target === 'text' ? $('textbox') : window;
+  const init = {key: m.key, shiftKey: !!m.shift, ctrlKey: !!m.ctrl, metaKey: !!m.meta, altKey: !!m.alt, bubbles: true, cancelable: true};
+  t.dispatchEvent(new KeyboardEvent('keydown', init)); t.dispatchEvent(new KeyboardEvent('keyup', init));
+};
+
+const CTL_MENU = {open: choose, save: saveAs, close: closeOrQuit, 'close-image': closeImage, create: createImage, delete: deleteImage, undo, redo, copy: () => copySelection(), paste: pasteImage};
+
+function ctlState() {
+  const sel = selectionRect();
+  return {
+    ok: true, name: view.name, dir: view.dir, index: view.index, count: view.count, size: pic.naturalWidth ? [dispW(), dispH()] : null,
+    loaded: !!pic.naturalWidth && pic.complete, mode: view.mode, zoom: view.sx, zoomY: view.sy, pixelated: view.pixelated, rot: view.rot,
+    edit: editOn(), tool: tool(), modified: !!(view.modified || floatChanges(view.fl)), selection: sel, text: txt ? {x: txt.x, y: txt.y, value: $('textbox').value} : null,
+    paint: {fg: paint.fg, bg: paint.bg, width: paint.width, style: paint.style, fill: paint.fill, tolerance: paint.tol, font: paint.font, size: paint.size, bold: paint.bold, italic: paint.italic},
+    full: document.body.classList.contains('full'), dock: $('dock').classList.contains('open'), info: toldInfo, status: $('status').textContent, history: {at: history.at, length: history.list.length},
+  };
+}
+
+async function ctlRun(m) {
+  switch (m.cmd) {
+    case 'state': return ctlState();
+    case 'wait': await ctl.sleep(m.ms ?? 200); return {ok: true};
+    case 'key': ctlKey(m); await ctlSettle(); return {ok: true}; // key: "e", "ArrowRight", "Escape"…; shift, ctrl, meta, alt; target: "text" for the text box
+    case 'menu': { const f = CTL_MENU[m.name]; if (!f) throw new Error(`no menu item "${m.name}": ${Object.keys(CTL_MENU).join(', ')}`); await f(); await ctlSettle(); return {ok: true}; }
+    case 'edit': setEdit(m.on !== false); await ctl.sleep(250); return ctlState();
+    case 'tool': if (!editOn()) setEdit(true); setTool(m.name); await ctl.sleep(250); return ctlState(); // select, pen, line, rect, ellipse, fill, text, pick
+    case 'mode': setMode(MODES[String(m.mode)] || m.mode); commit(); await ctl.sleep(300); return ctlState(); // 1 to 6
+    case 'zoom': { // an exact zoom (1 is 100%) with the picture pixel {x, y} (the middle by default) in the middle of the window
+      const b = stageSize(), s = m.scale, cx = m.x ?? dispW() / 2, cy = m.y ?? dispH() / 2;
+      view.free = true; view.sx = view.sy = s; view.ox = view.oy = 0; view.x = b.w / 2 - (cx + 0.5) * s; view.y = b.h / 2 - (cy + 0.5) * s;
+      draw(); await ctl.sleep(300); return ctlState();
+    }
+    case 'zoomby': { const r = $('stage').getBoundingClientRect(), [cx, cy] = m.x === undefined ? [r.left + r.width / 2, r.top + r.height / 2] : ctlClient(m.x, m.y); zoomAt(m.factor, cx - r.left, cy - r.top); await ctl.sleep(300); return ctlState(); }
+    case 'pan': { const b = stageSize(); view.free = true; view.x = b.w / 2 - (m.x + 0.5) * view.sx; view.y = b.h / 2 - (m.y + 0.5) * view.sy; draw(); await ctl.sleep(250); return ctlState(); }
+    case 'rotate': rotate(m.dir ?? 1); commit(); await ctl.sleep(500); return ctlState();
+    case 'fullscreen': { const on = document.body.classList.contains('full'); if (m.on === undefined || m.on !== on) { await ToggleFullscreen(); settleFullscreen(); await ctl.sleep(2200); } return ctlState(); }
+    case 'color': if (m.fg) paint.fg = m.fg.toUpperCase(); if (m.bg) paint.bg = m.bg.toUpperCase(); showColors(); return {ok: true};
+    case 'option': // width, style (solid, dashed, dotted), fill (outline, both, fill), tolerance (0 to 100), font, size, bold, italic
+      for (const [k, key] of [['width', 'width'], ['style', 'style'], ['fill', 'fill'], ['tolerance', 'tol'], ['font', 'font'], ['size', 'size'], ['bold', 'bold'], ['italic', 'italic']]) if (m[k] !== undefined) paint[key] = m[k];
+      showPenWidth(); showToolOptions(); $('pen-w').value = paint.width; renderText(); return {ok: true};
+    case 'palette': if (m.open) openDock(m.open === 'bg' ? 'bg' : 'fg'); else closeDock(); await ctl.sleep(300); return {ok: true};
+    case 'move': ctlPointer('pointermove', m.x, m.y, m); await ctl.sleep(m.settle ?? 200); return {ok: true}; // the pointer over a pixel (the readout, the cursor)
+    case 'click': ctlPointer('pointermove', m.x, m.y, m); ctlPointer('pointerdown', m.x, m.y, m); await ctl.sleep(60); ctlPointer('pointerup', m.x, m.y, m); await ctlSettle(); return {ok: true};
+    case 'dblclick': $('stage').dispatchEvent(new MouseEvent('dblclick', {bubbles: true, clientX: ctlClient(m.x, m.y)[0], clientY: ctlClient(m.x, m.y)[1]})); await ctl.sleep(300); return {ok: true};
+    case 'drag': await ctlDrag(m.points, m); return ctlState(); // {points: [[x, y], …], button, shift, steps, pause, hold, release}
+    case 'release': ctlPointer('pointerup', m.x, m.y, m); await ctlSettle(); return ctlState();
+    case 'select': await ctlDrag([[m.x0, m.y0], [m.x1, m.y1]], m); return ctlState(); // the select tool is used
+    case 'text': { // a text put in the picture at the pixel {x, y} with the text tool: {x, y, value, commit (default true)}
+      if (!editOn()) setEdit(true); setTool('text');
+      ctlPointer('pointerdown', m.x, m.y, {}); ctlPointer('pointerup', m.x, m.y, {}); await ctl.sleep(120);
+      if (!txt) throw new Error('the text could not be placed: the pixel is outside the picture');
+      const tb = $('textbox'); tb.value = m.value; tb.dispatchEvent(new Event('input')); await ctl.sleep(150);
+      if (m.commit !== false) { await commitText(); await ctlSettle(); }
+      return ctlState();
+    }
+    case 'pixel': { const at = [m.x, m.y]; ctlPointer('pointermove', at[0], at[1], {}); await ctl.sleep(m.settle ?? 300); const p = await fetchPixel(m.x, m.y); return {ok: true, pixel: p}; }
+    case 'eval': throw new Error('"eval" does not exist: use the commands');
+  }
+  throw new Error(`unknown command "${m.cmd}"`);
+}
+
+EventsOn('control', async (id, m) => {
+  let res;
+  try { res = await ctlRun(m); } catch (e) { res = {error: errText(e)}; }
+  try { await ControlReply(id, JSON.stringify(res)); } catch {}
+});
 
 (async () => {
   Trace(`js start, visibility ${document.visibilityState}`);

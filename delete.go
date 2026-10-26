@@ -72,6 +72,9 @@ func insertionIndex(names []string, name string) int {
 }
 
 func (a *App) confirmDelete(name string) bool {
+	if v, ok := a.mockAnswer("delete", name); ok { // control mode: yes, or (nothing queued) no
+		return v == "yes"
+	}
 	msg := fmt.Sprintf("Delete %s?", name)
 	yes, buttons := "Delete", []string{"Delete", "Cancel"}
 	switch runtime.GOOS {
@@ -102,6 +105,9 @@ func trashFile(path string) error {
 
 // ConfirmQuit is asked when Esc is pressed twice on the home screen: the system's alert, with Quit and Cancel.
 func (a *App) ConfirmQuit() bool {
+	if v, ok := a.mockAnswer("quit", ""); ok { // control mode: yes, or (nothing queued) no
+		return v == "yes"
+	}
 	if a.ctx == nil {
 		return true
 	}

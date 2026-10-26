@@ -3,283 +3,31 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
-## 0.30.0 – 2026-10-26
+## 0.31.0 – 2026-10-26
+
+Everything since 0.12.27, in one release: an editor next to the viewer.
 
 ### Added
-- **Circle and ellipse** tool: drag the box; Shift makes a circle. It has the width, style and outline/fill options of the rectangle in the ribbon, and the left button and the right button work as there.
-- **Fill** tool (the paint bucket): a click fills the connected area of the same color with the first color, a right click with the second. The ribbon has a tolerance (0 to 100%). It is one step of the undo history, and no step when the area has that color already.
-
-## 0.29.8 – 2026-10-26
+- **Edit mode** (**E** or **Tab**): the title says `[edit]`, the bar says `EDIT`, the view is pixelated, and a tool rail with two color wells and a palette appears. It needs a picture (File → Create Image makes a new white 1280 × 720 one, which counts as unchanged until you do something to it).
+- **Tools**, in the way of Paint, each with its options in a ribbon above the bottom bar: Select (move and stretch a selected part), **Pencil** (round, width 1 to 64), **Line**, **Rectangle** and **Circle/ellipse** (Shift: 45° line, square, circle; width; solid, dashed or dotted; outline, outline with fill, fill; the right button uses the second color; Esc or the other mouse button drops one that is being drawn), **Fill** (the paint bucket, with a tolerance), **Text** (font, size, bold, italic) and **Pick** (takes a color; the last tool comes back). Every one is a step of the undo history. The two colors have a palette that slides up, and the pixel readout in the bar shows x and y, R G B with meters and the hex color.
+- **Selections** are put on the clipboard the moment you let go, with a short highlight (a clipboard fades in, the border and the message flash) and their size written in the middle while they are drawn. S saves just the selection as a picture of its own. A selection starts only when the drag covers more than one pixel.
+- **Save and close**: S on a changed picture from a file asks **Overwrite**, **Save As** (the dialog offers the name with the date and time added, `photo-20261026-153012.jpg`) or **Cancel**. Closing a picture with changes asks Save, Discard or Cancel: **Ctrl/Cmd+W** (closes the picture, or the window when there is none), **Esc Esc** (two presses within 250 ms; on the home screen it asks whether to quit), the **✕** in edit mode, File → Close Image, going to another picture. **D** deletes the picture after a question (the Trash on a Mac) and shows the next one.
+- **Home screen**: three big buttons, **Open file…** (**O**), **Open from clipboard** (Ctrl/Cmd+V) and **Create image** (**N**). **O** and **N** work with a picture open too, and the question about unsaved changes comes before the Open dialog.
+- **Zoom modes 5 and 6**, as in IrfanView: the side edges touch the window, or the top and bottom edges. Mode 2 fits the picture to 85% of the window and is what every window starts with.
+- **Paste as a new picture** when edit mode is off (undo brings the old one back).
+- **Help → mcView Help** opens the manual (mormitech.com/tools/mcview/docs), with F1 on Windows and Linux; on macOS it is a Help menu after Window.
+- **Control mode**: `mcview --control 0` lets another program drive every feature (keys, menus, tools, pointer drags in picture pixels, zoom, options, full screen, the answers of the dialogs) over a local, token-protected connection. For demo screenshots and scripted tests; see `docs/control.md`, `scripts/mcview_ctl.py` and `scripts/demo_screenshots.py`. Off unless asked for.
 
 ### Changed
-- The "Quit mcView?" question no longer says that Esc was pressed twice.
-
-## 0.29.7 – 2026-10-26
-
-### Changed
-- Esc twice on the home screen asks "Quit mcView?" (Quit, Cancel) before it quits. Ctrl/Cmd+W on the home screen still quits at once.
-
-## 0.29.6 – 2026-10-26
-
-### Added
-- Two more zoom modes, as in IrfanView: **5** zooms until the left and right edges of the picture touch the window (the top and bottom go over it, or stay short), **6** until the top and bottom edges touch it. Like the others they stay while you go through the pictures, and a double click toggles between 100% and the mode.
-
-## 0.29.5 – 2026-10-26
+- The window title says the picture's size, its place in the folder and the zoom; the bottom bar has no status line in view mode and repeats them only in full screen (where there is no title).
+- Full screen (**F** or **Enter**, also on the home screen) has a black background; Esc does not leave it, because Esc twice closes the picture. The bottom bar comes up when the pointer is at the bottom edge or while there is a selection. On Windows the menu bar is hidden in full screen and shows at the top edge.
+- US English spelling ("color").
 
 ### Fixed
-- The page now claims the Esc key (`preventDefault`), so that the system does not get it to leave full screen, in addition to the Mac option of 0.29.4.
-
-## 0.29.4 – 2026-10-26
-
-### Fixed
-- Esc really does not leave full screen on a Mac any more: the system itself took it (the window's own full screen), whatever the page did. **F** and **Enter** are the way out.
-
-## 0.29.3 – 2026-10-26
-
-### Fixed
-- **F** toggles full screen on the home screen too (it did only with a picture open).
-
-## 0.29.2 – 2026-10-26
-
-### Changed
-- Esc no longer leaves full screen, because it gets in the way of Esc twice (close the picture). **F** or **Enter** toggles full screen.
-
-## 0.29.1 – 2026-10-26
-
-### Fixed
-- The home screen in full screen (black background): the title, the text and the logo are light now, so they can be read in the light theme too.
-
-## 0.29.0 – 2026-10-26
-
-### Changed
-- The home screen has three big buttons with an icon, a title and a small line under it: Open file… (**O**), Open from clipboard (Ctrl/Cmd+V) and Create image (**N**). The key is written on each button.
-- **O** opens the Open dialog and **N** creates a blank image, from any picture or from the home screen. If the picture has unsaved changes, the question (Save, Discard, Cancel) comes first, before the Open dialog (it used to come after a file was chosen). This goes for File → Open… too.
-
-## 0.28.2 – 2026-10-26
-
-### Added
-- Help → mcView Help opens the manual (mormitech.com/tools/mcview/docs) in the browser. On macOS it is a Help menu after Window; on Windows and Linux it is the first item of Help, with F1 (About mcView follows it).
-
-## 0.28.1 – 2026-10-26
-
-### Changed
-- A pencil stroke, line or rectangle that is being drawn is dropped at once by Esc or by a click of the other mouse button, while the first is still held down. Nothing is drawn into the picture.
-
-## 0.28.0 – 2026-10-26
-
-### Added
-- The Line, Rectangle, Text and Pick tools of the edit bar work, in the way of Paint. Each has its options in the ribbon above the bottom bar.
-  - Line and Rectangle: drag it out; Shift makes the line go at a multiple of 45° and the rectangle a square; Esc drops it. The left button uses the first color, the right button the second. Options: width, and a solid, dashed or dotted style. The rectangle also has outline, outline and fill (the second color fills) and fill only (the first color).
-  - Text: click to put a box on the picture and type; click elsewhere, pick another tool or press Ctrl/Cmd+Enter to draw it in, Esc to drop it. Options: font, size, bold and italic.
-  - Pick: a click takes the color of the pixel as the first color, a right click as the second, and the tool you had comes back.
-- Every one of them is a step of the undo history. The drawing goes to the picture as a small PNG (`DrawLayer`), so big pictures stay quick.
-
-## 0.27.0 – 2026-10-26
-
-### Added
-- Esc pressed twice within a quarter of a second closes the picture (asking about unsaved changes first), and closes the window when there is no picture. The first Esc does what it did before.
-
-## 0.26.4 – 2026-10-26
-
-### Changed
-- A new blank image (Create Image) is not modified: no dot in the title, and closing it (Cmd+W, Cmd+Q, the window's close button, the ✕, going to another picture) asks nothing. The first change to it, a stroke or a pasted or moved part, makes it a picture with unsaved changes; undoing back to the blank one makes it blank again.
-
-## 0.26.3 – 2026-10-26
-
-### Changed
-- Ctrl+W (Cmd+W) closes the picture when there is one, and the window when the window is empty. File → Close Window is now File → Close.
-
-## 0.26.2 – 2026-10-26
-
-### Changed
-- The pencil cursor shows only over the picture; beside it the pointer is the ordinary one.
-- The bottom bar no longer repeats the size, place in the folder and zoom (the title has them); it shows them in full screen only, where there is no title. The size of a selection is still there.
-
-## 0.26.1 – 2026-10-26
-
-### Changed
-- Close Image on a picture with changes asks the same question as closing the window: Save, Discard or Cancel.
-
-## 0.26.0 – 2026-10-26
-
-### Changed
-- S on a picture from a file that has changes (or is turned) asks first: Overwrite, Save As… or Cancel. Overwrite writes the changes into the file; Save As… opens the dialog with the name followed by the date and time (`photo-20261026-153012.jpg`).
-
-## 0.25.3 – 2026-10-26
-
-### Fixed
-- Letting go of a selection (Esc, a click) ends the clipboard highlight at once, and so does starting a new one. Before, the clipboard icon of the old selection could appear again over the next one while its button was still held.
-
-## 0.25.2 – 2026-10-26
-
-### Fixed
-- A selection starts only when the mouse covers more than one pixel. Holding the button down no longer shows a 1 × 1 frame, and a drag that stays on one pixel selects and copies nothing.
-
-## 0.25.1 – 2026-10-26
-
-### Fixed
-- The pencil stops the moment the mouse button is let go. Before, it kept following the pointer until the stroke was drawn into the picture, which took longer on big pictures.
-
-## 0.25.0 – 2026-10-26
-
-### Changed
-- While a selection is drawn or resized, its size is written in the middle of it (white with a black outline, so that it can be read on any picture).
-- A copy to the clipboard lights things up for a moment: the border of the selection fades to orange and white and back to its usual black and dirty white, a clipboard fades in and out in the middle, and the message in the status bar flashes orange and settles. The border is black and dirty white at rest again.
-
-## 0.24.0 – 2026-10-26
-
-### Changed
-- Zoom mode 2 (the key 2) zooms every image, up or down, so that it fills 85% of the window. It is the mode every window starts with (it was 3), so a new image, a small one and a big one all show whole with a margin around them.
-
-## 0.23.2 – 2026-10-26
-
-### Fixed
-- Edit mode cannot be turned on in the window without an image, and it ends whenever the window gets empty (File → Close Image, the close button, deleting the last image, undo back to the empty window).
-
-## 0.23.1 – 2026-10-26
-
-### Added
-- In edit mode the status bar has a close (x) button at its right end. It closes the image (any image) and goes back to the empty window, and edit mode ends. Undo brings the image back, as with File → Close Image.
-
-## 0.23.0 – 2026-10-26
-
-### Added
-- File → Create Image makes a new white 1280 × 720 image and starts edit mode. The empty window's "Create image" button does the same (it replaces "New picture…" and its size fields; the size will be configurable later).
-
-### Changed
-- Names: "Open file…" (the button of the empty window, File → Open File…), "Delete Image…" and "Close Image".
-
-## 0.22.1 – 2026-10-26
-
-### Added
-- File → Delete Picture… does the same as the key D.
-
-## 0.22.0 – 2026-10-26
-
-### Added
-- D deletes the picture after a question (on macOS the file goes to the Trash). The folder is counted again and the picture that comes next in the folder is shown at the same place (3 / 8 becomes 3 / 7); after the last picture the one before it, and the empty window when no picture is left. Undo does not bring a deleted picture back.
-
-### Changed
-- F toggles full screen, the same as Enter (it used to choose zoom mode 2; the key 2 still does).
-- US English spelling: "color", not "colour".
-- Keys typed into a field of the empty window (the size of a new picture) are not taken as commands.
-
-## 0.21.0 – 2026-10-26
-
-### Changed
-- The pencil draws a round stroke 5 pixels wide by default. While the pencil is the tool, a ribbon at the bottom has a slider for its width (1 to 64 pixels) and a dot that shows it; the color palette takes its place while it is open.
-
-## 0.20.0 – 2026-10-26
-
-### Added
-- The window without a picture offers "Open from clipboard" when the clipboard has a picture (checked when the window opens and when it gets focus again), and "New picture…", which asks for a size and whether the picture is white or transparent.
-
-## 0.19.1 – 2026-10-26
-
-### Changed
-- The border of the selection is black and dirty white while it is being drawn, and orange and dirty white once the button is released.
-
-## 0.19.0 – 2026-10-26
-
-### Changed
-- A finished selection (the button is released after drawing it, or after moving or resizing its frame) is put on the clipboard at once, with a short note in the status bar.
-- The moving border of the selection is black and orange instead of black and white.
-- S (Save As) with a selection saves only the selected part, as a picture of its own; the window keeps showing its picture. Without a selection the whole picture is offered, as before.
-
-## 0.18.4 – 2026-10-26
-
-### Fixed
-- The pencil no longer freezes the window: the line between two points of a stroke could go on for ever.
-
-## 0.18.3 – 2026-10-26
-
-### Fixed
-- The status bar has one height. It used to get lower when the pixel readout was not shown (the pointer outside the picture).
-
-## 0.18.2 – 2026-10-26
-
-### Fixed
-- The status bar no longer takes the pointer. Moving the pointer to the bottom of the window in edit mode used to leave the picture, which cleared the pixel readout and made the bar flicker.
-
-## 0.18.1 – 2026-10-26
-
-### Fixed
-- In edit mode the pointer at the bottom of the window no longer does anything to the status bar, which edit mode shows already.
-
-## 0.18.0 – 2026-10-26
-
-### Added
-- Edit bar: a Select tool at the top, which is the one chosen whenever edit mode starts (the selection works as before).
-- Edit bar: the pencil draws. A stroke is one pixel wide, in the first color with the left button and in the second color with the right button, and is one step of the undo history. Choosing the pencil lets go of the selection.
-
-## 0.17.0 – 2026-10-26
-
-### Changed
-- View mode has no status bar. What it said about the picture (its size, its place in the folder, the zoom) is in the title of the window. The bar shows in edit mode, while there is a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom.
-
-## 0.16.1 – 2026-10-26
-
-### Fixed
-- With the edit bar open, the status bar starts at its right edge instead of running under it, so the two colors at the bottom of the edit bar are not covered.
-
-## 0.16.0 – 2026-10-26
-
-### Added
-- Edit bar: the two colors (the drawing color and a second one) are at the bottom. Clicking one slides a palette up above the status bar, with the 20 basic colors and "Edit colors…" for the system picker. It closes with a click anywhere else, and when the pointer leaves it after a color was changed.
-- Edit bar: buttons for a pencil and a color picker (they do nothing yet, like the line, rectangle and text buttons).
-
-## 0.15.0 – 2026-10-26
-
-### Added
-- The title of the window says the size of the picture, after its name.
-- In full screen the bottom bar shows while the pointer is at the bottom of the screen, and goes when it leaves.
-- In full screen with edit mode off, the bottom bar stays for as long as there is a selection.
-
-## 0.14.4 – 2026-10-26
-
-### Fixed
-- The items of the status bar are centred vertically, so the pixel readout lines up with the file name and the picture info.
-
-## 0.14.3 – 2026-10-26
-
-### Changed
-- The pixel readout in the status bar is easier to read: the position is written x and y, each color channel has a small meter, and the hex code sits in a pill with the color swatch.
-
-## 0.14.2 – 2026-10-26
-
-### Changed
-- Tab toggles edit mode, the same as E.
-
-## 0.14.1 – 2026-10-26
-
-### Changed
-- Every window starts in zoom mode 3 (contain). The mode chosen with the keys 1 to 4 is kept while the window is open, but no longer for the next start or for a new window (Ctrl+N).
-
-## 0.14.0 – 2026-10-26
-
-### Changed
-- Edit mode (E) shows in the title ("[edit]") and in the status bar ("EDIT"). Turning it on switches to the pixelated view and turning it off goes back to the smoothed one; Tab does nothing for now.
-- In full screen, edit mode shows the status bar along with the edit bar; with it off both are hidden.
-
-## 0.13.1 – 2026-10-26
-
-### Changed
-- With edit mode off, paste always makes the clipboard picture the picture of the window, dropping the open one (undo brings it back). With edit mode on, paste works as before.
-
-## 0.13.0 – 2026-10-26
-
-### Changed
-- Edit mode (E) now decides what the selection does. With edit mode off, dragging the inside of the selection moves only the frame, and dragging an edge resizes only the frame; the picture is not touched and nothing goes into the undo history. With edit mode on, dragging the inside lifts and moves the part, and dragging an edge stretches it, like Paint; these steps can be undone.
-
-## 0.12.29 – 2026-10-25
-
-### Fixed
-- On Windows the menu shortcuts Ctrl+O, Ctrl+W, Ctrl+Shift+W and Ctrl+Q also work while the menu bar is hidden in full screen (the others were already handled by the page).
-
-## 0.12.28 – 2026-10-25
-
-### Changed
-- Full screen has a black background. On Windows the menu bar is hidden in full screen and shows while the pointer is at the top edge of the screen.
+- The pencil stops the moment the mouse button is let go (it used to follow the pointer until the stroke was drawn), and no longer freezes the window.
+- A stale clipboard highlight no longer reappears over the next selection.
+- The pencil cursor shows only over the picture; the status bar keeps one height and never takes the pointer.
+- On Windows the menu shortcuts Ctrl+O, Ctrl+W, Ctrl+Shift+W and Ctrl+Q also work while the menu bar is hidden in full screen.
 
 ## 0.12.27 – 2026-10-25
 

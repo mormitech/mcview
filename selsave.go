@@ -39,7 +39,7 @@ func (a *App) SaveSelectionAs(rot, x, y, w, h int) (string, error) {
 	if cur.Path != "" {
 		stem = strings.TrimSuffix(cur.Name, filepath.Ext(cur.Name))
 	}
-	target, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
+	target, err := a.pickSave(wruntime.SaveDialogOptions{
 		Title:                "Save selection as",
 		DefaultDirectory:     cur.Dir,
 		DefaultFilename:      stem + "-selection-" + time.Now().Format("150405") + ".png",

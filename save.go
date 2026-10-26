@@ -77,7 +77,7 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 	if stamp {
 		name = changedName(name, time.Now())
 	}
-	target, err := wruntime.SaveFileDialog(a.ctx, wruntime.SaveDialogOptions{
+	target, err := a.pickSave(wruntime.SaveDialogOptions{
 		Title:                "Save picture as",
 		DefaultDirectory:     cur.Dir,
 		DefaultFilename:      name,
