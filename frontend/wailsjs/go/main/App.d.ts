@@ -18,6 +18,8 @@ export function ChooseImage():Promise<void>;
 
 export function ClearFloat():Promise<void>;
 
+export function ClearRecent():Promise<void>;
+
 export function ClipboardHasImage():Promise<boolean>;
 
 export function CloseWindow():Promise<void>;
@@ -42,9 +44,35 @@ export function DrawShape(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 
+export function Effect(arg1:number,arg2:string):Promise<main.ImageInfo>;
+
 export function ExitFullscreen():Promise<void>;
 
+export function ExportFrames(arg1:string,arg2:string):Promise<string>;
+
+export function ExportFramesDialog():Promise<string>;
+
 export function FloodFill(arg1:number,arg2:number,arg3:number,arg4:string,arg5:number):Promise<main.ImageInfo>;
+
+export function GifAddFrame(arg1:number,arg2:boolean,arg3:number,arg4:boolean):Promise<main.ImageInfo>;
+
+export function GifDeleteFrame(arg1:number,arg2:boolean):Promise<main.ImageInfo>;
+
+export function GifDuplicateFrame(arg1:number,arg2:number,arg3:number,arg4:boolean):Promise<main.ImageInfo>;
+
+export function GifFrame(arg1:number):Promise<string>;
+
+export function GifInfo():Promise<main.GifMeta>;
+
+export function GifMoveFrame(arg1:number,arg2:number,arg3:boolean):Promise<main.ImageInfo>;
+
+export function GifSetDelay(arg1:number,arg2:number):Promise<main.ImageInfo>;
+
+export function GifSheet(arg1:number):Promise<Record<string, any>>;
+
+export function GifStart(arg1:number):Promise<main.ImageInfo>;
+
+export function GifTarget(arg1:number):Promise<void>;
 
 export function HasTransparency():Promise<boolean>;
 
@@ -66,6 +94,8 @@ export function NewWindow():Promise<void>;
 
 export function OpenImage(arg1:string):Promise<void>;
 
+export function OpenRecent(arg1:string):Promise<void>;
+
 export function PaintPixels(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function PasteLayer(arg1:number,arg2:number,arg3:number):Promise<main.PastedLayer>;
@@ -77,6 +107,10 @@ export function PixelAt(arg1:number,arg2:number,arg3:number,arg4:number):Promise
 export function PolygonPNG(arg1:number,arg2:string):Promise<string>;
 
 export function PreparePixels():Promise<string>;
+
+export function PrintPNG(arg1:string):Promise<string>;
+
+export function Recent():Promise<Array<main.RecentFile>>;
 
 export function ResizeCanvas(arg1:number,arg2:number,arg3:number,arg4:string,arg5:string):Promise<main.ImageInfo>;
 
@@ -94,17 +128,25 @@ export function RotatePNG(arg1:string,arg2:number):Promise<string>;
 
 export function SaveAs(arg1:number):Promise<string>;
 
+export function SaveRegionTo(arg1:string,arg2:string,arg3:boolean,arg4:number):Promise<string>;
+
 export function SaveSelectionAs(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number):Promise<string>;
 
 export function SaveToPath(arg1:string,arg2:number,arg3:boolean):Promise<string>;
 
+export function SaveToPathQ(arg1:string,arg2:number,arg3:boolean,arg4:number):Promise<string>;
+
 export function SaveWindow():Promise<void>;
+
+export function ScanImage():Promise<void>;
 
 export function SelectionPNG(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number):Promise<string>;
 
 export function SetEditMode(arg1:boolean):Promise<void>;
 
 export function SetFloat(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:boolean):Promise<void>;
+
+export function SetGifFrame(arg1:number):Promise<void>;
 
 export function SetMenuBar(arg1:boolean):Promise<void>;
 
@@ -119,5 +161,7 @@ export function Step(arg1:number):Promise<string>;
 export function ToggleFullscreen():Promise<void>;
 
 export function Trace(arg1:string):Promise<void>;
+
+export function Transform(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function Version():Promise<string>;

@@ -50,19 +50,25 @@ const chatSystemPrompt = `You are the assistant inside the picture editor mcView
 	`Polygons may be as complicated as the shape needs: tens or hundreds of points along an outline are fine, and polygons joins many separate pieces (all the labels, all the berries) into one mask; do not settle for a rectangle or a rough triangle when the shape is not one. Zoom in with snapshot (zoom, outline) to read coordinates precisely and check the outline before you use it. ` +
 	`To remove text: trace the letters themselves. Zoom in on the text (snapshot with zoom), then either use select_by_color on the ink (tolerance and a little grow; usually the most exact) or outline the letters with polygons, and work letter by letter or word by word: one mask for each, then fill_region on it with method smooth and grain true so that each letter is filled from the paper right around it, then look again (snapshot with zoom), fix what is left, and move to the next. Small pieces filled from their own surroundings look natural; one big patch over a whole line does not. The same goes for any small detail (a scratch, a wire, a speck, a logo, a strand of hair, a reflection): outline it exactly and fill it from its own surroundings, one piece at a time, and never remove several things with one big shape. ` +
 	`To remove writing, a label, a print or a spot: never cover it with a rectangle. Make a mask that hugs only the thing (select_by_color on its color with a few pixels of grow, or create_mask with a polygon along its outline, or selection_mask when the user selected it), check it with snapshot (mask), then call fill_region on that mask: method smooth with grain true for flat or slowly changing surfaces (paper, post-its, walls, skin, sky), method patch for textures (fabric, grass, water, food), nearest for hard edges between colors. ` +
+	`To make an animated GIF: draw the first frame, then add_frame (a copy of the last frame; the answer gives its number) and change only what moves in it (set_pixels, clone_region with to_x/to_y or an angle, draw tools), again and again; always pass the frame number as the frame parameter of the tools, which then work on that frame whatever the user has on the screen (animation_info tells which frame the user looks at, for "this frame"), duplicate_frame, move_frame and delete_frame reorder, set_frame_delay sets the speed, frames_sheet shows all frames at once so you can check the motion. Plan the motion first (how many frames, how far each part moves per frame, and that the last frame leads back to the first). Leave the animation ready in the window: the user plays it in the frame player and saves it themselves. ` +
 	`The user may mark a part of the picture with a highlight drawn in mcView (a rectangle, circle, arrow, scribble or the like, usually in a strong color) and then ask you to change, remove or fix "this", "what I marked" or "the highlighted part", with or without saying how it is marked. ` +
 	`Then: first take a snapshot and find the marking (say which shape you found if the user did not), and note exactly which area it points at, its box and what is inside it, before anything changes. ` +
 	`The marking is not part of the picture the user wants to keep: if it was the last step in the window, call undo once to take it away, take another snapshot, and check that only the marking is gone; if the undo took away something else, call redo. ` +
 	`If the marking is not the last step, do not undo; leave the earlier edits alone and cover the marking as part of your change. Then make the change on the area you noted. If you cannot tell what is marked, ask the user instead of guessing. ` +
+	`To hide something (a face, a plate, a name, a screen) use apply_effect censor on a polygon or mask that hugs it; blur, pixelize, grayscale, negative, sepia, emboss, explosion and the color adjustments (brightness, contrast, saturation, temperature, hue, levels) work on a box, a polygon, a mask or the user's selection the same way. For a speech bubble use draw_callout and then add_text inside it. After a change you can check that only the intended area changed with diff_original. ` +
 	`Answer in the language of the user, briefly and plainly.`
 
 // chatArgs are the arguments of the program for one message. The message itself goes in through the standard input.
-func chatArgs(session, mcpFile string) []string {
+func chatArgs(session, mcpFile string, web bool) []string {
+	tools, allowed := "", "mcp__"+mcpServerName
+	if web { // (AI → Web search and fetch)
+		tools, allowed = "WebSearch,WebFetch", allowed+",WebSearch,WebFetch"
+	}
 	args := []string{
 		"-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
 		"--strict-mcp-config", "--mcp-config", mcpFile,
-		"--tools", "", // no file, shell or web tools: the picture is all it can touch
-		"--allowedTools", "mcp__" + mcpServerName,
+		"--tools", tools, // no file or shell tools: the picture, and the web when the AI menu allows it, are all it can touch
+		"--allowedTools", allowed,
 		"--append-system-prompt", chatSystemPrompt,
 	}
 	if session != "" {
@@ -184,7 +190,7 @@ func (a *App) ChatSend(text string) error {
 		a.chat.mu.Unlock()
 		return fmt.Errorf("an answer is being written: wait for it, or stop it")
 	}
-	cmd := exec.Command(claude, chatArgs(a.chat.session, file)...)
+	cmd := exec.Command(claude, chatArgs(a.chat.session, file, !loadAI().NoWeb)...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(text)
 	out, err := cmd.StdoutPipe()

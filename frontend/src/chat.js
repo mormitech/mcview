@@ -52,6 +52,7 @@ const scroll = () => { const l = $('chat-log'); l.scrollTop = l.scrollHeight; };
 function setBusy(b) {
   busy = b;
   $('chat-send').hidden = b; $('chat-stop').hidden = !b;
+  $('chat-toggle').classList.toggle('working', b); // (the button shows that Claude is busy while the window is minimized)
 }
 
 function showSetup(text, buttons = [], extra = '') {
@@ -97,16 +98,12 @@ async function refresh() {
   render();
 }
 
-// The panel slides in and the picture window narrows with it; the picture is fitted to the room that is left on every frame of that (the page is told as a
-// window that changes size is).
+// The panel floats over the picture's bottom right corner, like a chat window: it grows out of the chat button and shrinks back into it.
 export function toggleChat(force) {
   isOpen = force ?? !isOpen;
   $('chat').classList.toggle('open', isOpen);
   $('chat').setAttribute('aria-hidden', String(!isOpen));
   document.body.classList.toggle('chat-open', isOpen);
-  const end = performance.now() + 340;
-  const frame = () => { window.dispatchEvent(new Event('resize')); if (performance.now() < end) requestAnimationFrame(frame); };
-  requestAnimationFrame(frame);
   if (isOpen) { refresh(); setTimeout(grow, 0); }
 }
 
@@ -146,7 +143,7 @@ function onEvent(ev) {
   }
 }
 
-// The width of the panel: 360 pixels to start with, then what the user dragged it to (kept for next time), never under 280 or over what leaves 320 pixels for the picture.
+// The width of the panel: 460 pixels to start with, then what the user dragged it to (kept for next time), never under 280 or over what leaves 320 pixels for the picture.
 const CHAT_MIN = 280;
 const chatMax = () => Math.max(CHAT_MIN, window.innerWidth - 320);
 function setChatWidth(w, save) {
@@ -159,7 +156,6 @@ function setChatWidth(w, save) {
 function initResize() {
   try { const w = parseInt(localStorage.getItem('chatWidth') || '', 10); if (w) setChatWidth(w, false); } catch {}
   const handle = $('chat-resize');
-  let frame = 0;
   handle.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
     ev.preventDefault();
@@ -168,14 +164,12 @@ function initResize() {
   });
   handle.addEventListener('pointermove', (ev) => {
     if (!document.body.classList.contains('chat-resizing')) return;
-    setChatWidth(window.innerWidth - ev.clientX, false);
-    if (!frame) frame = requestAnimationFrame(() => { frame = 0; window.dispatchEvent(new Event('resize')); }); // (the picture follows)
+    setChatWidth(window.innerWidth - 16 - ev.clientX, false);
   });
   const end = (ev) => {
     if (!document.body.classList.contains('chat-resizing')) return;
     document.body.classList.remove('chat-resizing');
-    setChatWidth(window.innerWidth - ev.clientX, true);
-    window.dispatchEvent(new Event('resize'));
+    setChatWidth(window.innerWidth - 16 - ev.clientX, true);
   };
   handle.addEventListener('pointerup', end);
   handle.addEventListener('pointercancel', (ev) => { document.body.classList.remove('chat-resizing'); });
@@ -189,6 +183,13 @@ export function initChat() {
   initResize();
   EventsOn('chat', onEvent);
   $('chat-toggle').onclick = () => toggleChat();
+  document.addEventListener('keydown', (ev) => { // Esc in the chat window minimizes it (and is not passed on: it would also step the picture's own Esc)
+    if (ev.key !== 'Escape' || !isOpen || ev.isComposing || !ev.target.closest?.('#chat')) return;
+    ev.preventDefault(); ev.stopPropagation();
+    document.activeElement?.blur();
+    toggleChat(false);
+  }, true);
+  document.addEventListener('pointerdown', (ev) => { if (isOpen && !ev.target.closest('#chat, #chat-toggle')) toggleChat(false); }, true); // a click next to the panel minimizes it (and still does what it was for)
   $('chat-close').onclick = () => toggleChat(false);
   $('chat-new').onclick = () => { ChatReset(); $('chat-log').replaceChildren(); bubble = null; setBusy(false); add('hint', 'New conversation. Ask Claude to change this picture.'); };
   $('chat-send').onclick = send;

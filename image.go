@@ -84,7 +84,7 @@ func (a *App) current() ImageInfo {
 		if a.clip == nil {
 			return ImageInfo{}
 		}
-		return ImageInfo{Name: clipboardName, Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: !a.blank || a.fl.moved(), CanAlpha: true}
+		return ImageInfo{Name: unsavedName(a.origin), Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: !a.blank || a.fl.moved(), CanAlpha: true}
 	}
 	return ImageInfo{Name: filepath.Base(a.image), Path: a.image, Dir: filepath.Dir(a.image), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: a.clip != nil || a.fl.moved(), CanAlpha: canAlpha(a.image)}
 }
@@ -125,11 +125,14 @@ func (a *App) setImage(path string) error {
 	a.imgSeq++
 	a.pix = pixelCache{} // the decoded picture of the one before is not needed any more
 	a.fl = nil
+	a.gifs = nil // (the file is opened afresh: its animation is as it is on the disk)
 	a.newStateLocked()
 	a.mu.Unlock()
+	addRecent(abs)
 	if a.ctx != nil { // not yet during startup: the window asks for the picture itself
 		a.titleWindow()
 		a.emit("image", a.Image())
+		a.refreshRecentMenu()
 	}
 	return nil
 }

@@ -53,6 +53,25 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 	}
 	name := cur.Name
 	stamp := false
+	var gm gifSaveChoice // what of an animation is saved (see askGifSave), and the number of the frame that is shown
+	frameNo := 0
+	if g := a.gifSaving(); g != nil { // an animation: the whole of it, or the frame that is shown
+		a.mu.Lock()
+		frame, count := g.cur, len(g.frames)
+		a.mu.Unlock()
+		mode := a.askGifSave(frame, count)
+		if mode == gifSaveCancel {
+			return "", nil
+		}
+		a.mu.Lock()
+		a.gifMode = mode
+		a.mu.Unlock()
+		defer func() { a.mu.Lock(); a.gifMode = 0; a.mu.Unlock() }()
+		gm, frameNo = mode, frame+1
+		if mode == gifSaveFrame {
+			ask = false // a new file: nothing to overwrite
+		}
+	}
 	_, writable := saveFormats[strings.ToLower(filepath.Ext(cur.Path))]
 	if ask && cur.Path != "" && writable && (cur.Modified || (rot%4+4)%4 != 0) {
 		switch a.askOverwrite(cur.Name) {
@@ -74,6 +93,19 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 			name = strings.TrimSuffix(name, filepath.Ext(name)) + ".png"
 		}
 	}
+	filter := wruntime.FileFilter{DisplayName: "PNG, JPEG, GIF, BMP, TIFF", Pattern: "*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff"}
+	if gm != 0 { // an animation: the whole of it is a GIF (and only a GIF is offered), a frame is a picture
+		stem := "animation-" + time.Now().Format("20060102-150405")
+		if cur.Path != "" {
+			stem = strings.TrimSuffix(cur.Name, filepath.Ext(cur.Name))
+		}
+		if gm == gifSaveAll {
+			name = stem + ".gif"
+			filter = wruntime.FileFilter{DisplayName: "GIF animation", Pattern: "*.gif"}
+		} else {
+			name = fmt.Sprintf("%s-frame-%d.png", stem, frameNo)
+		}
+	}
 	if stamp {
 		name = changedName(name, time.Now())
 	}
@@ -82,7 +114,7 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 		DefaultDirectory:     cur.Dir,
 		DefaultFilename:      name,
 		CanCreateDirectories: true,
-		Filters:              []wruntime.FileFilter{{DisplayName: "PNG, JPEG, GIF, BMP, TIFF", Pattern: "*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff"}},
+		Filters:              []wruntime.FileFilter{filter},
 	})
 	if err != nil || target == "" {
 		return "", err
@@ -165,6 +197,27 @@ func (a *App) saveTo(target string, rot int) (string, error) {
 // writePicture writes the picture to f in the given format. A file that is of that type already is copied as it is, which keeps
 // everything in it (EXIF, profiles, animation); anything else is decoded and written again, turned the way it is shown.
 func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) error {
+	if g := a.gifSaving(); g != nil { // an animation: all of it as a GIF, else the frame that is shown (the file itself is not copied then)
+		a.mu.Lock()
+		mode, frames, delays, shown := a.gifMode, g.frames, g.delays, g.frames[g.cur]
+		a.mu.Unlock()
+		if mode == 0 { // not asked (a tool saves): a GIF is the whole animation, any other type the frame that is shown
+			mode = gifSaveFrame
+			if format == "gif" {
+				mode = gifSaveAll
+			}
+		}
+		if mode == gifSaveAll && format == "gif" {
+			return encodeGifAnimation(f, frames, delays)
+		}
+		a.mu.Lock()
+		q := a.saveQuality
+		a.mu.Unlock()
+		if q == 0 {
+			q = 95
+		}
+		return encodePictureQ(f, turnImage(shown, rot), format, q)
+	}
 	if cur.Path != "" && !cur.Modified && rot == 0 && saveFormats[strings.ToLower(filepath.Ext(cur.Path))] == format {
 		src, err := os.Open(cur.Path)
 		if err != nil {
@@ -181,7 +234,13 @@ func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) er
 	if source != "go" {
 		return fmt.Errorf("mcView cannot convert %s to another type", cur.Name)
 	}
-	return encodePicture(f, turnImage(shownImage(pc), rot), format)
+	a.mu.Lock()
+	q := a.saveQuality
+	a.mu.Unlock()
+	if q == 0 {
+		q = 95
+	}
+	return encodePictureQ(f, turnImage(shownImage(pc), rot), format, q)
 }
 
 // shownImage is the picture the way it is shown, with the EXIF orientation applied.
@@ -202,6 +261,11 @@ func shownImage(pc pixelCache) image.Image {
 }
 
 func encodePicture(w io.Writer, img image.Image, format string) error {
+	return encodePictureQ(w, img, format, 95)
+}
+
+// encodePictureQ is encodePicture with the quality (1 to 100) of a JPEG.
+func encodePictureQ(w io.Writer, img image.Image, format string, quality int) error {
 	switch format {
 	case "png":
 		return png.Encode(w, img)
@@ -210,7 +274,7 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 		flat := image.NewRGBA(b)
 		draw.Draw(flat, b, image.White, image.Point{}, draw.Src)
 		draw.Draw(flat, b, img, b.Min, draw.Over)
-		return jpeg.Encode(w, flat, &jpeg.Options{Quality: 95})
+		return jpeg.Encode(w, flat, &jpeg.Options{Quality: min(max(quality, 1), 100)})
 	case "gif":
 		if o, ok := img.(interface{ Opaque() bool }); !ok || !o.Opaque() { // a transparent color of its own, or the transparent parts would be black
 			return gif.Encode(w, img, &gif.Options{NumColors: 256, Quantizer: transparentPlan9{}, Drawer: draw.FloydSteinberg})

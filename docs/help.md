@@ -47,11 +47,11 @@ The keys **1** to **6** set how the picture sits in the window, as in IrfanView.
 
 ### Moving through a folder
 
-**Arrow keys**, **Space** (next) and **Backspace** (previous) go through the pictures of the folder in alphabetical order, round and round. The title of the window says the size, the place in the folder (`3 / 5`) and the zoom.
+**Arrow keys** (right: next) and **Backspace** (previous) go through the pictures of the folder in alphabetical order, round and round. The title of the window says the size, the place in the folder (`3 / 5`) and the zoom.
 
 ### Turning, full screen
 
-- **R** turns the view a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file stays as it is until you save.
+- **R** turns the view a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file stays as it is until you save. With a part selected, **R** turns only that part instead (see Image and Effects).
 - **F** or **Enter** is full screen. There is no title or bar then; the bar comes up when the pointer is at the bottom edge. **Esc** does not leave full screen (two Escs close the picture).
 
 ### Looking closely
@@ -70,7 +70,7 @@ A picture with transparent parts has chequered squares behind it.
 
 | Tool | What it does |
 |---|---|
-| **Select** | Drag to select a rectangle. Drag an edge to stretch the selected part, or its inside to move it; the place it came from turns white (transparent where the picture can have it). **Shift** and drag moves just the frame |
+| **Select** | Drag to select a rectangle. Drag an edge or the inside of the selection to resize or move just the frame (the picture is not touched, in view mode and in edit mode alike). Hold **Shift** and drag an edge to stretch the selected part, or its inside to move it; the place it came from turns white (transparent where the picture can have it). A part that floats (a pasted picture, or one you lifted this way) moves and stretches with a plain drag until it is applied (a click beside it, or Esc) |
 | **Polygon select** | Select any shape, free-hand: see [below](#selecting) |
 | **Pencil** | Drag to draw. Left button: first color. Right button: second color. The ribbon above the bottom bar sets the width |
 | **Line**, **Rectangle**, **Circle and ellipse** | Drag them out. **Shift** makes a line at a multiple of 45°, a square, a true circle. The ribbon sets the width, solid / dashed / dotted, and outline, outline with fill, or fill |
@@ -87,6 +87,14 @@ The two **color wells** at the bottom of the rail are the first and the second c
 - **Ctrl+Z** undoes, **Ctrl+Shift+Z** (or **Ctrl+Y**) redoes. Every change of the picture can be undone. Zooming, moving and selecting are not steps.
 - **File → Discard Changes**, or the round-arrow button at the bottom right of the edit bar, takes the picture back to what it was when you opened it (the file on the disk, or the pasted or new picture). It is a step too: **undo brings your changes back**, redo discards them again.
 - A picture with changes has a **●** after its name.
+
+### Image and Effects
+
+The **Image** menu also makes animations: **Start Animation** (the picture becomes frame 1), **Add Frame** (a copy of the frame that is shown, after it), **Delete Frame** and **Export Frames as PNG…**; the frame player has the same Add and Delete buttons and a field for how many milliseconds each frame is shown. The chat can make an animation too: ask for it, and the frames are in the player when it is done. Save As then offers the whole animation as a GIF, or only the frame that is shown. The **Image** menu turns and flips the whole picture: **Rotate Right**, **Rotate Left** (a quarter turn, like **R**), **Rotate by Angle…** (any angle from -360° to 360°, smooth; the corners either make the picture bigger or are cut off) and **Flip Horizontal/Vertical**. A right click on the picture (with nothing selected) offers the same turn, an **Effects** submenu, and Copy, Select all, Save as… and Print…. With a part selected, the right-click menu also has Cut, Crop to selection and Clear, and **R**, Rotate Right/Left and Rotate by Angle… turn only the selected part: a quarter turn is stretched to fill the frame again, and any other angle is blown up just enough that no corner is empty. Turning the same part again and again starts from its pixels before the first turn, so it does not get blurrier, until you let the selection go. The same goes for the whole picture: turns that follow each other, with nothing else done to the picture in between, are all made from the picture before the first one (any other change, or an undo, starts afresh).
+
+The **Effects** menu changes the picture, or only the part you selected (a rectangle or a free-hand polygon; with nothing selected, all of it). **Clear** (also **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint; the selection stays, so you can undo and try another effect. The effects: **Blur**, **Pixelize**, **Emboss**, **Explosion** (a burst from the middle), **Censor** (a mosaic too coarse to read, for faces, plates and names), **Sharpen**, **Grayscale**, **Negative**, **Sepia**, **Brighter/Darker**, **More/Less Contrast**, **More/Less Color**, **Warmer/Cooler**, **Auto Levels**, and **Fill** with the foreground or background color. Each is one step of the history (Ctrl+Z takes it back); using one again makes it stronger. Claude can do the same, with settings, through the chat.
+
+The **AI** menu has **Web search and fetch**, which says whether Claude may use the web in the chat (on by default).
 
 ### Create image
 
@@ -126,7 +134,7 @@ The polygon is also what Claude works on when you write *"remove the selected pa
 
 ## Chat with Claude
 
-Press **C**, or click the speech bubble at the top right of the picture, to open the chat. Ask for what you want in your own words; Claude looks at the picture and changes it with mcView's tools. Every change is a step you can undo.
+Press **C**, or click the speech bubble at the bottom right of the picture, to open the chat: a floating window grows out of it, almost as tall as the window, and it shrinks back into the bubble when you minimize it. Drag its left edge to change the width. Ask for what you want in your own words; Claude looks at the picture and changes it with mcView's tools. Every change is a step you can undo.
 
 ### What you need
 
@@ -160,7 +168,7 @@ Claude is good at taking small things out of a photo: letters, labels, spots, sc
 
 mcView has no accounts, ads or telemetry. The chat is the one place where a picture leaves the computer, and only when **you** ask: Claude looks at the picture (screenshots of it) through your own Claude Code, so **what you chat about is sent to Anthropic**, under your Claude account's terms. Nothing is sent when the panel is closed.
 
-Claude can use mcView's picture tools and nothing else: no files, no shell, no web. It reaches the picture through a private connection inside the window that no other program can use.
+Claude can use mcView's picture tools and web search and fetch, and nothing else: no files, no shell. The **AI** menu turns the web off. It reaches the picture through a private connection inside the window that no other program can use.
 
 ---
 
@@ -183,13 +191,15 @@ Claude can use mcView's picture tools and nothing else: no files, no shell, no w
 | **C** | The chat panel |
 | **1** – **6** | Zoom modes |
 | **+**, **-**, wheel | Zoom |
-| **Arrow keys**, **Space**, **Backspace** | Next, previous picture |
+| **Arrow keys**, **Backspace** | Next, previous picture |
+| **Space** | Play or pause an animated GIF |
+| **Up**, **Down**, **Shift+wheel** | An animated GIF: a frame back, a frame forward (round and round; the animation stops) |
 | **R**, **Shift+R** | Turn the view |
 | **F**, **Enter** | Full screen |
 | **S** | Save As |
 | **D** | Delete the file |
 | **Ctrl+C** | Copy the selection (or the whole picture) |
-| **Ctrl+V** | Paste (a new picture outside edit mode, a floating part in it) |
+| **Ctrl+V** | Paste: a small picture floats over the picture as a part you can move; one about as big as the picture asks whether to make it a new image |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Delete** | Fill a polygon selection with the second color; take away a floating part |
 | **Esc** | Drop a selection or a drawing; let go of a selection; **Esc Esc** closes the picture |

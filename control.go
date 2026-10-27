@@ -267,6 +267,30 @@ func (c *control) do(m map[string]any) (map[string]any, error) {
 		return a.maskCommand(m)
 	case "seam": // how much the edge of a shape shows (see masks.go)
 		return a.seamCommand(m)
+	case "diff": // how the picture differs from the file (see extras.go)
+		return a.diffCommand(m)
+	case "folder": // the pictures of the folder, by name
+		return a.folderCommand(m)
+	case "fonts":
+		return map[string]any{"ok": true, "fonts": fontNames()}, nil
+	case "imageinfo": // the file name, the EXIF block and how the colors are used (see imageinfo.go)
+		return a.imageInfoCommand(m)
+	case "gifinfo": // the frames of the animation: count, the frame that is shown (1 based), the delays
+		meta, err := a.GifInfo()
+		if err != nil {
+			return nil, err
+		}
+		if meta.Frames == 0 {
+			return map[string]any{"ok": true, "animation": false}, nil
+		}
+		return map[string]any{"ok": true, "animation": true, "frames": meta.Frames, "frame": meta.Cur + 1, "delays_ms": meta.Delays}, nil
+	case "gifframe": // the frame that the tools work on from now on: {frame} (1 based)
+		if err := a.GifTarget(num(m, "frame", 0)); err != nil {
+			return nil, err
+		}
+		return map[string]any{"ok": true}, nil
+	case "gifsheet": // all frames in one picture
+		return a.GifSheet(num(m, "max", 1568))
 	case "snapshot": // the picture as a PNG (see mcp.go): {x, y, w, h} for a part, "max" for the longest side of the answer
 		return a.snapshot(m)
 	case "quit": // without asking anything

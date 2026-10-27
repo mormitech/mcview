@@ -34,6 +34,10 @@ export function ClearFloat() {
   return window['go']['main']['App']['ClearFloat']();
 }
 
+export function ClearRecent() {
+  return window['go']['main']['App']['ClearRecent']();
+}
+
 export function ClipboardHasImage() {
   return window['go']['main']['App']['ClipboardHasImage']();
 }
@@ -82,12 +86,64 @@ export function DrawStroke(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['DrawStroke'](arg1, arg2, arg3, arg4);
 }
 
+export function Effect(arg1, arg2) {
+  return window['go']['main']['App']['Effect'](arg1, arg2);
+}
+
 export function ExitFullscreen() {
   return window['go']['main']['App']['ExitFullscreen']();
 }
 
+export function ExportFrames(arg1, arg2) {
+  return window['go']['main']['App']['ExportFrames'](arg1, arg2);
+}
+
+export function ExportFramesDialog() {
+  return window['go']['main']['App']['ExportFramesDialog']();
+}
+
 export function FloodFill(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FloodFill'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GifAddFrame(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GifAddFrame'](arg1, arg2, arg3, arg4);
+}
+
+export function GifDeleteFrame(arg1, arg2) {
+  return window['go']['main']['App']['GifDeleteFrame'](arg1, arg2);
+}
+
+export function GifDuplicateFrame(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['GifDuplicateFrame'](arg1, arg2, arg3, arg4);
+}
+
+export function GifFrame(arg1) {
+  return window['go']['main']['App']['GifFrame'](arg1);
+}
+
+export function GifInfo() {
+  return window['go']['main']['App']['GifInfo']();
+}
+
+export function GifMoveFrame(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GifMoveFrame'](arg1, arg2, arg3);
+}
+
+export function GifSetDelay(arg1, arg2) {
+  return window['go']['main']['App']['GifSetDelay'](arg1, arg2);
+}
+
+export function GifSheet(arg1) {
+  return window['go']['main']['App']['GifSheet'](arg1);
+}
+
+export function GifStart(arg1) {
+  return window['go']['main']['App']['GifStart'](arg1);
+}
+
+export function GifTarget(arg1) {
+  return window['go']['main']['App']['GifTarget'](arg1);
 }
 
 export function HasTransparency() {
@@ -130,6 +186,10 @@ export function OpenImage(arg1) {
   return window['go']['main']['App']['OpenImage'](arg1);
 }
 
+export function OpenRecent(arg1) {
+  return window['go']['main']['App']['OpenRecent'](arg1);
+}
+
 export function PaintPixels(arg1, arg2) {
   return window['go']['main']['App']['PaintPixels'](arg1, arg2);
 }
@@ -152,6 +212,14 @@ export function PolygonPNG(arg1, arg2) {
 
 export function PreparePixels() {
   return window['go']['main']['App']['PreparePixels']();
+}
+
+export function PrintPNG(arg1) {
+  return window['go']['main']['App']['PrintPNG'](arg1);
+}
+
+export function Recent() {
+  return window['go']['main']['App']['Recent']();
 }
 
 export function ResizeCanvas(arg1, arg2, arg3, arg4, arg5) {
@@ -186,6 +254,10 @@ export function SaveAs(arg1) {
   return window['go']['main']['App']['SaveAs'](arg1);
 }
 
+export function SaveRegionTo(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SaveRegionTo'](arg1, arg2, arg3, arg4);
+}
+
 export function SaveSelectionAs(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['SaveSelectionAs'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -194,8 +266,16 @@ export function SaveToPath(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveToPath'](arg1, arg2, arg3);
 }
 
+export function SaveToPathQ(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SaveToPathQ'](arg1, arg2, arg3, arg4);
+}
+
 export function SaveWindow() {
   return window['go']['main']['App']['SaveWindow']();
+}
+
+export function ScanImage() {
+  return window['go']['main']['App']['ScanImage']();
 }
 
 export function SelectionPNG(arg1, arg2, arg3, arg4, arg5, arg6) {
@@ -208,6 +288,10 @@ export function SetEditMode(arg1) {
 
 export function SetFloat(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
   return window['go']['main']['App']['SetFloat'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+}
+
+export function SetGifFrame(arg1) {
+  return window['go']['main']['App']['SetGifFrame'](arg1);
 }
 
 export function SetMenuBar(arg1) {
@@ -236,6 +320,10 @@ export function ToggleFullscreen() {
 
 export function Trace(arg1) {
   return window['go']['main']['App']['Trace'](arg1);
+}
+
+export function Transform(arg1, arg2) {
+  return window['go']['main']['App']['Transform'](arg1, arg2);
 }
 
 export function Version() {

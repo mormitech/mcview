@@ -7,7 +7,7 @@
 </head>
 <body>
 <main id="viewer">
-    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div><svg id="poly" hidden aria-hidden="true"></svg></div>
+    <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="movemark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"/><path d="M12 5v14M5 12h14M12 5l-2.5 2.5M12 5l2.5 2.5M12 19l-2.5-2.5M12 19l2.5-2.5M5 12l2.5-2.5M5 12l2.5 2.5M19 12l-2.5-2.5M19 12l-2.5 2.5"/></svg><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div><svg id="poly" hidden aria-hidden="true"></svg></div>
     <div id="empty">
         <img class="logo" src="./src/assets/mormitech-mark.svg" alt="" width="120">
         <h1>mcView</h1>
@@ -16,7 +16,10 @@
             <button id="open" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></svg><b>Open file…</b><small>Browse for a picture</small><kbd>O</kbd></button>
             <button id="open-clip" class="card" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg><b>Open from clipboard</b><small>The picture you copied</small><kbd id="k-clip">⌘V</kbd></button>
             <button id="new-pic" class="card" title="Shift-click: choose the size and the background"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M12 9.5v5M9.5 12h5"/></svg><b>Create image</b><small><span class="s-def">A blank 1280 × 720<br>Hold Shift for custom</span><span class="s-cus">Click to customize</span></small><kbd>N</kbd></button>
+            <button id="reopen-pic" class="card" hidden title="Bring back the picture you closed last, with all its changes and its undo history"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 8.5a7.5 7.5 0 1 1-1 5"/><path d="M4.5 3.8v5h5"/><path d="M12 8.5V12l2.5 1.5"/></svg><b>Reopen last closed</b><small>With all its changes</small><kbd id="k-reopen">⌘Z</kbd></button>
+            <button id="scan-pic" class="card" title="Scan a picture with a scanner"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="12.5" width="18" height="6.5" rx="1.8"/><path d="M5 12.5V9.4a1.5 1.5 0 0 1 1.1-1.4l11-3A1.5 1.5 0 0 1 19 6.4v6.1"/><path d="M16.5 15.8h1.5"/></svg><b>Scan</b><small>From a scanner</small></button>
         </div>
+        <div id="recent" hidden><h2>Recent</h2><div id="recent-list"></div></div>
     </div>
     <div id="tools" aria-label="Edit tools">
         <button class="tool on" id="tool-select" title="Select" aria-label="Select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="1" stroke-dasharray="3 2.5"/></svg></button>
@@ -48,11 +51,12 @@
         <div class="grp" data-for="pick"><span class="hint">Click takes the color under the pointer as the first color, right click as the second. The tool you had comes back.</span></div>
     </div>
     <button id="chat-toggle" title="Chat with Claude (C)" aria-label="Chat with Claude"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H10l-4.5 4v-4h0A1.5 1.5 0 0 1 4 14.5z"/></svg></button>
-    <div id="status" hidden><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="pixel" hidden></span><span id="info"></span><button id="discard-img" title="Discard all changes (undo brings them back)" aria-label="Discard changes" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M4.5 4.5v4.2h4.2"/></svg></button><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div id="gifbar" hidden role="group" aria-label="Animation"><button id="gif-prev" title="Previous frame" aria-label="Previous frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button><button id="gif-play" title="Pause" aria-label="Pause"><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 6l9 6-9 6z"/></svg></button><button id="gif-next" title="Next frame" aria-label="Next frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button><span id="gif-count">1 / 1</span><button id="gif-add" title="Add a frame: a copy of this one, after it" aria-label="Add a frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button><button id="gif-del" title="Delete this frame" aria-label="Delete this frame"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h12M10 7V5h4v2M8 7l1 12h6l1-12"/></svg></button><label id="gif-speed" title="How long each frame is shown (milliseconds)"><input type="number" id="gif-ms" min="20" max="60000" step="10" value="100" aria-label="Milliseconds per frame"><span>ms</span></label></div>
+    <div id="status" hidden><div class="sl"><span id="editmark" hidden>EDIT</span><span id="name"></span><span id="folder"></span><span id="clipflag" title="Copied to the clipboard" aria-hidden="true"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></span></div><div class="sr"><span id="pixel" hidden></span><span id="info"></span><button id="discard-img" title="Discard all changes (undo brings them back)" aria-label="Discard changes" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.2-5.1"/><path d="M4.5 4.5v4.2h4.2"/></svg></button><button id="close-img" title="Close image" aria-label="Close image"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
 </main>
 <aside id="chat" aria-label="Chat with Claude" aria-hidden="true">
     <div id="chat-resize" title="Drag to resize" role="separator" aria-orientation="vertical"></div>
-    <header><b>Claude</b><span id="chat-who" class="who"></span><span class="sp"></span><button id="chat-new" title="New conversation" aria-label="New conversation">New</button><button id="chat-close" title="Minimize" aria-label="Minimize chat"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9"/></svg></button></header>
+    <header><b>Claude</b><span id="chat-who" class="who"></span><span class="sp"></span><button id="chat-new" title="New conversation: starts a new, empty one" aria-label="New conversation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h7l4 4v12a1 1 0 0 1-1 1h-10a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z"/><path d="M13.5 3.5v4h4"/></svg></button><button id="chat-close" title="Minimize" aria-label="Minimize chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5l6 6 6-6"/></svg></button></header>
     <section id="chat-setup"><p id="chat-msg"></p><div id="chat-actions"></div><p id="chat-url" class="muted"></p></section>
     <section id="chat-main" hidden>
         <div id="chat-log"></div>
@@ -67,6 +71,17 @@
         <div class="row"><label for="nd-bg">Background</label><select id="nd-bg"><option value="white">White</option><option value="transparent">Transparent</option><option value="color">Color…</option></select><input type="color" id="nd-color" value="#ffffff" hidden></div>
         <p class="err" id="nd-err" hidden></p>
         <div class="btns"><button type="button" id="nd-cancel">Cancel</button><button type="submit" id="nd-ok" class="primary">Create</button></div>
+    </form>
+</div>
+<div id="rotdlg" hidden role="dialog" aria-modal="true" aria-labelledby="rotdlg-title">
+    <form class="box" id="rotdlg-form" autocomplete="off">
+        <h2 id="rotdlg-title">Rotate by angle</h2>
+        <div class="row"><label for="rd-a">Angle</label><input type="number" id="rd-a" min="-360" max="360" step="0.1" value="0"><span class="unit">° clockwise</span></div>
+        <div class="row"><input type="range" id="rd-r" min="-45" max="45" step="0.1" value="0" aria-label="Angle"></div>
+        <div class="row"><label for="rd-c">Corners</label><select id="rd-c"><option value="grow">Make the picture bigger</option><option value="crop">Keep the size, cut the corners</option></select></div>
+        <div class="row"><label for="rd-bg">Empty parts</label><select id="rd-bg"><option value="auto">Automatic</option><option value="transparent">Transparent</option><option value="white">White</option><option value="second">Second color</option></select></div>
+        <p class="err" id="rd-err" hidden></p>
+        <div class="btns"><button type="button" id="rd-cancel">Cancel</button><button type="submit" id="rd-ok" class="primary">Rotate</button></div>
     </form>
 </div>
 <div id="about" hidden></div>

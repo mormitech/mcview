@@ -25,6 +25,7 @@ func (a *App) DiscardChanges() (ImageInfo, error) {
 		a.imgSeq++
 		a.pix = pixelCache{}
 		a.fl = nil
+		a.gifs = nil // (the file as it is on the disk again)
 		a.newStateLocked()
 		a.mu.Unlock()
 		a.titleWindow()

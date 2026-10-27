@@ -44,7 +44,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
   **1** original size (100%, however small or big), **2** fit the window with a margin (85%; small pictures stay 100%), **3** fit every picture to
   the window borders, keeping its proportions, **4** stretch every picture to the window borders, **5** zoom until the side edges touch the window (the top and bottom may go over), **6** zoom until the top and bottom edges touch it (the sides may go over). **+** and **-** zoom, a mouse wheel zooms, dragging
   moves the picture (a double click never changes the zoom); on a Mac two fingers on the trackpad move the picture and a pinch zooms. Pull a big picture past its edge and it gives a little, then eases back.
-- **Arrow keys** (Space for next, Backspace for previous) go through the pictures of the folder in alphabetical order, and go round. The title of the window
+- **Arrow keys** (Backspace for previous; Space plays and pauses an animated GIF) go through the pictures of the folder in alphabetical order, and go round. The title of the window
   says the size, the place in the folder (`3 / 5`) and the zoom.
 - **Rotate the view.** **R** turns the picture a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file is not changed until you save.
 - **Full screen.** **F** or **Enter** toggles it (Esc does not leave it: two Escs close the picture). There is no title or bar then: the bar (size, place, zoom, color readout) comes up
@@ -56,7 +56,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Select and copy.** Drag to select a part (it snaps to whole pixels in the pixelated view). The moment you let go, the selection is **on the clipboard**,
   with a short highlight and its size written in the middle. With no selection, **Ctrl+C** copies the whole picture. **Esc** or a click takes the selection away.
   On Linux copying and pasting pictures needs `xclip` (X11) or `wl-clipboard` (Wayland).
-- **Paste as a new picture.** Outside edit mode, **Ctrl+V** makes the clipboard picture the picture of the window (undo brings the one before back). Open a new window
+- **Paste.** **Ctrl+V** lays a small clipboard picture over the picture as a part you can move; one about as big as the picture asks whether to make it a new image (undo brings the one before back). An empty window takes it as its picture. Open a new window
   (**Ctrl+N**) to keep both.
 - **Home screen.** A window with no picture offers three big buttons: **Open file…** (key **O**), **Open from clipboard** (**Ctrl+V**, shown when there is a picture on it) and **Create image** (**N**). **O** and **N** work with a picture open too; a picture with unsaved changes asks Save, Discard or Cancel first.
 
@@ -65,7 +65,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 **E** (or **Tab**) turns edit mode on and off; the title says `[edit]`, the bar says `EDIT`, and the tool rail (Select, Polygon select, Pencil, Line, Rectangle, Ellipse, Fill, Text, Pick) and the bottom bar appear. The **✕** at the bottom right closes the picture. Edit mode needs a picture:
 **File → Create Image** makes a new white 1280 × 720 one and starts it in edit mode; **hold Shift** (or press **Shift+N**) to choose the size and the background first. A blank image, and a picture pasted from the clipboard, count as unchanged: they close without a question until you do something to them.
 
-- **Select** (default): drag an edge of the selection to stretch the selected part, or its top left corner (or inside) to move it; the place it came from turns white
+- **Select** (default): drag an edge or the inside of the selection to move or resize just the frame; hold **Shift** and drag to stretch or move the selected part itself; the place it came from turns white
   (transparent in a picture that can have it). **Shift** and drag moves just the frame. **Ctrl+V** lays the clipboard picture over this one as a floating part you can drag and stretch
   (Delete, Backspace or Esc take it away; a click beside it lays it down).
 - **Polygon select**: draw round any shape free-hand; when you let go, the end joins the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Holding the **right mouse button** does the same with the Select tool. **Delete** fills it with the second color, **Ctrl+C** copies what is inside it, **Esc** lets it go (Esc or a right click drops a selection that is still being drawn, the rectangle too).
@@ -83,7 +83,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 
 ### Chat with Claude
 
-**C** (or the speech bubble at the top right) opens a chat panel next to the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mcView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and nothing else (no files, no shell, no web), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
+**C** (or the speech bubble at the bottom right) opens a floating chat window over the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mcView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and web search and fetch, and nothing else (no files, no shell), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
 
 ### Saving, closing, deleting
 
@@ -165,9 +165,9 @@ forces the look instead of the system's.
 the answers of the dialogs) over a local, token-protected connection: for demo screenshots and scripted tests. See [docs/control.md](docs/control.md);
 `scripts/demo_screenshots.py` makes the screenshots of the manual that way.
 
-**Chat panel.** The speech bubble at the top right of a picture window (or the key **C**) opens a chat with Claude about the picture, and Claude can change it with picture tools: snapshots, drawing, fills, selecting, clone and healing patches, masks, resizing and cropping. It runs the Claude Code on the computer with the user's subscription (no API key), signs in through the browser, and reaches the picture through a private tool server that exists only for this window. See [docs/chat.md](docs/chat.md).
+**Chat panel.** The speech bubble at the bottom right of a picture window (or the key **C**) opens a chat with Claude about the picture, and Claude can change it with picture tools: snapshots, drawing, fills, selecting, clone and healing patches, masks, resizing and cropping. It runs the Claude Code on the computer with the user's subscription (no API key), signs in through the browser, and reaches the picture through a private tool server that exists only for this window. See [docs/chat.md](docs/chat.md).
 
-**Polygon select.** In edit mode the second tool of the rail selects freely: draw round the part with the mouse, and when you let go the end is joined to the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Delete fills it with the second color, Ctrl+C copies what is inside it, Esc lets it go. **File → Discard Changes** (also a button in the edit bar) takes the picture back to its original, and undo brings the changes back.
+**Effects.** The Effects menu applies blur, pixelize, emboss, explosion, censor, sharpen, grayscale, negative, sepia and brightness, contrast, color and warmth adjustments to the selected part (a box or a free-hand polygon) or to the whole picture; the chat's Claude can apply them too, with settings. **Polygon select.** In edit mode the second tool of the rail selects freely: draw round the part with the mouse, and when you let go the end is joined to the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Delete fills it with the second color, Ctrl+C copies what is inside it, Esc lets it go. **File → Discard Changes** (also a button in the edit bar) takes the picture back to its original, and undo brings the changes back.
 
 **Slow start?** Start the app with `MCVIEW_TRACE=/tmp/mcview-trace.txt` (macOS: `open --env MCVIEW_TRACE=/tmp/t.txt -a mcview.app picture.jpg`): each step of the
 start, in Go and in the UI, is written to that file with a time in milliseconds.

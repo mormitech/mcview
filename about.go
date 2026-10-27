@@ -31,12 +31,18 @@ func appMenu(app *App) *menu.Menu {
 		appMenu.AddText("Quit mcView", keys.CmdOrCtrl("q"), func(*menu.CallbackData) { wruntime.Quit(app.ctx) })
 		fileMenu(app, m)
 		editMenu(app, m)
+		imageMenu(app, m)
+		effectsMenu(app, m)
+		aiMenu(m)
 		m.Append(menu.WindowMenu())
 		m.AddSubmenu("Help").AddText("mcView Help", nil, func(*menu.CallbackData) { app.openHelp() }) // the last menu, where macOS has it
 		return m
 	}
 	fileMenu(app, m)
 	editMenu(app, m)
+	imageMenu(app, m)
+	effectsMenu(app, m)
+	aiMenu(m)
 	help := m.AddSubmenu("Help")
 	help.AddText("mcView Help", keys.Key("f1"), func(*menu.CallbackData) { app.openHelp() })
 	help.AddSeparator()
@@ -48,6 +54,7 @@ func fileMenu(app *App, m *menu.Menu) {
 	file := m.AddSubmenu("File")
 	file.AddText("New Window", keys.CmdOrCtrl("n"), func(*menu.CallbackData) { app.newWindow() })
 	file.AddText("Open File…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { app.chooseImage() })
+	recentMenu(app, file)
 	file.AddText("Create Image", nil, func(*menu.CallbackData) { app.emit("menu-create") }) // a new 1280 × 720 image, in edit mode
 	app.saveItem = file.AddText("Save As…", keys.CmdOrCtrl("s"), func(*menu.CallbackData) { app.saveAs() })
 	app.closeItem = file.AddText("Close Image", keys.Combo("w", keys.CmdOrCtrlKey, keys.ShiftKey), func(*menu.CallbackData) { app.emit("menu-close-image") })
@@ -71,4 +78,6 @@ func editMenu(app *App, m *menu.Menu) {
 	edit.AddSeparator()
 	edit.AddText("Copy", keys.CmdOrCtrl("c"), func(*menu.CallbackData) { app.emit("menu-copy") })
 	edit.AddText("Paste", keys.CmdOrCtrl("v"), func(*menu.CallbackData) { app.pasteImage() })
+	edit.AddSeparator()
+	edit.AddText("Select All", keys.CmdOrCtrl("a"), func(*menu.CallbackData) { app.emit("menu-select-all") })
 }

@@ -3,6 +3,205 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.50.3 – 2026-10-27
+
+### Changed
+
+- In full screen, the info bar at the bottom shows for two seconds when another picture arrives (opened, pasted, or stepped to), then hides again.
+
+## 0.50.2 – 2026-10-27
+
+### Fixed
+- Saving an animation as the whole GIF offered a PNG name (`clipboard-….png`) and all picture types. The dialog now offers `animation-….gif` (or the file's name with .gif) and only the GIF type; a single frame is offered as `…-frame-N.png`.
+
+## 0.50.1 – 2026-10-27
+
+### Fixed
+- An animation made from a new or pasted picture (and so one the chat made) did not show the frame player and the frame count: the page only looked for the player on pictures whose file name ends in .gif. It now shows it for every animation, at once.
+
+### Changed
+- The title of a picture that has no file says where it came from: [new image] for Create image, [scanned image] for a scan, [clipboard image] for a pasted one.
+- The chat works on frames independently of the player: a tool called with a `frame` number changes that frame and the frame the user has on the screen stays (and a running animation runs on); `add_frame`, `duplicate_frame`, `delete_frame` and `move_frame` do not move the user's frame either (the player's own buttons do follow the change). `animation_info` tells which frame the user looks at.
+
+## 0.50.0 – 2026-10-27
+
+### Added
+- Making animations. Image → Start Animation makes the picture frame 1 of an animation; Add Frame (a copy of the frame that is shown, after it), Delete Frame and Export Frames as PNG… (every frame as a numbered PNG file) are in the menu, and the frame player has Add and Delete buttons and a field for the milliseconds each frame is shown. Every change of the frames is a step of the history. Save As of the animation offers the whole GIF or the frame that is shown.
+- The chat's Claude can make an animated GIF: new tools `animation_start`, `add_frame`, `duplicate_frame` (what to copy and where it goes), `delete_frame`, `move_frame`, `set_frame_delay`, `animation_info` and `frames_sheet` (all frames in one picture, to check the motion), and every tool that reads or changes pixels takes an optional `frame` number (the first is 1), so it can work on any frame without moving the user's player. Claude leaves the animation in the window; the user saves it.
+
+## 0.49.5 – 2026-10-27
+
+### Changed
+- An animated GIF that runs outside edit mode fades its player away in under a second; pausing, stepping (Space, arrows, Shift+wheel) brings it back.
+
+## 0.49.4 – 2026-10-27
+
+### Added
+- Animated GIF: Shift+wheel stops the animation and steps through the frames (wheel up a frame back, wheel down a frame forward), and the up and down arrow keys do the same. At either end it goes round to the other end, so it never stops. Outside edit mode the first step brings the player up.
+
+## 0.49.3 – 2026-10-27
+
+### Fixed
+- Going to another animated GIF could show frames of the GIF before it: the player kept the pictures it had made for the old frames, and the new animation's frames could get the same keys. The player, the frames, the count and the timer of the old GIF are flushed at once when another picture is shown, and the keys are numbered per animation.
+
+## 0.49.2 – 2026-10-27
+
+### Changed
+- Space no longer goes to the next picture (the right arrow does). With an animated GIF it plays and pauses the animation (outside edit mode, the first press brings the player up, paused).
+
+## 0.49.1 – 2026-10-27
+
+### Changed
+- Starting the animation with Play lets the selection go (a selection belongs to one frame).
+
+## 0.49.0 – 2026-10-27
+
+### Added
+- A GIF frame editor. An animated GIF in edit mode plays in the frame player (Pause/Play, one frame back, one frame forward, the frame counter). Paused or stepped on a frame, every tool draws on that frame, and the animation stays: the other frames are untouched, the player stays after the edit, and undo and redo bring the frame back. A GIF whose frames were changed also shows the player outside edit mode.
+- Save As (also the S key) of an animation, stopped on a frame, asks whether to save the whole animation (a GIF with all frames and their delays) or only the frame that is shown (as PNG, by default named after the frame number). Saving to another type than GIF saves the frame that is shown.
+- A change of the picture's size (resize, crop, canvas) ends the frame editing: the picture is a still then.
+
+### Fixed
+- The player no longer disappears after drawing on a frame.
+
+## 0.48.2 – 2026-10-27
+
+### Fixed
+- Drawing on a paused frame of an animated GIF showed "Cannot show …" and an empty picture: the frame player put the GIF's own file back over the edited picture. It does that now only when edit mode is left.
+
+## 0.48.1 – 2026-10-27
+
+### Changed
+- While an animated GIF plays and the tool rail is hidden, the bottom bar reaches the left edge of the window.
+
+## 0.48.0 – 2026-10-27
+
+### Added
+- Recent pictures: the home screen lists the five pictures opened last (click to open), and File → Open Recent has the last ten, with Clear Menu. The list is kept for next time and shared by all windows.
+
+## 0.47.0 – 2026-10-27
+
+### Added
+- A frame player for animated GIFs: in edit mode a small bar at the bottom shows Pause/Play, one frame back, one frame forward, and the frame counter (for example 14 / 22). Paused (or stepped) on a frame, that frame is what the pixel readout reads and what an edit starts from; an edit makes the picture a still, and the player goes away until you undo back to the GIF. While the animation plays the tool rail is hidden (there is nothing to draw on); pausing or stepping brings it back. Outside edit mode the GIF plays by itself as before.
+
+## 0.46.0 – 2026-10-27
+
+### Added
+- The right-click menu shows a "Recent" group above Effects with the last three effects you used (the latest first; kept for next time), so a repeat is one click.
+
+### Changed
+- Esc, with a drawing tool other than the rectangular selection set (edit mode), returns to the rectangular selection tool.
+
+## 0.45.1 – 2026-10-27
+
+### Changed
+- Undo no longer goes back to the home screen: opening, scanning or pasting a picture from the home screen is not undone, so undoing a lot stops at the picture (going to the next or previous picture of the folder is still undone). Reopen last closed still brings back a closed picture.
+
+## 0.45.0 – 2026-10-27
+
+### Added
+- The right-click menu (of a selection, and of the whole picture) has an Effects submenu: an effect works on the selection, or on all of the picture when nothing is selected.
+- A selected part can be turned: **R** and **Shift+R** (a quarter turn each way), Image → Rotate Right/Left, Rotate by Angle… (with any angle) and the right-click menu turn only the selected part (a box or a polygon) when there is a selection. A quarter turn is stretched to fill the frame again; any other angle is blown up just enough that the turned part reaches every edge. Turning the same part again and again starts from its pixels before the first turn, so it does not get blurrier (until the selection is let go).
+- Consecutive fine rotations of the whole picture (nothing else changed it in between) are all made from the picture as it was before the first one, by the angles added up, so repeating them does not blur the picture or grow its canvas each time; any other change, or an undo, starts afresh.
+- The chat's `apply_effect` has a `rotate` effect (a part, and angle).
+
+## 0.44.1 – 2026-10-27
+
+### Changed
+- Esc minimizes the chat window while you are in it (the cursor in its text field, or anything inside it focused).
+
+## 0.44.0 – 2026-10-27
+
+### Added
+- While Claude is working and the chat window is minimized, the chat button pulses with rings and its bubble bobs, so you can see that it is busy.
+
+## 0.43.1 – 2026-10-27
+
+### Fixed
+- On macOS a small dropdown with system actions (Add To Contacts, Look Up, Translate…) could appear over text that the system reads in the picture (Live Text); the picture no longer takes the pointer, so it does not.
+
+## 0.43.0 – 2026-10-27
+
+### Added
+- A new Image menu: Rotate Right, Rotate Left (a quarter turn, as the R key), Rotate by Angle…, Flip Horizontal and Flip Vertical.
+- Fine rotation: Image → Rotate by Angle… turns the picture by any angle (smooth, -360° to 360°; with a slider), either making the picture bigger so that nothing is cut off or keeping its size and cutting the corners; the empty parts are transparent (or white where the file type has no transparency), white, or the second color. (The chat's `rotate_image` had it already.)
+- A right click on the picture with no selection opens a menu of the whole picture: Copy, Select all, Save as…, Print… and Rotate by angle…. (Cut and Crop are only offered for a selection.)
+
+## 0.42.1 – 2026-10-27
+
+### Changed
+- The cards of the home screen have their own subtle colors (amber, violet, blue, green, pink) on a soft tinted square behind the icon.
+
+## 0.42.0 – 2026-10-27
+
+### Added
+- "Reopen last closed" on the home screen: after an image was closed, it brings the picture back with all its changes and its undo history (it is an undo of the close step, so Ctrl+Z does the same).
+
+## 0.41.1 – 2026-10-27
+
+### Changed
+- A scanned picture counts as an unsaved change (the modified mark shows, and closing it asks), because a scan takes time and a scanner; the pictures from the file, the clipboard and Create image are still closed without a question.
+- On macOS, Image Capture is quit when the scan has arrived (if mcView started it), and mcView gets the focus back.
+
+## 0.41.0 – 2026-10-27
+
+### Added
+- A right click on a selection (a box or a free-hand polygon) opens a menu: Cut, Copy, Crop to selection, Save selection as…, Print… and Clear. Print sends the selected part to the default printer. A right drag still draws a new polygon. The chat's Claude can do the same with the new tools `cut_selection`, `crop_to_selection`, `save_selection` and `print_selection` (it already had `copy` and `clear_selection`).
+
+## 0.40.3 – 2026-10-27
+
+### Changed
+- A click anywhere outside the chat window minimizes it.
+
+## 0.40.2 – 2026-10-27
+
+### Changed
+- The chat window starts wider (460 px), and its New and Minimize buttons are colored rounded squares (blue and amber).
+
+## 0.40.1 – 2026-10-27
+
+### Changed
+- Scan on macOS opens Image Capture and then opens the first new picture that turns up in Pictures, Desktop, Documents or Downloads (for up to ten minutes), so scan to one of those folders.
+
+## 0.40.0 – 2026-10-27
+
+### Changed
+- The chat is a floating window, like a messenger's: it sits over the bottom right corner of the picture (which no longer narrows), reaches almost to the top, grows out of the chat button and shrinks back into it with an animation when minimized. The chat button moved to the bottom right, above the status bar when there is one.
+
+## 0.39.0 – 2026-10-27
+
+### Added
+- Scan on the home screen: a picture from a scanner opens as a new, unsaved picture (Windows: the system scan dialog; Linux: SANE's `scanimage`; macOS opens Image Capture, which has no scan command to call).
+- Tooltips: everything with a hint shows it after one second in a small dark bubble instead of the system tooltip.
+
+### Changed
+- The chat's New button is an empty-document icon and the minimize button has a nicer arrow-to-edge icon.
+
+## 0.38.10 – 2026-10-27
+
+Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more tools for the chat's Claude, and a lot of polish.
+
+### Added
+- **Effects menu**: Clear, Blur, Pixelize, Emboss, Explosion, Censor, Sharpen, Grayscale, Negative, Sepia, Brighter/Darker, More/Less Contrast, More/Less Color, Warmer/Cooler, Auto Levels and Fill with the foreground color. Each works on the part that is selected (a polygon, or else the box), or on all of the picture when nothing is selected, and is one step of the history (using one again makes it stronger). The selection stays, also through undo and redo, so you can try one effect after the other.
+- **Clear** (Effects → Clear, or **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint. Without a selection Backspace still goes to the previous picture.
+- **AI menu** with **Web search and fetch**: whether the chat's Claude may use the web (on by default; the choice is kept in `ai.json` in the settings folder).
+- **Edit → Select All** (Cmd+A): all the text in the chat box (or the text being typed), the whole picture otherwise. Copy, paste, undo and redo of the Edit menu work in the chat box too.
+- **Chat tools**: `apply_effect` (all the effects, and gradient, hue, gamma, levels, with strengths and a soft edge, on a box, polygon, mask or the user's selection), `clear_selection`, `resize_image`, `rotate_image` (any angle), `flip_image`, `place_image` (a picture from a file, scaled, see-through), `draw_polygon`, `draw_callout` (a speech bubble), rounded corners, opacity and shadows for shapes, `add_text` with alignment, wrapping, outline and shadow, `history` (the undo steps, by the user or Claude), `goto_step`, `checkpoint` and `goto_checkpoint`, `image_info` (file name without the folder, EXIF, how the colors are used, also for a part), `diff_original`, `list_folder`, `list_fonts`, `show_area`, and a JPEG quality for `save_image`.
+
+### Changed
+- Dragging a selection no longer depends on edit mode: a plain drag of its inside or an edge moves or resizes just the frame, and **Shift** and drag moves or stretches the selected picture itself (the place it came from turns white). A part that floats (a pasted picture, or one that was lifted with Shift) moves and stretches with a plain drag until it is applied.
+- A right click no longer drops the selection; only a drag with the right button draws a new polygon.
+- A copy to the clipboard no longer flashes the status bar: an orange clipboard appears at the end of the folder label for a moment, and the clipboard in the middle of the selection is orange too.
+- The status bar has two groups, the file on the left and the readout and buttons on the right; when the window is too narrow the right group goes to a second row of its own.
+- In edit mode a picture bigger than the window can be moved so that its whole left and bottom edge is in the open (not under the tool rail and the status bar), and the modes 4, 5 and 6 (stretch, fit width, fit height) fill only the visible part of the window.
+- The chat button is shown in full screen when edit mode is on.
+- The chat's Claude can use the web search and fetch tools as well as the picture tools; files and the shell stay off.
+
+- A selection that can be moved is shown differently: blue dashes, a light blue tint and a small move sign in the corner, for a part that floats (it moves with a plain drag) and while Shift is held (the picture under the selection moves). The usual black and white dashes mean that only the frame moves.
+
+### Fixed
+- Paste no longer depends on edit mode, and no longer always starts another new image: a small clipboard picture is laid over the picture as a part (a selection) that can be moved, without turning edit mode on, and one about as big as the picture (or bigger) is asked about (new image, paste, or cancel). An empty window takes the clipboard picture as its picture.
+
 ## 0.37.8 – 2026-10-26
 
 Everything since 0.31.0, in one release: a chat with Claude next to the picture, and the tools to remove things from a photo.

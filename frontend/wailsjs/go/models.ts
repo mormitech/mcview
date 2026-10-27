@@ -1,5 +1,27 @@
 export namespace main {
 	
+	export class GifMeta {
+	    frames: number;
+	    delays: number[];
+	    keys: string[];
+	    cur: number;
+	    fresh: boolean;
+	    edited: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new GifMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.frames = source["frames"];
+	        this.delays = source["delays"];
+	        this.keys = source["keys"];
+	        this.cur = source["cur"];
+	        this.fresh = source["fresh"];
+	        this.edited = source["edited"];
+	    }
+	}
 	export class ImageInfo {
 	    name: string;
 	    path: string;
@@ -72,6 +94,22 @@ export namespace main {
 	        this.g = source["g"];
 	        this.b = source["b"];
 	        this.a = source["a"];
+	    }
+	}
+	export class RecentFile {
+	    name: string;
+	    dir: string;
+	    path: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new RecentFile(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.dir = source["dir"];
+	        this.path = source["path"];
 	    }
 	}
 
