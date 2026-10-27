@@ -88,7 +88,9 @@ The two **color wells** at the bottom of the rail are the first and the second c
 - **File → Discard Changes**, or the round-arrow button at the bottom right of the edit bar, takes the picture back to what it was when you opened it (the file on the disk, or the pasted or new picture). It is a step too: **undo brings your changes back**, redo discards them again.
 - A picture with changes has a **●** after its name.
 
-### Effects
+### Image and Effects
+
+The **Image** menu turns and flips the whole picture: **Rotate Right**, **Rotate Left** (a quarter turn, like **R**), **Rotate by Angle…** (any angle from -360° to 360°, smooth; the corners either make the picture bigger or are cut off) and **Flip Horizontal/Vertical**. A right click on the picture (with nothing selected) offers the same turn, and Copy, Select all, Save as… and Print….
 
 The **Effects** menu changes the picture, or only the part you selected (a rectangle or a free-hand polygon; with nothing selected, all of it). **Clear** (also **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint; the selection stays, so you can undo and try another effect. The effects: **Blur**, **Pixelize**, **Emboss**, **Explosion** (a burst from the middle), **Censor** (a mosaic too coarse to read, for faces, plates and names), **Sharpen**, **Grayscale**, **Negative**, **Sepia**, **Brighter/Darker**, **More/Less Contrast**, **More/Less Color**, **Warmer/Cooler**, **Auto Levels**, and **Fill** with the foreground or background color. Each is one step of the history (Ctrl+Z takes it back); using one again makes it stronger. Claude can do the same, with settings, through the chat.
 

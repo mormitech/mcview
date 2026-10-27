@@ -31,6 +31,7 @@ func appMenu(app *App) *menu.Menu {
 		appMenu.AddText("Quit mcView", keys.CmdOrCtrl("q"), func(*menu.CallbackData) { wruntime.Quit(app.ctx) })
 		fileMenu(app, m)
 		editMenu(app, m)
+		imageMenu(app, m)
 		effectsMenu(app, m)
 		aiMenu(m)
 		m.Append(menu.WindowMenu())
@@ -39,6 +40,7 @@ func appMenu(app *App) *menu.Menu {
 	}
 	fileMenu(app, m)
 	editMenu(app, m)
+	imageMenu(app, m)
 	effectsMenu(app, m)
 	aiMenu(m)
 	help := m.AddSubmenu("Help")

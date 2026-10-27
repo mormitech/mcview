@@ -37,6 +37,23 @@ func effectsMenu(app *App, m *menu.Menu) {
 	add("Auto Levels", "auto-levels")
 	fx.AddSeparator()
 	add("Fill with Foreground Color", "fill-fg")
-	fx.AddSeparator()
+
+}
+
+// The Image menu: turning and flipping the whole picture (menu-image, with the name that the page knows). Off while there is no picture, like the Effects menu.
+func imageMenu(app *App, m *menu.Menu) {
+	im := m.AddSubmenu("Image")
+	add := func(label, name string) {
+		item := im.AddText(label, nil, func(*menu.CallbackData) { app.emit("menu-image", name) })
+		item.Disabled = true
+		app.mu.Lock()
+		app.effectItems = append(app.effectItems, item)
+		app.mu.Unlock()
+	}
+	add("Rotate Right", "rotate-right")
+	add("Rotate Left", "rotate-left")
 	add("Rotate by Angle…", "rotate-angle")
+	im.AddSeparator()
+	add("Flip Horizontal", "flip-h")
+	add("Flip Vertical", "flip-v")
 }

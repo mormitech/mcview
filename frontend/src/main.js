@@ -346,7 +346,6 @@ async function applyEffect(spec, label) {
   return info;
 }
 async function applyEffectMenu(name) {
-  if (name === 'rotate-angle') { rotateByAngle(); return; }
   const base = EFFECT_MENU[name];
   if (!base || !view.state || !pic.naturalWidth) return;
   const spec = {...base, ...effectPart()};
@@ -386,6 +385,21 @@ async function rotateByAngle() {
     clearSelection();
     await showImage(info, {rot: 0});
     commit(`rotated ${o.angle}°`);
+  } catch (e) { problem(errText(e)); }
+}
+
+// The Image menu: turn (a quarter, as the R key does) or flip the whole picture, or turn it by any angle.
+async function imageMenuAction(name) {
+  if (!pic.naturalWidth) return;
+  if (name === 'rotate-angle') { rotateByAngle(); return; }
+  await commitText();
+  try {
+    if (view.fl) await flushFloat({clear: true}); // what is lifted is applied first
+    if (name === 'rotate-right' || name === 'rotate-left') { rotate(name === 'rotate-right' ? 1 : -1); commit(); return; }
+    const info = await Transform(view.rot, JSON.stringify({op: 'flip', horizontal: name === 'flip-h', vertical: name === 'flip-v'}));
+    clearSelection();
+    await showImage(info, {rot: 0});
+    commit(name === 'flip-h' ? 'flipped left to right' : 'flipped top to bottom');
   } catch (e) { problem(errText(e)); }
 }
 
@@ -1752,6 +1766,7 @@ function startViewer() {
   $('discard-img').onclick = discardChanges;
   $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
   EventsOn('menu-effect', (name) => applyEffectMenu(name)); // Effects menu
+  EventsOn('menu-image', (name) => imageMenuAction(name)); // Image menu
   EventsOn('menu-create', () => createImage()); // File → Create Image
   window.addEventListener('focus', () => { if (!$('empty').hidden) offerClipboard(); });
   offerClipboard();
