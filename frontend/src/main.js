@@ -295,10 +295,10 @@ function offerReopen() {
 // what an edit starts from (the picture is a still then); an edit makes the picture a changed one, and the player goes away.
 const gif = {meta: null, url: '', i: 0, playing: false, timer: 0, urls: [], shown: false};
 function gifStop() { clearTimeout(gif.timer); gif.timer = 0; gif.playing = false; document.body.classList.remove('gif-playing'); }
-function gifHide() { // back to the file's own animation
+function gifHide(restore = false) { // the player goes; with restore the picture is the file's own animation again (edit mode left), not when another picture has come (an edit)
   gifStop();
   $('gifbar').hidden = true;
-  if (gif.shown && gif.url && pic.src !== new URL(gif.url, location.href).href) { pic.src = gif.url; }
+  if (restore && gif.shown && gif.url && pic.src !== new URL(gif.url, location.href).href) { pic.src = gif.url; }
   gif.shown = false;
 }
 async function gifFrameURL(i) { return gif.urls[i] || (gif.urls[i] = await GifFrame(i)); }
@@ -548,7 +548,7 @@ function setEdit(on) {
     view.ox = x0 - view.x; view.oy = y0 - view.y; draw(); startSpring();
   }
   updateHover(false);
-  if (on) gifOffer(); else gifHide(); // (an animated GIF: its frame player is for the edit mode)
+  if (on) gifOffer(); else gifHide(true); // (an animated GIF: its frame player is for the edit mode)
 }
 
 // ---- Tools of the edit bar: select (the default when edit mode starts), pencil, line, rectangle, text and the color picker ----------------------------------
