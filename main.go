@@ -58,7 +58,7 @@ func windowFlags(args []string) (mode, theme, file string, cascade int) {
 func main() {
 	trace("main")
 	app := NewApp()
-	title, width, height := "mormiView v"+version(), 1024, 640
+	title, width, height := "mormiView", 1024, 640
 	mode, theme, file, cascade := windowFlags(os.Args[1:])
 	about := mode != "" // (a window of its own, not a viewer)
 	switch {
