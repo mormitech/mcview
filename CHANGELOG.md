@@ -3,6 +3,20 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.7 – 2026-10-27
+
+### Added
+
+- Control mode can open the right-click menu, the Rotate by angle dialog and a tooltip, and play, pause and step an animation, for screenshots of them (docs/control.md).
+
+### Fixed
+
+- The right-click menu of a free-hand (polygon) selection was the menu of the whole picture, and its Copy copied all of it. It is now the menu of the selection: Cut, Copy (what is inside the polygon), Effects, Rotate and Clear.
+
+### Changed
+
+- A demo run (`--demo`) shows nothing personal: it does not open pictures from your home folder, and the chat panel shows no account name, e-mail or plan.
+
 ## 0.51.5 – 2026-10-27
 
 ### Added

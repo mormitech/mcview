@@ -61,6 +61,12 @@ moves a pointer or presses a key: a drawing command puts its result into the pic
 | `pixel` | `x`, `y` | the color of the pixel, from the file |
 | `snapshot` | `x`, `y`, `w`, `h`, `max` | the picture as a PNG (base64 in `png`, with `scale`, `region`, `picture`); used by the [chat panel](chat.md) |
 | `saveto` | `path`, `overwrite` | saves the picture to a full path without the Save dialog |
+| `effect` | `op`, `selection: true` (the part the user selected), `recent: true` (counts for the Recent group of the right-click menu), settings | an effect (`blur`, `censor`, `grayscale`, `rotate` with `angle` …) on the selection or on the whole picture |
+| `polygon` | `pts: [[x, y], …]` | a closed free-hand selection (`[]` lets it go) |
+| `ctxmenu` | `sub` | the right-click menu in the middle of the picture, with a submenu (for example `Effects`) open; `closemenu` closes it |
+| `rotdlg` | `angle`, `part`, `close` | the Rotate by angle dialog, left open with an angle in it |
+| `tip` | `id` | the tooltip of the element with this id |
+| `gif` / `gifplay` | `op: start|add|duplicate|delete|move|delay`; `on` or `step` | the frames of an animation; the player: play, pause, a frame back or forward |
 | `wait` / `sleep` | `ms` | a pause |
 | `answer` | `kind`, `value` or `values` | queues answers for the dialogs (below) |
 | `dialogs` | | the questions the dialogs have asked since the last time |

@@ -45,3 +45,16 @@ func TestDemoUsesAFreshFolder(t *testing.T) {
 	}
 	os.RemoveAll(demoDir)
 }
+
+func TestUnderHome(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		t.Skip("no home folder")
+	}
+	if !underHome(filepath.Join(home, "Pictures", "a.jpg")) {
+		t.Errorf("a file in the home folder is not under it")
+	}
+	if underHome("/tmp/Pictures/a.jpg") && !underHome(os.TempDir()) {
+		t.Errorf("/tmp/Pictures is not in the home folder")
+	}
+}
