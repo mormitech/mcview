@@ -1,6 +1,6 @@
 # Chat panel
 
-The speech bubble at the top right of a picture window (or the key **C**) opens a chat with Claude about the picture of that window. Ask it to
+The speech bubble at the bottom right of a picture window (or the key **C**) opens a chat with Claude about the picture of that window. Ask it to
 look at the picture, to draw on it, to change it; the changes appear in the window and are steps of its undo history.
 
 ## How it works

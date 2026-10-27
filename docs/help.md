@@ -132,7 +132,7 @@ The polygon is also what Claude works on when you write *"remove the selected pa
 
 ## Chat with Claude
 
-Press **C**, or click the speech bubble at the top right of the picture, to open the chat. Ask for what you want in your own words; Claude looks at the picture and changes it with mcView's tools. Every change is a step you can undo.
+Press **C**, or click the speech bubble at the bottom right of the picture, to open the chat: a floating window grows out of it, almost as tall as the window, and it shrinks back into the bubble when you minimize it. Drag its left edge to change the width. Ask for what you want in your own words; Claude looks at the picture and changes it with mcView's tools. Every change is a step you can undo.
 
 ### What you need
 

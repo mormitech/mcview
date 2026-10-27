@@ -97,16 +97,12 @@ async function refresh() {
   render();
 }
 
-// The panel slides in and the picture window narrows with it; the picture is fitted to the room that is left on every frame of that (the page is told as a
-// window that changes size is).
+// The panel floats over the picture's bottom right corner, like a chat window: it grows out of the chat button and shrinks back into it.
 export function toggleChat(force) {
   isOpen = force ?? !isOpen;
   $('chat').classList.toggle('open', isOpen);
   $('chat').setAttribute('aria-hidden', String(!isOpen));
   document.body.classList.toggle('chat-open', isOpen);
-  const end = performance.now() + 340;
-  const frame = () => { window.dispatchEvent(new Event('resize')); if (performance.now() < end) requestAnimationFrame(frame); };
-  requestAnimationFrame(frame);
   if (isOpen) { refresh(); setTimeout(grow, 0); }
 }
 
@@ -159,7 +155,6 @@ function setChatWidth(w, save) {
 function initResize() {
   try { const w = parseInt(localStorage.getItem('chatWidth') || '', 10); if (w) setChatWidth(w, false); } catch {}
   const handle = $('chat-resize');
-  let frame = 0;
   handle.addEventListener('pointerdown', (ev) => {
     if (ev.button !== 0) return;
     ev.preventDefault();
@@ -168,14 +163,12 @@ function initResize() {
   });
   handle.addEventListener('pointermove', (ev) => {
     if (!document.body.classList.contains('chat-resizing')) return;
-    setChatWidth(window.innerWidth - ev.clientX, false);
-    if (!frame) frame = requestAnimationFrame(() => { frame = 0; window.dispatchEvent(new Event('resize')); }); // (the picture follows)
+    setChatWidth(window.innerWidth - 16 - ev.clientX, false);
   });
   const end = (ev) => {
     if (!document.body.classList.contains('chat-resizing')) return;
     document.body.classList.remove('chat-resizing');
-    setChatWidth(window.innerWidth - ev.clientX, true);
-    window.dispatchEvent(new Event('resize'));
+    setChatWidth(window.innerWidth - 16 - ev.clientX, true);
   };
   handle.addEventListener('pointerup', end);
   handle.addEventListener('pointercancel', (ev) => { document.body.classList.remove('chat-resizing'); });

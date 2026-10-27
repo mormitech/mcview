@@ -157,7 +157,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 /* the same clipboard, orange, at the end of the folder label in the status bar */
 #clipflag svg { display:none; width:16px; height:16px; fill:none; stroke:#ffa31a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
 #clipflag.on svg { display:block; animation:clipfade 1.6s ease-in-out; }
-@media (prefers-reduced-motion: reduce) { #sel.flash .ants .k, #sel.flash .ants .w, #sel.flash .clipmark, #clipflag.on svg { animation:none; } }
+@media (prefers-reduced-motion: reduce) { #chat, #chat.open, #chat-toggle { transition:none; } }
 
 /* Create image with chosen parameters (Shift-click on Create image) */
 #newdlg { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); }
@@ -176,14 +176,15 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #new-pic .s-cus { display:none; } body.shift #new-pic .s-def { display:none; } body.shift #new-pic .s-cus { display:inline; } /* Shift held: the card says it will ask for the settings */
 
 /* The chat panel */
-#chat-toggle { position:absolute; top:10px; right:12px; z-index:6; width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bar); }
-#chat-toggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
-#chat-toggle { transition:opacity .2s ease, transform .2s ease; }
-body.chat-open #chat-toggle { opacity:0; transform:scale(.8); pointer-events:none; } body.full:not(.edit) #chat-toggle { display:none; } /* full screen has the button in edit mode only */
-#viewer { transition:right .28s cubic-bezier(.3,.7,.2,1); } body.chat-open #viewer { right:var(--chat-w, 360px); }
-#chat { position:fixed; top:0; right:0; bottom:0; width:var(--chat-w, 360px); z-index:20; display:flex; flex-direction:column; background:var(--panel); border-left:1px solid var(--line); transform:translateX(100%); visibility:hidden; transition:transform .28s cubic-bezier(.3,.7,.2,1), visibility 0s linear .28s; }
-#chat.open { transform:none; visibility:visible; transition:transform .28s cubic-bezier(.3,.7,.2,1), visibility 0s; }
-@media (prefers-reduced-motion: reduce) { #viewer, #chat, #chat.open, #chat-toggle { transition:none; } }
+#chat-toggle { position:fixed; bottom:16px; right:16px; z-index:21; width:48px; height:48px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--accent); color:var(--accent-text); border:0; box-shadow:0 4px 14px rgba(0,0,0,.3); }
+#chat-toggle svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
+#chat-toggle { transition:opacity .2s ease, transform .25s cubic-bezier(.3,.7,.2,1); } #chat-toggle:hover { transform:scale(1.06); }
+body.chat-open #chat-toggle { opacity:0; transform:scale(.6); pointer-events:none; } body.full:not(.edit) #chat-toggle { display:none; } /* full screen has the button in edit mode only */
+/* above the status bar when there is one */
+body:has(#status:not([hidden])) #chat-toggle { bottom:50px; } body:has(#status:not([hidden])) #chat { bottom:50px; }
+#chat { position:fixed; right:16px; bottom:16px; top:44px; width:var(--chat-w, 360px); z-index:20; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.3); overflow:visible; transform-origin:bottom right; transform:translateY(24px) scale(.2); opacity:0; visibility:hidden; transition:transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease, visibility 0s linear .3s; } #chat > header { border-radius:14px 14px 0 0; } #chat-form { border-radius:0 0 14px 14px; }
+#chat.open { transform:none; opacity:1; visibility:visible; transition:transform .3s cubic-bezier(.2,.9,.25,1.05), opacity .2s ease, visibility 0s; }
+@media (prefers-reduced-motion: reduce) { #chat, #chat.open, #chat-toggle { transition:none; } }
 #chat header { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); }
 #chat header .sp { flex:1; } #chat header .who { color:var(--muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; } #chat header .who.warn { color:var(--bad); }
 #chat header button { padding:2px 9px; }
@@ -227,7 +228,7 @@ body.chat-open #chat-toggle { opacity:0; transform:scale(.8); pointer-events:non
 #chat-resize { position:absolute; left:-4px; top:0; bottom:0; width:9px; cursor:col-resize; z-index:2; touch-action:none; }
 #chat-resize::after { content:''; position:absolute; left:4px; top:0; bottom:0; width:2px; background:var(--accent); opacity:0; transition:opacity .15s; }
 #chat-resize:hover::after, body.chat-resizing #chat-resize::after { opacity:.55; }
-body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #viewer, body.chat-resizing #chat { transition:none; }
+body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #chat { transition:none; }
 #chat-form button { height:34px; border-radius:10px; flex:none; }
 
 /* The polygon selection: a polygon that is being made or is set (black and dirty white dashes, like the frame of the rectangle) */

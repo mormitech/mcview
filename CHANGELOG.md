@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.40.0 – 2026-10-27
+
+### Changed
+- The chat is a floating window, like a messenger's: it sits over the bottom right corner of the picture (which no longer narrows), reaches almost to the top, grows out of the chat button and shrinks back into it with an animation when minimized. The chat button moved to the bottom right, above the status bar when there is one.
+
 ## 0.39.0 – 2026-10-27
 
 ### Added
