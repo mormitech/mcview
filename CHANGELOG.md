@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.40.3 – 2026-10-27
+
+### Changed
+- A click anywhere outside the chat window minimizes it.
+
 ## 0.40.2 – 2026-10-27
 
 ### Changed

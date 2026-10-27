@@ -182,6 +182,7 @@ export function initChat() {
   initResize();
   EventsOn('chat', onEvent);
   $('chat-toggle').onclick = () => toggleChat();
+  document.addEventListener('pointerdown', (ev) => { if (isOpen && !ev.target.closest('#chat, #chat-toggle')) toggleChat(false); }, true); // a click next to the panel minimizes it (and still does what it was for)
   $('chat-close').onclick = () => toggleChat(false);
   $('chat-new').onclick = () => { ChatReset(); $('chat-log').replaceChildren(); bubble = null; setBusy(false); add('hint', 'New conversation. Ask Claude to change this picture.'); };
   $('chat-send').onclick = send;
