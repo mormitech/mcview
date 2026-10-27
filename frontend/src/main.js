@@ -326,7 +326,7 @@ function gifSetPlaying(on) { // (the promise is for the pause: what is shown is 
   gif.playing = on; document.body.classList.toggle('gif-playing', on); // (the tools are out of the way until a frame is chosen)
   $('gifbar').classList.toggle('paused', !on);
   $('gif-play').title = on ? 'Pause' : 'Play'; $('gif-play').setAttribute('aria-label', on ? 'Pause' : 'Play');
-  if (on) { gifTick(); return Promise.resolve(); }
+  if (on) { clearSelection(); polyClear(); gifTick(); return Promise.resolve(); } // (a selection belongs to one frame: playing lets it go)
   return SetGifFrame(gif.i).catch(() => {});
 }
 async function gifStep(d) {
