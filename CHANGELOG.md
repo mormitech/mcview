@@ -3,6 +3,14 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.46.0 – 2026-10-27
+
+### Added
+- The right-click menu shows a "Recent" group above Effects with the last three effects you used (the latest first; kept for next time), so a repeat is one click.
+
+### Changed
+- Esc, with a drawing tool other than the rectangular selection set (edit mode), returns to the rectangular selection tool.
+
 ## 0.45.1 – 2026-10-27
 
 ### Changed

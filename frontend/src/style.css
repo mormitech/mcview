@@ -180,6 +180,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #ctx button { display:flex; justify-content:space-between; gap:24px; align-items:center; border:0; background:transparent; padding:6px 10px; border-radius:6px; text-align:left; font:inherit; color:var(--text); }
 #ctx button:hover { background:var(--accent); color:var(--accent-text); } #ctx kbd { font:inherit; opacity:.6; }
 #ctx button.has-sub { position:relative; } #ctx .sub { display:none; position:absolute; min-width:210px; padding:5px; border-radius:10px; background:var(--panel); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,.28); flex-direction:column; }
+#ctx .cap { padding:4px 10px 2px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
 #ctx hr { border:0; border-top:1px solid var(--line); margin:4px 2px; }
 
 /* The chat panel */

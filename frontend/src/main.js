@@ -327,6 +327,14 @@ function problem(text, bad = true, ms = 4000) {
 // A selected part that is turned again (and again) is turned from the pixels it had before the first turn, so that it does not get blurrier: Go keeps those while this
 // session lasts, which is until the selection is let go or the picture is changed by something else (the state is not the one the turn made).
 let rotSession = null;
+// The effects used last (at most three, the latest first), offered at the top of the effects in the right-click menu; kept for next time.
+let recentEffects = [];
+try { recentEffects = JSON.parse(localStorage.getItem('recentEffects') || '[]').filter((n) => typeof n === 'string').slice(0, 3); } catch {}
+function noteRecentEffect(name) {
+  if (!EFFECT_LABELS.some((e) => e && e[1] === name)) return;
+  recentEffects = [name, ...recentEffects.filter((n) => n !== name)].slice(0, 3);
+  try { localStorage.setItem('recentEffects', JSON.stringify(recentEffects)); } catch {}
+}
 const EFFECT_LABELS = [['Blur', 'blur'], ['Pixelize', 'pixelize'], ['Emboss', 'emboss'], ['Explosion', 'explosion'], ['Censor', 'censor'], ['Sharpen', 'sharpen'], null,
   ['Grayscale', 'grayscale'], ['Negative', 'negative'], ['Sepia', 'sepia'], null, ['Brighter', 'brightness+'], ['Darker', 'brightness-'], ['More contrast', 'contrast+'], ['Less contrast', 'contrast-'],
   ['More color', 'saturation+'], ['Less color', 'saturation-'], ['Warmer', 'warmer'], ['Cooler', 'cooler'], ['Auto levels', 'auto-levels'], null, ['Fill with foreground color', 'fill-fg']];
@@ -366,7 +374,7 @@ async function applyEffectMenu(name) {
   if (!base || !view.state || !pic.naturalWidth) return;
   const spec = {...base, ...effectPart()};
   if (name === 'fill-fg') spec.color = paint.fg; else if (name === 'clear') spec.color = paint.bg;
-  try { await applyEffect(spec); } catch (e) { problem(errText(e)); }
+  try { await applyEffect(spec); noteRecentEffect(name); } catch (e) { problem(errText(e)); }
 }
 
 // Rotate by angle (Effects menu, and the right-click menu of the whole picture): any angle, smooth; the corners either make the picture bigger or are cut off.
@@ -592,6 +600,10 @@ function showSelectionMenu(x, y) {
   const part = selectionRect(), r = part || {x: 0, y: 0, w: dispW(), h: dispH()}; // (no selection: the menu of the whole picture)
   if (!pic.naturalWidth) return;
   const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
+  const recentItems = () => { // the last effects used, the latest first (nothing, until one was used)
+    const list = recentEffects.map((n) => EFFECT_LABELS.find((e) => e && e[1] === n)).filter(Boolean).map((e) => [e[0], () => applyEffectMenu(e[1])]);
+    return list.length ? [['Recent', null, '', null, true], ...list, null] : [];
+  };
   const effectItems = () => EFFECT_LABELS.map((e) => e && [e[0], () => applyEffectMenu(e[1])]); // (on the selection, or on all of the picture)
   const items = part ? [
     ['Cut', async () => { await copySelection(); await clearSelectedPart(); }],
@@ -600,6 +612,7 @@ function showSelectionMenu(x, y) {
     ['Save selection as…', saveAs],
     ['Print…', printSelection],
     null,
+    ...recentItems(),
     ['Effects', null, '', effectItems()],
     ['Rotate right', () => rotatePart(90), 'R'],
     ['Rotate left', () => rotatePart(-90), '⇧R'],
@@ -612,6 +625,7 @@ function showSelectionMenu(x, y) {
     ['Save as…', saveAs],
     ['Print…', printSelection],
     null,
+    ...recentItems(),
     ['Effects', null, '', effectItems()],
     ['Rotate right', () => imageMenuAction('rotate-right'), 'R'],
     ['Rotate left', () => imageMenuAction('rotate-left'), '⇧R'],
@@ -622,6 +636,7 @@ function showSelectionMenu(x, y) {
   const fill = (box, list) => {
     for (const it of list) {
       if (!it) { box.appendChild(document.createElement('hr')); continue; }
+      if (it[4]) { const c = document.createElement('div'); c.className = 'cap'; c.textContent = it[0]; box.appendChild(c); continue; } // a caption
       const b = document.createElement('button');
       b.setAttribute('role', 'menuitem');
       b.innerHTML = `<span></span><kbd></kbd>`;
@@ -1991,6 +2006,7 @@ function startViewer() {
     }
     if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
     if ((ev.key === 'Delete' || ev.key === 'Backspace') && pic.naturalWidth && !view.fl && view.sel && selectionRect()) { ev.preventDefault(); clearSelectedPart(); return; } // a selected part is cleared (Backspace goes to the previous picture only without one)
+    if (ev.key === 'Escape' && editOn() && view.tool !== 'select') { setTool('select'); return; } // another tool: back to the rectangular selection
     if (ev.key === 'Escape') { clearSelection(); return; } // (Esc does not leave full screen: F and Enter do, and two Escs close the picture)
     if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; } // (also on the home screen)
     if ((ev.key === 'c' || ev.key === 'C') && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); toggleChat(); return; } // the chat panel
