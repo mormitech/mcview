@@ -142,7 +142,7 @@ function onEvent(ev) {
   }
 }
 
-// The width of the panel: 360 pixels to start with, then what the user dragged it to (kept for next time), never under 280 or over what leaves 320 pixels for the picture.
+// The width of the panel: 460 pixels to start with, then what the user dragged it to (kept for next time), never under 280 or over what leaves 320 pixels for the picture.
 const CHAT_MIN = 280;
 const chatMax = () => Math.max(CHAT_MIN, window.innerWidth - 320);
 function setChatWidth(w, save) {

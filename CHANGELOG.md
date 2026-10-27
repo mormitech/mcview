@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.40.2 – 2026-10-27
+
+### Changed
+- The chat window starts wider (460 px), and its New and Minimize buttons are colored rounded squares (blue and amber).
+
 ## 0.40.1 – 2026-10-27
 
 ### Changed
