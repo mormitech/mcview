@@ -53,6 +53,8 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 	}
 	name := cur.Name
 	stamp := false
+	var gm gifSaveChoice // what of an animation is saved (see askGifSave), and the number of the frame that is shown
+	frameNo := 0
 	if g := a.gifSaving(); g != nil { // an animation: the whole of it, or the frame that is shown
 		a.mu.Lock()
 		frame, count := g.cur, len(g.frames)
@@ -65,9 +67,9 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 		a.gifMode = mode
 		a.mu.Unlock()
 		defer func() { a.mu.Lock(); a.gifMode = 0; a.mu.Unlock() }()
+		gm, frameNo = mode, frame+1
 		if mode == gifSaveFrame {
 			ask = false // a new file: nothing to overwrite
-			name = fmt.Sprintf("%s-frame-%d.png", strings.TrimSuffix(cur.Name, filepath.Ext(cur.Name)), frame+1)
 		}
 	}
 	_, writable := saveFormats[strings.ToLower(filepath.Ext(cur.Path))]
@@ -91,6 +93,19 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 			name = strings.TrimSuffix(name, filepath.Ext(name)) + ".png"
 		}
 	}
+	filter := wruntime.FileFilter{DisplayName: "PNG, JPEG, GIF, BMP, TIFF", Pattern: "*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff"}
+	if gm != 0 { // an animation: the whole of it is a GIF (and only a GIF is offered), a frame is a picture
+		stem := "animation-" + time.Now().Format("20060102-150405")
+		if cur.Path != "" {
+			stem = strings.TrimSuffix(cur.Name, filepath.Ext(cur.Name))
+		}
+		if gm == gifSaveAll {
+			name = stem + ".gif"
+			filter = wruntime.FileFilter{DisplayName: "GIF animation", Pattern: "*.gif"}
+		} else {
+			name = fmt.Sprintf("%s-frame-%d.png", stem, frameNo)
+		}
+	}
 	if stamp {
 		name = changedName(name, time.Now())
 	}
@@ -99,7 +114,7 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 		DefaultDirectory:     cur.Dir,
 		DefaultFilename:      name,
 		CanCreateDirectories: true,
-		Filters:              []wruntime.FileFilter{{DisplayName: "PNG, JPEG, GIF, BMP, TIFF", Pattern: "*.png;*.jpg;*.jpeg;*.gif;*.bmp;*.tif;*.tiff"}},
+		Filters:              []wruntime.FileFilter{filter},
 	})
 	if err != nil || target == "" {
 		return "", err

@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.50.2 – 2026-10-27
+
+### Fixed
+- Saving an animation as the whole GIF offered a PNG name (`clipboard-….png`) and all picture types. The dialog now offers `animation-….gif` (or the file's name with .gif) and only the GIF type; a single frame is offered as `…-frame-N.png`.
+
 ## 0.50.1 – 2026-10-27
 
 ### Fixed
