@@ -58,6 +58,7 @@ func windowFlags(args []string) (mode, theme, file string, cascade int) {
 }
 
 func main() {
+	startThroughRealPath() // (macOS, started through a link: see reexec.go)
 	trace("main")
 	app := NewApp()
 	title, width, height := "mormiView", 1024, 640

@@ -1,6 +1,10 @@
 package main
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestVersion(t *testing.T) {
 	if v := version(); v == "" || v == "dev" {
@@ -39,5 +43,27 @@ func TestThemes(t *testing.T) {
 	}
 	if windowsTheme("dark") == windowsTheme("light") || windowsTheme("") == windowsTheme("dark") {
 		t.Error("windowsTheme: dark, light and the system's setting must differ")
+	}
+}
+
+func TestResolvedPathFollowsLinks(t *testing.T) {
+	dir := t.TempDir()
+	real := filepath.Join(dir, "app", "prog")
+	if err := os.MkdirAll(filepath.Dir(real), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(real, []byte("x"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "prog")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skip("no symbolic links here")
+	}
+	want, _ := filepath.EvalSymlinks(real)
+	if got, changed := resolvedPath(link); !changed || got != want {
+		t.Errorf("resolvedPath(link) = %q, %v; want %q, true", got, changed, want)
+	}
+	if got, changed := resolvedPath(want); changed || got != want {
+		t.Errorf("resolvedPath(real) = %q, %v; want it unchanged", got, changed)
 	}
 }

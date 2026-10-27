@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.10 – 2026-10-27
+
+### Fixed
+
+- macOS: started from a terminal by the `mormiview` command (the link that Homebrew installs), the Open dialog opened and collapsed at once, so no file could be opened. The system finds the app's identity from the path the program was started by, and through the link there was none. The program now starts itself again by the real path of the app, at once. (Started from Spotlight, Finder or `open`, it was fine.)
+
 ## 0.51.9 – 2026-10-27
 
 ### Added
