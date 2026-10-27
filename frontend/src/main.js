@@ -269,6 +269,12 @@ function offerClipboard() {
   ClipboardHasImage().then((has) => { if (!$('empty').hidden) $('open-clip').hidden = !has; }).catch(() => {});
 }
 
+// The empty window offers the picture that was closed last, when closing it is the last step of the history (undo brings it back, changes and history with it).
+function offerReopen() {
+  const e = history.list[history.at], p = history.list[history.at - 1];
+  $('reopen-pic').hidden = $('empty').hidden || !(e && e.label === 'image closed' && p && p.state !== 0);
+}
+
 function showImage(info, opts = {}) {
   let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
   view.state = info?.state || 0;
@@ -1444,7 +1450,7 @@ async function closeImage() {
   try {
     const info = await RestoreState(0);
     await showImage(info);
-    commit('image closed');
+    commit('image closed'); offerReopen();
   } catch (e) { problem(errText(e)); }
 }
 
@@ -1640,7 +1646,7 @@ async function travel(to) {
       if (fl.pasted) await SetPasted(e.rot, fl.url.split(',')[1], fl.dest.x, fl.dest.y, fl.dest.w, fl.dest.h, !editOn()); else await sendFloat();
     } else view.sel = sel ? rectSel(sel) : null; // the frame that was selected before it was lifted, or the part that was dropped and let go
     draw();
-    history.at = to;
+    history.at = to; offerReopen();
   } catch (err) { problem(errText(err)); }
   history.busy = false;
 }
@@ -1693,7 +1699,8 @@ function startViewer() {
   });
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
   $('hint').textContent = 'Open a picture, paste one from the clipboard, or start a blank one. You can also open pictures with mcView from your file manager.';
-  $('k-clip').textContent = `${cmd}V`;
+  $('k-clip').textContent = `${cmd}V`; $('k-reopen').textContent = `${cmd}Z`;
+  $('reopen-pic').onclick = () => undo();
   $('open').onclick = choose;
   $('open-clip').onclick = () => PasteNew().catch((e) => problem(errText(e)));
   $('new-pic').onclick = (ev) => createImage(ev.shiftKey);

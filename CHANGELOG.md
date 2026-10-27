@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.42.0 – 2026-10-27
+
+### Added
+- "Reopen last closed" on the home screen: after an image was closed, it brings the picture back with all its changes and its undo history (it is an undo of the close step, so Ctrl+Z does the same).
+
 ## 0.41.1 – 2026-10-27
 
 ### Changed
