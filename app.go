@@ -55,6 +55,8 @@ type App struct {
 	spawned     int              // the windows this one started, so that each opens a little further down and right
 	cascade     int              // --cascade: how many steps of that this window was started at
 
+	recentSub *menu.Menu // File → Open Recent
+	recentSig string
 	gifs      *gifSet          // the frames of the animated GIF of the window (see gif.go)
 	rotc      *rotCache        // where a rotation started from, so that turning again does not turn the turned picture (see rotate.go)
 	states    map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
@@ -195,7 +197,7 @@ func (a *App) updateMenuItems() {
 	del, save, closeImg, discard := a.deleteItem, a.saveItem, a.closeItem, a.discardItem
 	a.mu.Unlock()
 	cur := a.current()
-	changed := false
+	changed := a.fillRecentMenu() // (another window may have opened something)
 	for item, off := range map[*menu.MenuItem]bool{del: cur.Path == "", save: cur.URL == "", closeImg: cur.URL == "", discard: !cur.Modified} {
 		if item != nil && item.Disabled != off {
 			item.Disabled = off

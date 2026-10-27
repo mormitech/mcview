@@ -54,6 +54,7 @@ func fileMenu(app *App, m *menu.Menu) {
 	file := m.AddSubmenu("File")
 	file.AddText("New Window", keys.CmdOrCtrl("n"), func(*menu.CallbackData) { app.newWindow() })
 	file.AddText("Open File…", keys.CmdOrCtrl("o"), func(*menu.CallbackData) { app.chooseImage() })
+	recentMenu(app, file)
 	file.AddText("Create Image", nil, func(*menu.CallbackData) { app.emit("menu-create") }) // a new 1280 × 720 image, in edit mode
 	app.saveItem = file.AddText("Save As…", keys.CmdOrCtrl("s"), func(*menu.CallbackData) { app.saveAs() })
 	app.closeItem = file.AddText("Close Image", keys.Combo("w", keys.CmdOrCtrlKey, keys.ShiftKey), func(*menu.CallbackData) { app.emit("menu-close-image") })

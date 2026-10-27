@@ -18,6 +18,8 @@ export function ChooseImage():Promise<void>;
 
 export function ClearFloat():Promise<void>;
 
+export function ClearRecent():Promise<void>;
+
 export function ClipboardHasImage():Promise<boolean>;
 
 export function CloseWindow():Promise<void>;
@@ -72,6 +74,8 @@ export function NewWindow():Promise<void>;
 
 export function OpenImage(arg1:string):Promise<void>;
 
+export function OpenRecent(arg1:string):Promise<void>;
+
 export function PaintPixels(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function PasteLayer(arg1:number,arg2:number,arg3:number):Promise<main.PastedLayer>;
@@ -85,6 +89,8 @@ export function PolygonPNG(arg1:number,arg2:string):Promise<string>;
 export function PreparePixels():Promise<string>;
 
 export function PrintPNG(arg1:string):Promise<string>;
+
+export function Recent():Promise<Array<main.RecentFile>>;
 
 export function ResizeCanvas(arg1:number,arg2:number,arg3:number,arg4:string,arg5:string):Promise<main.ImageInfo>;
 

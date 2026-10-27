@@ -127,9 +127,11 @@ func (a *App) setImage(path string) error {
 	a.fl = nil
 	a.newStateLocked()
 	a.mu.Unlock()
+	addRecent(abs)
 	if a.ctx != nil { // not yet during startup: the window asks for the picture itself
 		a.titleWindow()
 		a.emit("image", a.Image())
+		a.refreshRecentMenu()
 	}
 	return nil
 }

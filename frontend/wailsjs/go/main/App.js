@@ -34,6 +34,10 @@ export function ClearFloat() {
   return window['go']['main']['App']['ClearFloat']();
 }
 
+export function ClearRecent() {
+  return window['go']['main']['App']['ClearRecent']();
+}
+
 export function ClipboardHasImage() {
   return window['go']['main']['App']['ClipboardHasImage']();
 }
@@ -142,6 +146,10 @@ export function OpenImage(arg1) {
   return window['go']['main']['App']['OpenImage'](arg1);
 }
 
+export function OpenRecent(arg1) {
+  return window['go']['main']['App']['OpenRecent'](arg1);
+}
+
 export function PaintPixels(arg1, arg2) {
   return window['go']['main']['App']['PaintPixels'](arg1, arg2);
 }
@@ -168,6 +176,10 @@ export function PreparePixels() {
 
 export function PrintPNG(arg1) {
   return window['go']['main']['App']['PrintPNG'](arg1);
+}
+
+export function Recent() {
+  return window['go']['main']['App']['Recent']();
 }
 
 export function ResizeCanvas(arg1, arg2, arg3, arg4, arg5) {

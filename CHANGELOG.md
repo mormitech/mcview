@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.48.0 – 2026-10-27
+
+### Added
+- Recent pictures: the home screen lists the five pictures opened last (click to open), and File → Open Recent has the last ten, with Clear Menu. The list is kept for next time and shared by all windows.
+
 ## 0.47.0 – 2026-10-27
 
 ### Added

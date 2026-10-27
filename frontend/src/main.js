@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -265,7 +265,22 @@ function zoomAt(factor, px, py) {
 
 // opts.rot: the turn the picture is shown with (undo brings a picture back as it was turned); a new picture is not turned.
 // The empty window offers the picture that is on the clipboard (if there is one) next to Open file…
+function offerRecent() { // the pictures opened last, on the home screen
+  Recent().then((list) => {
+    const box = $('recent-list');
+    box.replaceChildren(...(list || []).slice(0, 5).map((f) => {
+      const b = document.createElement('button'), n = document.createElement('b'), d = document.createElement('span');
+      n.textContent = f.name; d.textContent = f.dir.replace(/^\/(Users|home)\/[^/]+/, '~');
+      b.append(n, d); b.title = f.path;
+      b.onclick = () => OpenRecent(f.path).catch((e) => problem(errText(e)));
+      return b;
+    }));
+    $('recent').hidden = !list?.length;
+  }).catch(() => {});
+}
+
 function offerClipboard() {
+  offerRecent();
   ClipboardHasImage().then((has) => { if (!$('empty').hidden) $('open-clip').hidden = !has; }).catch(() => {});
 }
 
