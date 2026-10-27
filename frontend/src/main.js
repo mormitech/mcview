@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent, GifStart, GifAddFrame, GifDuplicateFrame, GifDeleteFrame, GifMoveFrame, GifSetDelay, ExportFramesDialog} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent, ClearRecent, GifStart, GifAddFrame, GifDuplicateFrame, GifDeleteFrame, GifMoveFrame, GifSetDelay, ExportFramesDialog} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -278,6 +278,8 @@ function offerRecent() { // the pictures opened last, on the home screen
     $('recent').hidden = !list?.length;
   }).catch(() => {});
 }
+
+$('recent-clear').onclick = () => ClearRecent().then(offerRecent).catch(() => {});
 
 function offerClipboard() {
   offerRecent();
@@ -748,7 +750,8 @@ async function clearSelectedPart() {
 function closeSelectionMenu() { const m = $('ctx'); if (m) m.remove(); }
 function showSelectionMenu(x, y) {
   closeSelectionMenu();
-  const part = selectionRect(), r = part || {x: 0, y: 0, w: dispW(), h: dispH()}; // (no selection: the menu of the whole picture)
+  const isPoly = !selectionRect() && poly.closed && poly.pts.length >= 3; // (a free-hand selection: the box items that need a rectangle are left out)
+  const part = selectionRect() || (isPoly ? {x: 0, y: 0, w: dispW(), h: dispH()} : null), r = part || {x: 0, y: 0, w: dispW(), h: dispH()}; // (no selection: the menu of the whole picture)
   if (!pic.naturalWidth) return;
   const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
   const recentItems = () => { // the last effects used, the latest first (nothing, until one was used)
@@ -757,11 +760,9 @@ function showSelectionMenu(x, y) {
   };
   const effectItems = () => EFFECT_LABELS.map((e) => e && [e[0], () => applyEffectMenu(e[1])]); // (on the selection, or on all of the picture)
   const items = part ? [
-    ['Cut', async () => { await copySelection(); await clearSelectedPart(); }],
-    ['Copy', () => copySelection(), `${MAC ? '⌘' : 'Ctrl+'}C`],
-    ['Crop to selection', cropToSelection],
-    ['Save selection as…', saveAs],
-    ['Print…', printSelection],
+    ['Cut', async () => { await (isPoly ? polyCopy() : copySelection()); await clearSelectedPart(); }],
+    ['Copy', () => (isPoly ? polyCopy() : copySelection()), `${MAC ? '⌘' : 'Ctrl+'}C`],
+    ...(isPoly ? [] : [['Crop to selection', cropToSelection], ['Save selection as…', saveAs], ['Print…', printSelection]]),
     null,
     ...recentItems(),
     ['Effects', null, '', effectItems()],
@@ -2249,14 +2250,15 @@ async function ctlRun(m) {
       draw(); await ctl.sleep(300); return ctlState();
     }
     case 'effect': { // an effect on a part: {op, …} (see effects.go); with selection: true the part is what the user selected
-      const spec = {...m}; delete spec.cmd; delete spec.selection; delete spec.clear;
+      const spec = {...m}; delete spec.cmd; delete spec.selection; delete spec.clear; delete spec.recent;
       if (m.selection) {
         const part = effectPart();
         if (!part.pts && part.x === undefined) throw new Error('nothing is selected in the window');
         Object.assign(spec, part);
       }
       if (m.clear) { spec.op = 'fill'; if (!spec.color) spec.color = paint.bg; } // the second color, as Delete does
-      const info = await applyEffect(spec); return {...ctlState(), note: info.note || ''};
+      const info = await applyEffect(spec); if (m.recent) noteRecentEffect(spec.op); // (recent: true counts it as one used from the menu)
+      return {...ctlState(), note: info.note || ''};
     }
     case 'transform': { // resize, rotate, flip or place (see transform.go)
       await commitText(); if (view.fl) await flushFloat({clear: true});
@@ -2267,6 +2269,33 @@ async function ctlRun(m) {
       await commitText(); if (view.fl) await flushFloat({clear: true});
       const info = await gifDo(m);
       await showImage(info, {keepView: true, rot: 0}); commit(`animation: ${m.op}`); await ctlSettle(); return ctlState();
+    }
+    case 'ctxmenu': { // the right-click menu at the pixel {x, y} of the window (the middle by default); sub: the submenu to open, for example "Effects"
+      const r = $('stage').getBoundingClientRect();
+      showSelectionMenu(m.cx ?? r.left + r.width / 2, m.cy ?? r.top + r.height / 2);
+      if (m.sub) [...document.querySelectorAll('#ctx .has-sub')].find((b) => b.firstChild.textContent === m.sub)?.onmouseenter?.();
+      await ctl.sleep(300); return {ok: true};
+    }
+    case 'chat': { // the chat panel open (on: false shuts it), with an unsent draft {text} in its box
+      toggleChat(m.on !== false);
+      if (m.text !== undefined) { const t = $('chat-text'); t.value = m.text; t.dispatchEvent(new Event('input')); }
+      await ctl.sleep(m.wait ?? 3500); return {ok: true};
+    }
+    case 'closemenu': closeSelectionMenu(); return {ok: true};
+    case 'rotdlg': { // the Rotate by angle dialog, left open with the angle {angle} in it (close: true shuts it)
+      if (m.close) { $('rd-cancel').click(); return {ok: true}; }
+      askRotation(!!m.part).catch(() => {});
+      $('rd-a').value = $('rd-r').value = String(m.angle ?? 0);
+      await ctl.sleep(300); return {ok: true};
+    }
+    case 'tip': { // the tooltip of the element with the id {id}, as if the pointer had rested on it
+      const el = document.getElementById(m.id); if (!el) throw new Error(`no element "${m.id}"`);
+      el.dispatchEvent(new PointerEvent('pointerover', {bubbles: true}));
+      await ctl.sleep(1400); return {ok: true};
+    }
+    case 'gifplay': { // the frame player: {on: true|false}, or {step: 1|-1} (stops the animation first)
+      if (m.step) await gifStepAny(m.step); else await gifSetPlaying(m.on !== false);
+      await ctl.sleep(300); return ctlState();
     }
     case 'wait': await ctl.sleep(m.ms ?? 200); return {ok: true};
     case 'menu': { const f = CTL_MENU[m.name]; if (!f) throw new Error(`no menu item "${m.name}": ${Object.keys(CTL_MENU).join(', ')}`); await f(); await ctlSettle(); return {ok: true}; }
@@ -2324,7 +2353,7 @@ async function ctlRun(m) {
       txt = {x: m.x, y: m.y, color: m.color || paint.fg, opts: {align: m.align, boxW: m.box_w, outline: m.outline, outlineW: m.outline_width, shadow: m.shadow}}; $('textbox').value = m.value;
       await commitText(); return ctlState();
     }
-    case 'pixel': { if (pixelState === 'preparing') await preparePixels(); return {ok: true, pixel: await fetchPixel(m.x, m.y)}; }
+    case 'pixel': { if (pixelState === 'preparing') await preparePixels(); const p = await fetchPixel(m.x, m.y); if (m.show) showPixel(p); return {ok: true, pixel: p}; } // show: true puts it in the readout of the bar
     case 'cutsel': { // Cut: the selected part goes to the clipboard and is cleared
       await commitText(); if (!selectionRect()) throw new Error('nothing is selected in the window');
       await copySelection(); await clearSelectedPart(); await ctlSettle(); return ctlState();

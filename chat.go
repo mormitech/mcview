@@ -98,6 +98,9 @@ func (a *App) ChatInfo() map[string]any {
 		return info
 	}
 	info["loggedIn"], info["method"], info["email"], info["plan"] = st.LoggedIn, st.AuthMethod, st.Email, st.SubscriptionType
+	if demoDir != "" { // a demo run (screenshots) shows nothing of the account
+		info["email"], info["plan"] = "", ""
+	}
 	a.chat.mu.Lock()
 	info["busy"], info["signingIn"] = a.chat.cmd != nil, a.chat.login != nil
 	a.chat.mu.Unlock()

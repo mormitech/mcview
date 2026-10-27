@@ -114,6 +114,9 @@ func (a *App) setImage(path string) error {
 	if !isImage(abs) {
 		return fmt.Errorf("%s is not a picture type mormiView opens", filepath.Base(abs))
 	}
+	if demoDir != "" && underHome(abs) {
+		return fmt.Errorf("a demo run does not open pictures from your home folder (their names and folders would show): copy the picture somewhere else first")
+	}
 	if fi, err := os.Stat(abs); err != nil || fi.IsDir() {
 		return fmt.Errorf("cannot open %s", filepath.Base(abs))
 	}

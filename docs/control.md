@@ -7,6 +7,9 @@ screenshots, for the manual in pictures, for scripted tests. It is off unless yo
 mormiview --control 0 picture.jpg          # 0 takes a free port; or MORMIVIEW_CONTROL=0 in the environment
 ```
 
+`--demo` (or `--mock`) is control mode on a free port that also starts with settings of its own: a new empty folder in the temporary folder, so the
+recent pictures, the window place and the AI settings of the person who makes the screenshots do not show in them and are not changed. `scripts/demo_screenshots.py` starts the app this way.
+
 On start the app writes `mormiview-control.json` (in the temporary folder, or where `MORMIVIEW_CONTROL_FILE` says; readable by you only):
 
 ```json
@@ -55,9 +58,16 @@ moves a pointer or presses a key: a drawing command puts its result into the pic
 | `fill` | `x`, `y`, `color`, `tolerance` (0 to 100) | the paint bucket at the pixel |
 | `select` | `x0`, `y0`, `x1`, `y1` | a selection with these two pixels as its corners |
 | `text` | `x`, `y`, `value`, `color` | puts a text into the picture with its top left corner at the pixel (font and size: `option`) |
-| `pixel` | `x`, `y` | the color of the pixel, from the file |
+| `pixel` | `x`, `y`, `show` | the color of the pixel, from the file; `show: true` also puts it in the readout of the bar |
 | `snapshot` | `x`, `y`, `w`, `h`, `max` | the picture as a PNG (base64 in `png`, with `scale`, `region`, `picture`); used by the [chat panel](chat.md) |
 | `saveto` | `path`, `overwrite` | saves the picture to a full path without the Save dialog |
+| `effect` | `op`, `selection: true` (the part the user selected), `recent: true` (counts for the Recent group of the right-click menu), settings | an effect (`blur`, `censor`, `grayscale`, `rotate` with `angle` …) on the selection or on the whole picture |
+| `polygon` | `pts: [[x, y], …]` | a closed free-hand selection (`[]` lets it go) |
+| `ctxmenu` | `sub` | the right-click menu in the middle of the picture, with a submenu (for example `Effects`) open; `closemenu` closes it |
+| `rotdlg` | `angle`, `part`, `close` | the Rotate by angle dialog, left open with an angle in it |
+| `chat` | `on`, `text` | the chat panel open (or shut), with an unsent draft in its box |
+| `tip` | `id` | the tooltip of the element with this id |
+| `gif` / `gifplay` | `op: start|add|duplicate|delete|move|delay`; `on` or `step` | the frames of an animation; the player: play, pause, a frame back or forward |
 | `wait` / `sleep` | `ms` | a pause |
 | `answer` | `kind`, `value` or `values` | queues answers for the dialogs (below) |
 | `dialogs` | | the questions the dialogs have asked since the last time |

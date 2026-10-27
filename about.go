@@ -9,7 +9,7 @@ import (
 )
 
 // helpURL is the page of the manual; Help → mormiView Help opens it in the browser of the system.
-const helpURL = "https://mormitech.com/tools/mcview/docs"
+const helpURL = "https://mormitech.com/mctools/mormiview/docs/"
 
 func (a *App) openHelp() {
 	if a.ctx != nil {

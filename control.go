@@ -44,6 +44,17 @@ type control struct {
 
 // controlPort is the port from --control or MORMIVIEW_CONTROL; the second result is false when control mode is not asked for.
 func controlPort(args []string, env string) (string, bool) {
+	if demoFlag(args) { // --demo is control mode on a free port (and a settings folder of its own, see configDir)
+		for i, a := range args {
+			if v, ok := strings.CutPrefix(a, "--control="); ok {
+				return v, true
+			}
+			if (a == "--control" || a == "-control") && i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				return args[i+1], true
+			}
+		}
+		return "0", true
+	}
 	for i, a := range args {
 		if a == "--control" || a == "-control" {
 			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {

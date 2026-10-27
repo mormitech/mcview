@@ -254,7 +254,8 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 
 /* the recent pictures on the home screen */
 #recent { margin-top:22px; width:min(100%, 660px); text-align:left; } #recent[hidden] { display:none; }
-#recent h2 { margin:0 0 6px 4px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
+#recent .rhead { display:flex; align-items:baseline; justify-content:space-between; margin:0 4px 6px; } #recent-clear { border:0; background:transparent; padding:2px 6px; border-radius:6px; font:inherit; font-size:11px; color:var(--muted); cursor:pointer; } #recent-clear:hover { background:rgba(127,127,127,.16); color:inherit; }
+#recent h2 { margin:0; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); }
 #recent-list { display:flex; flex-direction:column; gap:2px; }
 #recent-list button { display:flex; align-items:baseline; gap:10px; width:100%; padding:6px 10px; border:0; border-radius:8px; background:transparent; text-align:left; font:inherit; color:var(--text); }
 #recent-list button:hover { background:rgba(127,127,127,.16); }

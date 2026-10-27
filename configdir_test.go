@@ -33,3 +33,28 @@ func TestConfigDirMovesTheOldFolder(t *testing.T) {
 		t.Errorf("the old folder is still there")
 	}
 }
+
+func TestDemoUsesAFreshFolder(t *testing.T) {
+	defer func() { demoDir = "" }()
+	startDemo([]string{"--demo"})
+	if demoDir == "" || configDir() != demoDir {
+		t.Fatalf("demo folder %q, config folder %q", demoDir, configDir())
+	}
+	if entries, _ := os.ReadDir(demoDir); len(entries) != 0 {
+		t.Errorf("the demo folder is not empty")
+	}
+	os.RemoveAll(demoDir)
+}
+
+func TestUnderHome(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		t.Skip("no home folder")
+	}
+	if !underHome(filepath.Join(home, "Pictures", "a.jpg")) {
+		t.Errorf("a file in the home folder is not under it")
+	}
+	if underHome("/tmp/Pictures/a.jpg") && !underHome(os.TempDir()) {
+		t.Errorf("/tmp/Pictures is not in the home folder")
+	}
+}

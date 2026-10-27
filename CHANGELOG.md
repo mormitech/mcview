@@ -3,6 +3,56 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.8 – 2026-10-27
+
+### Added
+
+- Control mode can open the chat panel with a draft in its box (`chat`) and show a pixel in the readout (`pixel` with `show`), for screenshots.
+
+## 0.51.7 – 2026-10-27
+
+### Added
+
+- Control mode can open the right-click menu, the Rotate by angle dialog and a tooltip, and play, pause and step an animation, for screenshots of them (docs/control.md).
+
+### Fixed
+
+- The right-click menu of a free-hand (polygon) selection was the menu of the whole picture, and its Copy copied all of it. It is now the menu of the selection: Cut, Copy (what is inside the polygon), Effects, Rotate and Clear.
+
+### Changed
+
+- A demo run (`--demo`) shows nothing personal: it does not open pictures from your home folder, and the chat panel shows no account name, e-mail or plan.
+
+## 0.51.5 – 2026-10-27
+
+### Added
+
+- `--demo` (also `--mock`): control mode on a free port, with a new empty settings folder, so that screenshots show no recent pictures or window state of the person making them. The demo scripts use it.
+
+## 0.51.4 – 2026-10-27
+
+### Added
+
+- A **Clear** button next to Recent on the home screen empties the list of recent pictures (the files stay).
+
+## 0.51.3 – 2026-10-27
+
+### Changed
+
+- The window title no longer carries the version number (it is still in the About window).
+
+## 0.51.2 – 2026-10-27
+
+### Changed
+
+- Help → mormiView Help opens the manual at its new address, mormitech.com/mctools/mormiview/docs/ (the old addresses still redirect).
+
+## 0.51.1 – 2026-10-27
+
+### Changed
+
+- The README and the manual describe the newer features: animated GIFs (player, frame editing, making and saving animations), Image and Effects menus, fine rotation, the right-click menu, Scan, recent pictures and Reopen last closed, tooltips.
+
 ## 0.51.0 – 2026-10-27
 
 ### Changed

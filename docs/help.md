@@ -22,7 +22,7 @@ In the app, **Help → mormiView Help** opens it. Below, **Ctrl** is **Cmd** on 
 4. **Press C** to chat with Claude about the picture, and ask it to change it.
 5. **Save with S.** Nothing is written to the file until you do.
 
-A window with no picture offers three big buttons: **Open file…** (**O**), **Open from clipboard** (**Ctrl+V**) and **Create image** (**N**).
+A window with no picture offers big buttons: **Open file…** (**O**), **Open from clipboard** (**Ctrl+V**), **Create image** (**N**) and **Scan** (a picture from a scanner opens as a new, unsaved picture; on macOS it opens Image Capture and takes the first new picture that turns up in Pictures, Desktop, Documents or Downloads). **Reopen last closed** brings back a closed picture with its changes and undo history. Under the buttons are the five pictures opened last; *File → Open Recent* has the last ten. Undo never goes back to the home screen.
 
 ---
 
@@ -52,7 +52,11 @@ The keys **1** to **6** set how the picture sits in the window, as in IrfanView.
 ### Turning, full screen
 
 - **R** turns the view a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file stays as it is until you save. With a part selected, **R** turns only that part instead (see Image and Effects).
-- **F** or **Enter** is full screen. There is no title or bar then; the bar comes up when the pointer is at the bottom edge. **Esc** does not leave full screen (two Escs close the picture).
+- **F** or **Enter** is full screen. There is no title or bar then; the bar comes up when the pointer is at the bottom edge, and for two seconds when another picture arrives (opened, pasted or stepped to). **Esc** does not leave full screen (two Escs close the picture).
+
+### Animated GIFs
+
+A GIF with several frames plays, and a small player appears at the bottom: **pause/play**, **a frame back**, **a frame forward** and the frame counter (for example `14 / 22`). Outside edit mode the player fades away while the animation runs, and comes back when you pause or step. **Space** plays and pauses; **Shift+wheel**, **Up** and **Down** stop the animation and step through the frames, round and round. Starting the animation lets a selection go. In edit mode, pause on a frame and every tool draws on that frame only; see Image and Effects for making and saving animations.
 
 ### Looking closely
 
@@ -202,7 +206,7 @@ Claude can use mormiView's picture tools and web search and fetch, and nothing e
 | **Ctrl+V** | Paste: a small picture floats over the picture as a part you can move; one about as big as the picture asks whether to make it a new image |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Delete** | Fill a polygon selection with the second color; take away a floating part |
-| **Esc** | Drop a selection or a drawing; let go of a selection; **Esc Esc** closes the picture |
+| **Esc** | With a drawing tool: back to the rectangle select tool; drop a selection or a drawing; let go of a selection; **Esc Esc** closes the picture |
 | **Ctrl+W**, **Ctrl+Shift+W** | Close the picture or the window; close just the picture |
 | **F1** | This help (Windows and Linux) |
 

@@ -43,6 +43,8 @@ func version() string {
 func windowFlags(args []string) (mode, theme, file string, cascade int) {
 	fs := flag.NewFlagSet("mormiview", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
+	fs.Bool("demo", false, "control mode on a free port, with settings of its own that start empty (for screenshots); --mock is the same")
+	fs.Bool("mock", false, "same as --demo")
 	var about bool
 	fs.BoolVar(&about, "about", false, "show the About window")
 	fs.StringVar(&theme, "theme", "", "light or dark, instead of the system's setting (for screenshots)")
@@ -58,7 +60,8 @@ func windowFlags(args []string) (mode, theme, file string, cascade int) {
 func main() {
 	trace("main")
 	app := NewApp()
-	title, width, height := "mormiView v"+version(), 1024, 640
+	title, width, height := "mormiView", 1024, 640
+	startDemo(os.Args[1:])
 	mode, theme, file, cascade := windowFlags(os.Args[1:])
 	about := mode != "" // (a window of its own, not a viewer)
 	switch {

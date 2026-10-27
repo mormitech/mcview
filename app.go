@@ -187,9 +187,9 @@ func (a *App) titleWindow() {
 		if cur.Modified {
 			name += modifiedMark
 		}
-		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mormiView v"+version()+a.editMark())
+		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mormiView"+a.editMark())
 	} else { // undo can take the window back to empty
-		wruntime.WindowSetTitle(a.ctx, "mormiView v"+version()+a.editMark())
+		wruntime.WindowSetTitle(a.ctx, "mormiView"+a.editMark())
 	}
 }
 
