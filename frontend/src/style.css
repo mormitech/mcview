@@ -273,7 +273,7 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 @media (prefers-reduced-motion: reduce) { #chat-toggle.working::before, #chat-toggle.working::after, #chat-toggle.working svg { animation:none; } #chat-toggle.working { box-shadow:0 0 0 4px rgba(47,109,246,.35); } }
 
 /* The frame player of an animated GIF (edit mode); the tools are hidden (and off) while it plays: one draws on a frame, not on an animation */
-body.edit.gif-playing #tools { opacity:0; pointer-events:none; }
+body.edit.gif-playing #tools { opacity:0; pointer-events:none; } body.edit.gif-playing #status { left:0; } /* (no rail: the bar reaches the left edge) */
 
 #gifbar { position:fixed; left:50%; bottom:50px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:4px; padding:4px 10px 4px 4px; border-radius:999px; background:var(--bar); border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.2); }
 #gifbar[hidden], body:not(.edit) #gifbar { display:none; }
