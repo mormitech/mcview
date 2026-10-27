@@ -76,6 +76,9 @@ func (a *App) NewBlankColor(w, h int, rgba string) error {
 	}
 	n := image.NewNRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(n, n.Bounds(), image.NewUniform(c), image.Point{}, draw.Src)
+	a.mu.Lock()
+	a.origin = "new"
+	a.mu.Unlock()
 	return a.setPixelsBlank(n, true)
 }
 

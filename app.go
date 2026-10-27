@@ -57,6 +57,7 @@ type App struct {
 
 	recentSub  *menu.Menu // File → Open Recent
 	recentSig  string
+	origin     string        // where a picture that has no file came from: new, scan or the clipboard (see unsavedName)
 	gifs       *gifSession   // the animated GIF of the window that is edited frame by frame (see gif.go)
 	gifMode    gifSaveChoice // what Save As saves of an animation (set while it runs)
 	confirmGif func(frame, count int) gifSaveChoice

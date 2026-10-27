@@ -9,6 +9,7 @@ and the versions are the [releases](https://github.com/mormitech/mcview/releases
 - An animation made from a new or pasted picture (and so one the chat made) did not show the frame player and the frame count: the page only looked for the player on pictures whose file name ends in .gif. It now shows it for every animation, at once.
 
 ### Changed
+- The title of a picture that has no file says where it came from: [new image] for Create image, [scanned image] for a scan, [clipboard image] for a pasted one.
 - The chat works on frames independently of the player: a tool called with a `frame` number changes that frame and the frame the user has on the screen stays (and a running animation runs on); `add_frame`, `duplicate_frame`, `delete_frame` and `move_frame` do not move the user's frame either (the player's own buttons do follow the change). `animation_info` tells which frame the user looks at.
 
 ## 0.50.0 – 2026-10-27

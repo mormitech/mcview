@@ -84,7 +84,7 @@ func (a *App) current() ImageInfo {
 		if a.clip == nil {
 			return ImageInfo{}
 		}
-		return ImageInfo{Name: clipboardName, Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: !a.blank || a.fl.moved(), CanAlpha: true}
+		return ImageInfo{Name: unsavedName(a.origin), Dir: a.workDirLocked(), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: !a.blank || a.fl.moved(), CanAlpha: true}
 	}
 	return ImageInfo{Name: filepath.Base(a.image), Path: a.image, Dir: filepath.Dir(a.image), URL: "/image/" + strconv.Itoa(a.imgSeq), State: a.stateID, Modified: a.clip != nil || a.fl.moved(), CanAlpha: canAlpha(a.image)}
 }

@@ -45,7 +45,7 @@ func indexOf(names []string, name string) int {
 func (a *App) Step(delta int) (string, error) {
 	cur := a.current()
 	if cur.Path == "" {
-		if cur.Name == clipboardName { // a pasted picture is in no folder: going on would lose it
+		if cur.URL != "" { // a pasted picture is in no folder: going on would lose it
 			return "Save this picture first (S) to go through the pictures of a folder", nil
 		}
 		return "", nil

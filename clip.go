@@ -18,6 +18,17 @@ import (
 // clipboardName is what the title of a window says instead of the name of a file, for a picture pasted from the clipboard.
 const clipboardName = "[clipboard image]"
 
+// unsavedName is the title of a picture that has no file yet, by where it came from: "new" (Create image), "scan", else the clipboard.
+func unsavedName(origin string) string {
+	switch origin {
+	case "new":
+		return "[new image]"
+	case "scan":
+		return "[scanned image]"
+	}
+	return clipboardName
+}
+
 // A picture pasted from the clipboard has no file: it lives in this window (App.clip) until it is saved with Save As. Its "folder" is
 // the Pictures folder of the user, and the folder Save As starts in; when it is saved somewhere else, that folder becomes the one the
 // window works in (see saveTo).
@@ -78,6 +89,9 @@ func (a *App) NewBlank(w, h int, transparent bool) error {
 	if !transparent {
 		draw.Draw(n, n.Bounds(), image.White, image.Point{}, draw.Src)
 	}
+	a.mu.Lock()
+	a.origin = "new"
+	a.mu.Unlock()
 	return a.setPixelsBlank(n, true)
 }
 
@@ -90,6 +104,9 @@ func (a *App) setClip(img image.Image) error {
 	}
 	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy())) // the colors as they are, not premultiplied
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
+	a.mu.Lock()
+	a.origin = "clip"
+	a.mu.Unlock()
 	return a.setPixelsBlank(n, true)
 }
 

@@ -102,6 +102,7 @@ func (a *App) setScan(img image.Image, file string) error {
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
 	a.mu.Lock()
 	a.gifs = nil // (a scan is a picture of its own)
+	a.origin = "scan"
 	a.mu.Unlock()
 	if err := a.setPixelsFull(n, file, true, false); err != nil {
 		return err
