@@ -181,7 +181,13 @@ func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) er
 	if source != "go" {
 		return fmt.Errorf("mcView cannot convert %s to another type", cur.Name)
 	}
-	return encodePicture(f, turnImage(shownImage(pc), rot), format)
+	a.mu.Lock()
+	q := a.saveQuality
+	a.mu.Unlock()
+	if q == 0 {
+		q = 95
+	}
+	return encodePictureQ(f, turnImage(shownImage(pc), rot), format, q)
 }
 
 // shownImage is the picture the way it is shown, with the EXIF orientation applied.
@@ -202,6 +208,11 @@ func shownImage(pc pixelCache) image.Image {
 }
 
 func encodePicture(w io.Writer, img image.Image, format string) error {
+	return encodePictureQ(w, img, format, 95)
+}
+
+// encodePictureQ is encodePicture with the quality (1 to 100) of a JPEG.
+func encodePictureQ(w io.Writer, img image.Image, format string, quality int) error {
 	switch format {
 	case "png":
 		return png.Encode(w, img)
@@ -210,7 +221,7 @@ func encodePicture(w io.Writer, img image.Image, format string) error {
 		flat := image.NewRGBA(b)
 		draw.Draw(flat, b, image.White, image.Point{}, draw.Src)
 		draw.Draw(flat, b, img, b.Min, draw.Over)
-		return jpeg.Encode(w, flat, &jpeg.Options{Quality: 95})
+		return jpeg.Encode(w, flat, &jpeg.Options{Quality: min(max(quality, 1), 100)})
 	case "gif":
 		if o, ok := img.(interface{ Opaque() bool }); !ok || !o.Opaque() { // a transparent color of its own, or the transparent parts would be black
 			return gif.Encode(w, img, &gif.Options{NumColors: 256, Quantizer: transparentPlan9{}, Drawer: draw.FloydSteinberg})

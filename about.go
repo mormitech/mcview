@@ -31,12 +31,16 @@ func appMenu(app *App) *menu.Menu {
 		appMenu.AddText("Quit mcView", keys.CmdOrCtrl("q"), func(*menu.CallbackData) { wruntime.Quit(app.ctx) })
 		fileMenu(app, m)
 		editMenu(app, m)
+		effectsMenu(app, m)
+		aiMenu(m)
 		m.Append(menu.WindowMenu())
 		m.AddSubmenu("Help").AddText("mcView Help", nil, func(*menu.CallbackData) { app.openHelp() }) // the last menu, where macOS has it
 		return m
 	}
 	fileMenu(app, m)
 	editMenu(app, m)
+	effectsMenu(app, m)
+	aiMenu(m)
 	help := m.AddSubmenu("Help")
 	help.AddText("mcView Help", keys.Key("f1"), func(*menu.CallbackData) { app.openHelp() })
 	help.AddSeparator()
@@ -71,4 +75,6 @@ func editMenu(app *App, m *menu.Menu) {
 	edit.AddSeparator()
 	edit.AddText("Copy", keys.CmdOrCtrl("c"), func(*menu.CallbackData) { app.emit("menu-copy") })
 	edit.AddText("Paste", keys.CmdOrCtrl("v"), func(*menu.CallbackData) { app.pasteImage() })
+	edit.AddSeparator()
+	edit.AddText("Select All", keys.CmdOrCtrl("a"), func(*menu.CallbackData) { app.emit("menu-select-all") })
 }

@@ -1,5 +1,5 @@
 import './style.css';
-import {Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -56,6 +56,7 @@ const view = {tool: 'select', name: '', dir: '', index: 0, count: 0, mode: 'larg
 const CHECKER = 'repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%)'; // the squares of a picture with transparent parts, a bluish one and a white one
 let problemTimer = 0;
 let pointerDown = false;
+let rightHold = null; // the right button is down over a selection: only a drag draws a new polygon, a click leaves the selection alone
 
 // R turns the picture clockwise by a quarter, Shift+R counterclockwise: only the view (the file is not touched). view.rot is the number
 // of quarter turns, 0 to 3; view.angle counts them without wrapping, so that the animation always turns the short way. Everything below
@@ -106,24 +107,38 @@ function rotate(dir) {
 const stageSize = () => ({w: $('stage').clientWidth, h: $('stage').clientHeight});
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
+// The part of the window the modes 4, 5 and 6 (stretch, width, height) fill: in edit mode without the tool rail and the status bar that cover its edges.
+const FILL_MODES = ['stretch', 'width', 'height'];
+function visibleBox() {
+  const b = stageSize(), ins = insets();
+  return FILL_MODES.includes(view.mode) ? {x: ins.l, y: 0, w: b.w - ins.l, h: b.h - ins.b} : {x: 0, y: 0, w: b.w, h: b.h};
+}
+
 // The scale of the picture, for each axis, that the mode asks for.
 function modeScale() {
-  const b = stageSize(), w = dispW(), h = dispH(), fit = Math.min(b.w / w, b.h / h);
+  const b = stageSize(), w = dispW(), h = dispH(), fit = Math.min(b.w / w, b.h / h), v = visibleBox();
   switch (view.mode) {
     case 'original': return [1, 1];
     case 'large': return [fit * 0.85, fit * 0.85]; // 85% of the window, up or down
     case 'contain': return [fit, fit];
-    case 'width': return [b.w / w, b.w / w]; // the side edges touch the window; the top and bottom go over, or stay short
-    case 'height': return [b.h / h, b.h / h]; // the top and bottom edges touch the window
-    default: return [b.w / w, b.h / h];
+    case 'width': return [v.w / w, v.w / w]; // the side edges touch the window (the rail); the top and bottom go over, or stay short
+    case 'height': return [v.h / h, v.h / h]; // the top and bottom edges touch the window (the bar)
+    default: return [v.w / w, v.h / h];
   }
 }
 
 // Keeps a picture that was moved or zoomed on the screen: smaller than the window it is centred, bigger it cannot leave a gap.
 function constrain() {
-  const b = stageSize(), w = dispW() * view.sx, h = dispH() * view.sy;
-  view.x = w <= b.w ? (b.w - w) / 2 : clamp(view.x, b.w - w, 0);
-  view.y = h <= b.h ? (b.h - h) / 2 : clamp(view.y, b.h - h, 0);
+  const bd = bounds();
+  view.x = clamp(view.x, bd.x[0], bd.x[1]);
+  view.y = clamp(view.y, bd.y[0], bd.y[1]);
+}
+
+// What covers the picture at its edges in edit mode: the tool rail on the left and the status bar at the bottom. A picture that is bigger than the
+// window may be moved that far past its edge, so that the whole of its left and bottom edge can be brought into the open.
+function insets() {
+  if (!document.body.classList.contains('edit')) return {l: 0, b: 0};
+  return {l: $('tools').offsetWidth, b: $('status').hidden ? 0 : $('status').offsetHeight};
 }
 
 // ---- Bounce at the edge ----------------------------------------------------------------------------------
@@ -143,8 +158,8 @@ const bounce = {peak: 0, lastPush: 0, over: false, lastWheel: 0, swipeOver: fals
 
 // Where the top left corner of the picture may be, per axis: [lowest, highest]. A picture that fits has one place only.
 function bounds() {
-  const b = stageSize(), w = dispW() * view.sx, h = dispH() * view.sy;
-  return {x: w <= b.w ? [(b.w - w) / 2, (b.w - w) / 2] : [b.w - w, 0], y: h <= b.h ? [(b.h - h) / 2, (b.h - h) / 2] : [b.h - h, 0]};
+  const b = stageSize(), w = dispW() * view.sx, h = dispH() * view.sy, ins = insets();
+  return {x: w <= b.w ? [(b.w - w) / 2, (b.w - w) / 2] : [b.w - w, ins.l], y: h <= b.h ? [(b.h - h) / 2, (b.h - h) / 2] : [b.h - h - ins.b, 0]};
 }
 
 // What a pull of d pixels past the edge shows: less than d, and never more than BOUNCE_MAX.
@@ -184,8 +199,8 @@ function draw() {
     constrain();
   } else { // the mode decides, and the picture is centred (a big one at 100% shows its middle)
     [view.sx, view.sy] = modeScale();
-    const b = stageSize();
-    view.x = (b.w - dispW() * view.sx) / 2; view.y = (b.h - dispH() * view.sy) / 2;
+    const v = visibleBox();
+    view.x = v.x + (v.w - dispW() * view.sx) / 2; view.y = v.y + (v.h - dispH() * view.sy) / 2;
   }
   // The picture gets its size on screen, not a scale: scaling a 36 megapixel picture with a CSS transform made WebKit draw
   // all of it, 5 seconds before anything showed. At its displayed size it is decoded and drawn at that size.
@@ -228,7 +243,7 @@ function setStatus(folder, info = '', name = '') {
   $('name').textContent = name; $('name').title = name;
   $('folder').textContent = folder; $('folder').title = folder;
   $('info').textContent = info;
-  $('status').classList.remove('bad', 'ok-flash');
+  $('status').classList.remove('bad');
 }
 
 // The keys 1 to 6: choose a mode, and keep it.
@@ -301,6 +316,36 @@ function problem(text, bad = true, ms = 4000) {
   problemTimer = setTimeout(() => { document.body.classList.remove('peek'); draw(); }, ms);
 }
 
+// The Effects menu: the effect works on the part that is selected (the polygon, else the box), or on all of the picture when nothing is.
+const EFFECT_MENU = {
+  blur: {op: 'blur', radius: 6}, pixelize: {op: 'pixelize', size: 12}, emboss: {op: 'emboss'}, explosion: {op: 'explosion'}, censor: {op: 'censor'},
+  grayscale: {op: 'grayscale'}, negative: {op: 'negative'}, sepia: {op: 'sepia'}, sharpen: {op: 'sharpen'}, 'auto-levels': {op: 'auto_levels'},
+  'brightness+': {op: 'brightness', amount: 15}, 'brightness-': {op: 'brightness', amount: -15}, 'contrast+': {op: 'contrast', amount: 15}, 'contrast-': {op: 'contrast', amount: -15},
+  'saturation+': {op: 'saturation', amount: 25}, 'saturation-': {op: 'saturation', amount: -25}, warmer: {op: 'temperature', amount: 20}, cooler: {op: 'temperature', amount: -20},
+  'fill-fg': {op: 'fill'}, clear: {op: 'fill'},
+};
+function effectPart() {
+  if (poly.closed && poly.pts.length >= 3) return {pts: poly.pts.map((p) => [p[0], p[1]])};
+  const r = selectionRect();
+  return r ? {x: r.x, y: r.y, w: r.w, h: r.h} : {};
+}
+async function applyEffect(spec, label) {
+  await commitText(); if (view.fl) await flushFloat({clear: true});
+  const keep = selectionRect(), prev = history.list[history.at]; // the selection stays, also when the effect is undone and done again, so that one can try one effect after the other
+  const info = await Effect(view.rot, JSON.stringify(spec));
+  await showImage(info, {keepView: true, rot: 0, sel: keep}); commit(label || `effect: ${spec.op}`);
+  const made = history.list[history.at];
+  if (keep && made !== prev) { made.sel = {...keep}; if (prev) prev.undoSel = {...keep}; }
+  return info;
+}
+async function applyEffectMenu(name) {
+  const base = EFFECT_MENU[name];
+  if (!base || !view.state || !pic.naturalWidth) return;
+  const spec = {...base, ...effectPart()};
+  if (name === 'fill-fg') spec.color = paint.fg; else if (name === 'clear') spec.color = paint.bg;
+  try { await applyEffect(spec); } catch (e) { problem(errText(e)); }
+}
+
 // Left and right arrow: the previous and the next picture of the folder, in alphabetical order.
 async function step(delta) {
   try {
@@ -330,6 +375,7 @@ let pixelPending = null, pixelBusy = false;
 const editOn = () => document.body.classList.contains('edit');
 function setEdit(on) {
   if (on && !pic.naturalWidth) return; // nothing to edit
+  const x0 = view.x, y0 = view.y;
   document.body.classList.toggle('edit', on);
   if (!on) { closeDock(); polyClear(); }
   if (on) setTool('select');
@@ -337,6 +383,9 @@ function setEdit(on) {
   $('editmark').hidden = !on;
   SetEditMode(on).catch(() => {});
   if (pic.naturalWidth && view.pixelated !== on) setPixelated(on); else view.pixelated = on;
+  if (!on && view.free && (Math.abs(x0 - view.x) > 0.5 || Math.abs(y0 - view.y) > 0.5)) { // the picture was in the room the rail and the bar had: it slides back
+    view.ox = x0 - view.x; view.oy = y0 - view.y; draw(); startSpring();
+  }
   updateHover(false);
 }
 
@@ -444,16 +493,17 @@ function polyKey(ev) {
   const cmd = ev.ctrlKey || ev.metaKey;
   if (cmd && !ev.altKey && (ev.key === 'c' || ev.key === 'C') && poly.closed) { polyCopy(); return true; }
   if (ev.key === 'Escape' && (poly.pts.length || poly.closed || poly.down)) { polyClear(); return true; }
-  if ((ev.key === 'Backspace' || ev.key === 'Delete') && poly.closed) { polyFill(); return true; }
+  if ((ev.key === 'Backspace' || ev.key === 'Delete') && poly.closed) { clearSelectedPart(); return true; }
   return false;
 }
 
-async function polyFill() {
-  try {
-    await commitText(); if (view.fl) await flushFloat();
-    const info = await Retouch(view.rot, JSON.stringify({op: 'fill', method: 'solid', color: paint.bg, pts: poly.pts}));
-    await showImage(info, {keepView: true, rot: 0}); commit();
-  } catch (e) { problem(errText(e)); }
+// Clear (Effects → Clear, and Delete or Backspace while something is selected): the selected part is filled with the second color, as Delete does in Paint.
+// The selection stays, so that undo and another try are at hand.
+async function clearSelectedPart() {
+  const part = effectPart();
+  if (!part.pts && part.x === undefined) return false;
+  try { await applyEffect({op: 'fill', color: paint.bg, ...part}, 'cleared'); } catch (e) { problem(errText(e)); }
+  return true;
 }
 
 async function polyCopy() {
@@ -461,7 +511,7 @@ async function polyCopy() {
     if (view.fl) await flushFloat();
     const b64 = await PolygonPNG(view.rot, JSON.stringify(poly.pts));
     try { await navigator.clipboard.write([new ClipboardItem({'image/png': base64ToBlob(b64, 'image/png')})]); } catch { await CopyImageNative(b64); }
-    problem('Polygon copied to the clipboard', false, 1700);
+    flashClipboard();
   } catch (e) { problem(errText(e)); }
 }
 
@@ -519,7 +569,7 @@ async function finishInk(k) {
   try {
     const info = await DrawStroke(view.rot, k.pts, k.color, k.width);
     await showImage(info, {keepView: true, rot: 0});
-    commit();
+    commit('pen stroke');
   } catch (e) { problem(errText(e)); }
   if (fin === k) fin = null; // (a stroke that started meanwhile has the overlay now)
   renderInk();
@@ -618,7 +668,7 @@ async function finishShape(s) {
     part.getContext('2d').drawImage(cv, bx, by, bw, bh, 0, 0, bw, bh); // only the box around it goes to Go
     const info = await DrawLayer(view.rot, bx, by, part.toDataURL('image/png').split(',')[1]);
     await showImage(info, {keepView: true, rot: 0});
-    commit();
+    commit(`${s.kind} drawn`);
   } catch (e) { problem(errText(e)); }
   if (fin === s) fin = null;
   renderInk();
@@ -633,7 +683,7 @@ async function fillAt(ev) {
     const info = await FloodFill(view.rot, at[0], at[1], ev.button === 2 ? paint.bg : paint.fg, Math.round(paint.tol * 2.55));
     if (info.state === view.state) return; // nothing changed
     await showImage(info, {keepView: true, rot: 0});
-    commit();
+    commit('paint bucket fill');
   } catch (e) { problem(errText(e)); }
 }
 
@@ -689,6 +739,17 @@ function startText(ev) {
   setTimeout(() => tb.focus(), 0); // (after the click has moved the focus)
 }
 
+// A line broken into lines that are at most maxW wide (at the spaces; a word that is longer stays whole).
+function wrapLine(ctx, line, maxW) {
+  const out = []; let cur = '';
+  for (const word of line.split(' ')) {
+    const next = cur ? `${cur} ${word}` : word;
+    if (cur && ctx.measureText(next).width > maxW) { out.push(cur); cur = word; } else cur = next;
+  }
+  out.push(cur);
+  return out;
+}
+
 function cancelText() { txt = null; const tb = $('textbox'); tb.value = ''; tb.hidden = true; }
 
 async function commitText() {
@@ -697,15 +758,29 @@ async function commitText() {
   const tb = $('textbox'), text = tb.value.replace(/\s+$/, '');
   cancelText();
   if (!text.trim()) return;
-  const lines = text.split('\n'), lh = paint.size * 1.2, cv = document.createElement('canvas');
+  // the options of the chat's text tool: {align, boxW (wrap at this width), outline, outlineW, shadow {dx, dy, blur, color}}
+  const o = t.opts || {}, ow = o.outline ? Math.max(1, o.outlineW || 2) : 0;
+  const sh = o.shadow ? {dx: o.shadow.dx ?? 2, dy: o.shadow.dy ?? 2, blur: o.shadow.blur ?? 3, color: o.shadow.color || '#000000'} : null;
+  const lh = paint.size * 1.2, cv = document.createElement('canvas');
   let ctx = cv.getContext('2d'); ctx.font = textFont(paint.size);
-  cv.width = Math.ceil(Math.max(...lines.map((l) => ctx.measureText(l).width))) + 2; cv.height = Math.ceil(lines.length * lh) + 2;
-  ctx = cv.getContext('2d'); ctx.font = textFont(paint.size); ctx.fillStyle = t.color; ctx.textBaseline = 'middle';
-  lines.forEach((l, i) => ctx.fillText(l, 0, i * lh + lh / 2));
+  let lines = text.split('\n');
+  if (o.boxW > 0) lines = lines.flatMap((l) => wrapLine(ctx, l, o.boxW));
+  const widest = Math.ceil(Math.max(...lines.map((l) => ctx.measureText(l).width))), bw = o.boxW > 0 ? o.boxW : widest;
+  const pad = ow + (sh ? Math.max(Math.abs(sh.dx), Math.abs(sh.dy)) + sh.blur : 0) + 1;
+  const lx = Math.max(0, t.x - pad), ly = Math.max(0, t.y - pad), ox = t.x - lx, oy = t.y - ly; // (the layer starts a little before the text, for the outline and the shadow)
+  cv.width = Math.ceil(ox + bw + pad) + 1; cv.height = Math.ceil(oy + lines.length * lh + pad) + 1;
+  ctx = cv.getContext('2d'); ctx.font = textFont(paint.size); ctx.fillStyle = t.color; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  lines.forEach((l, i) => {
+    const w = ctx.measureText(l).width, x = ox + (o.align === 'center' ? (bw - w) / 2 : o.align === 'right' ? bw - w : 0), y = oy + i * lh + lh / 2;
+    if (sh) { ctx.shadowColor = sh.color; ctx.shadowBlur = sh.blur; ctx.shadowOffsetX = sh.dx; ctx.shadowOffsetY = sh.dy; }
+    if (ow) { ctx.strokeStyle = o.outline; ctx.lineWidth = ow * 2; ctx.strokeText(l, x, y); ctx.shadowColor = 'transparent'; }
+    ctx.fillText(l, x, y);
+    ctx.shadowColor = 'transparent';
+  });
   try {
-    const info = await DrawLayer(view.rot, t.x, t.y, cv.toDataURL('image/png').split(',')[1]);
+    const info = await DrawLayer(view.rot, lx, ly, cv.toDataURL('image/png').split(',')[1]);
     await showImage(info, {keepView: true, rot: 0});
-    commit();
+    commit('text added');
   } catch (e) { problem(errText(e)); }
 }
 
@@ -987,8 +1062,8 @@ const RIGHT_LASSO = ['select', 'poly']; // in these the right button, held, draw
 const TOOL_CURSOR = {pen: 'crosshair', line: 'crosshair', rect: 'crosshair', ellipse: 'crosshair', fill: 'crosshair', pick: 'crosshair', text: 'text'};
 const RESIZE_CURSORS = {t: 'ns-resize', b: 'ns-resize', l: 'ew-resize', r: 'ew-resize', tl: 'nwse-resize', br: 'nwse-resize', tr: 'nesw-resize', bl: 'nesw-resize'};
 
-// Lights the edge under the pointer, in two ways: with Shift ("frame": the frame is moved, the picture is not touched) and without
-// ("content", like Paint: the selected part is stretched by its edges and moved by its top left corner; see below).
+// Lights the edge under the pointer, in two ways: with Shift ("content": the selected part is stretched by its edges and moved by its inside; see below)
+// and without ("frame": the frame is moved and resized, the picture is not touched). It does not depend on edit mode.
 function updateHover(shift) {
   if (view.selDrag?.edge || view.tdrag || view.drag) return;
   if (TOOL_CURSOR[tool()]) { // the cursor of a drawing tool is for the picture; beside it the pointer is an ordinary one (while a stroke is drawn it stays)
@@ -996,11 +1071,10 @@ function updateHover(shift) {
     $('stage').style.cursor = ink || shape || (lastPointer && pixelUnder(lastPointer.x, lastPointer.y)) ? TOOL_CURSOR[tool()] : '';
     return;
   }
-  const editOn = document.body.classList.contains('edit');
   const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, true) : null;
   const was = JSON.stringify([view.hl, view.hlMode]);
   view.hl = hit;
-  view.hlMode = hit ? (editOn ? 'content' : 'frame') : '';
+  view.hlMode = hit ? (shift || view.fl?.pasted ? 'content' : 'frame') : ''; // Shift: the selected part itself is moved or stretched; without it the frame
   const key = hit ? (hit.t ? 't' : hit.b ? 'b' : '') + (hit.l ? 'l' : hit.r ? 'r' : '') : '';
   $('stage').style.cursor = hit?.move || (view.hlMode === 'content' && key === 'tl') ? 'move' : key ? RESIZE_CURSORS[key] : '';
   if (was !== JSON.stringify([view.hl, view.hlMode])) renderSelection();
@@ -1015,7 +1089,7 @@ function clearSelection() {
 }
 
 // ---- Move and stretch the selected part, like Paint ----------------------------------------------------------
-// Without Shift, the edges of the selection stretch the part, and its inside (and its top left corner) moves it. The first time, the part is lifted: the
+// With Shift (or for a pasted picture), the edges of the selection stretch the part, and its inside (and its top left corner) moves it. The first time, the part is lifted: the
 // place it came from is white, and the part is shown where it is dropped (#float, over the picture, which is not changed yet; #hole is the
 // white). It is worked out from the part as it was lifted, never from the result of the last drag, so stretching and going back loses
 // nothing. It stays like that, and can be dragged again, until the selection is let go (Esc, a click, a new selection, a picture that
@@ -1178,8 +1252,9 @@ async function cutPng(r) {
 
 let lastCopy = 0;
 
-// A copy lights things up for a moment: the border of the selection (orange and white, with a clipboard in the middle), and the message in the status bar.
-let flashTimer = 0, statusFlashTimer = 0;
+// A copy lights things up for a moment: the border of the selection (orange and white, with an orange clipboard in the middle), and an orange
+// clipboard at the end of the folder label of the status bar (for as long as the one in the middle).
+let flashTimer = 0, clipFlagTimer = 0;
 function flashSelection() {
   const el = $('sel');
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash'); // (taken off and put on again, so that a second copy starts it again)
@@ -1189,10 +1264,11 @@ function flashSelection() {
 function stopSelectionFlash() {
   clearTimeout(flashTimer); $('sel').classList.remove('flash');
 }
-function flashStatus() {
-  const el = $('status');
-  el.classList.remove('ok-flash'); void el.offsetWidth; el.classList.add('ok-flash');
-  clearTimeout(statusFlashTimer); statusFlashTimer = setTimeout(() => el.classList.remove('ok-flash'), 1700);
+function flashClipboard() {
+  const el = $('clipflag');
+  el.classList.remove('on'); void el.offsetWidth; el.classList.add('on');
+  document.body.classList.add('peek'); // (the bar is there for the flag, also when there is no selection)
+  clearTimeout(clipFlagTimer); clipFlagTimer = setTimeout(() => { el.classList.remove('on'); document.body.classList.remove('peek'); }, 1700);
 }
 
 async function copySelection(auto = false) {
@@ -1209,9 +1285,8 @@ async function copySelection(auto = false) {
     } catch { await CopyImageNative(b64); }
     copiedKey = view.sel && selectionBox() ? boxKey(selectionBox()) : null;
     renderSelection();
-    if (auto) { problem(`Selection copied to the clipboard  ·  ${r.w} × ${r.h}`, false, 1700); flashStatus(); } // (a finished selection is copied by itself: a short note)
+    flashClipboard();
     if (view.sel) flashSelection();
-    else problem(`Copied ${r.w} × ${r.h} pixels${view.sel ? ' (the selection)' : ''} to the clipboard`, false);
   } catch (e) { problem(errText(e)); }
 }
 
@@ -1268,7 +1343,8 @@ function onWheel(ev) {
   if (isWheelNotch(ev) && now - lastTrackpad > 120) zoom(); else panBy(ev.deltaX, ev.deltaY);
 }
 
-// With edit mode off, paste always makes the clipboard picture the picture of the window (undo brings the old one back); the rest is for edit mode on.
+// With edit mode off, paste makes the clipboard picture the picture of the window (undo brings the old one back), unless the window shows a clipboard picture
+// that is not saved: then it is as in edit mode, a small one is laid over it and a big one is asked about. The rest is for edit mode on.
 // Ctrl+V (Cmd+V, Shift+Insert, Edit → Paste): the picture on the clipboard becomes the picture of the window. It has no file yet:
 // the title says [clipboard image], and S saves it.
 // Paste (Ctrl+V, Cmd+V, Edit → Paste): the picture on the clipboard is laid over the picture, near the top left corner of what is visible, as a part that
@@ -1278,18 +1354,20 @@ function onWheel(ev) {
 async function pasteImage() {
   try {
     if (view.fl) await flushFloat({clear: false});
-    if (!document.body.classList.contains('edit')) { await PasteNew(); return; } // edit mode off: a whole new image (the 'image' event shows it and makes it a step)
+    const onClipPicture = !!pic.naturalWidth && view.name.startsWith('[clipboard image]'); // a picture that came from the clipboard and has no file yet
+    if (!document.body.classList.contains('edit') && !onClipPicture) { await PasteNew(); return; } // edit mode off: a whole new image (the 'image' event shows it and makes it a step)
     let px = 0, py = 0;
     if (pic.naturalWidth) { const r = $('stage').getBoundingClientRect(); [px, py] = pointInPicture(r.left + 12, r.top + 12); }
     const L = await PasteLayer(view.rot, Math.ceil(px), Math.ceil(py)); // (rounded up: the first pixel that is seen whole, 12 screen pixels in from the corner)
     if (!L.w) return;
+    if (!editOn()) setEdit(true); // (a small picture laid over a clipboard picture is a part that can be moved: that is edit mode)
     const f = {src: {x: 0, y: 0, w: L.w, h: L.h}, dest: {x: L.x, y: L.y, w: L.w, h: L.h}, url: `data:image/png;base64,${L.png}`, pasted: true, state: view.state, rot: view.rot};
     view.fl = f;
     $('float').onload = () => renderFloat();
     $('float').src = f.url;
     view.sel = rectSel(f.dest);
     draw();
-    commit();
+    commit('pasted part placed');
   } catch (e) { problem(errText(e)); }
 }
 
@@ -1298,7 +1376,7 @@ function removeLayer() {
   dropFloat();
   view.sel = null; view.selDrag = null; view.hl = null; view.hlMode = ''; $('stage').style.cursor = '';
   draw();
-  commit();
+  commit('pasted part removed');
 }
 
 // File → Close Image: the window goes back to the way it starts, with no picture. It is a step of the history like any other, so undo brings
@@ -1312,7 +1390,7 @@ async function closeImage() {
   try {
     const info = await RestoreState(0);
     await showImage(info);
-    commit();
+    commit('image closed');
   } catch (e) { problem(errText(e)); }
 }
 
@@ -1370,7 +1448,7 @@ async function discardChanges() {
     const info = await DiscardChanges();
     if (info.state === was) { problem('There are no changes to discard', false, 2000); return; }
     await showImage(info);
-    commit();
+    commit('changes discarded');
     problem('Changes discarded (undo brings them back)', false, 2500);
   } catch (e) { problem(errText(e)); }
 }
@@ -1445,11 +1523,24 @@ const snapshot = () => ({state: view.state, mode: view.mode, pixelated: view.pix
 const flKey = (f) => (f ? JSON.stringify([f.src, f.dest]) : '');
 const sameSnapshot = (a, b) => a.state === b.state && a.mode === b.mode && a.pixelated === b.pixelated && a.rot === b.rot && flKey(a.fl) === flKey(b.fl);
 
+// Who makes the steps (the chat's Claude, through the control commands, or the user) and what each is called: the history tool tells Claude both.
+let actor = 'user';
+const checkpoints = new Map(); // name → the step of the history (the object itself, so that it is found again when the list changes)
+function autoLabel(prev, s) {
+  if (!prev) return 'start';
+  if (s.state !== prev.state) return 'picture changed';
+  if (s.rot !== prev.rot) return 'turned';
+  if (s.mode !== prev.mode) return `view mode: ${s.mode}`;
+  if (s.pixelated !== prev.pixelated) return 'pixelated view toggled';
+  return s.fl ? 'part moved or stretched' : 'change';
+}
+
 // Makes the state the window is in now a step of the history (and ends what could be redone).
-function commit() {
+function commit(label) {
   if (history.busy) return;
   const s = snapshot();
   if (history.at >= 0 && sameSnapshot(history.list[history.at], s)) return;
+  s.by = actor; s.label = label || autoLabel(history.list[history.at], s);
   history.list.length = history.at + 1;
   history.list.push(s);
   if (history.list.length > HISTORY_MAX) history.list.shift();
@@ -1513,7 +1604,7 @@ const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 function beginSelection(clientX, clientY) {
   stopSelectionFlash();
   polyClear(); // (a new frame replaces a polygon)
-  const edge = document.body.classList.contains('edit') ? null : edgeAt(clientX, clientY, true); // edit mode off: the frame alone is moved and resized
+  const edge = edgeAt(clientX, clientY, true); // without Shift the frame alone is moved and resized, in any mode
   const [qx, qy] = pointInPicture(clientX, clientY);
   if (edge) { // an edge of the frame: it is moved, not a new frame drawn
     const box = selectionBox();
@@ -1554,16 +1645,22 @@ function startViewer() {
   $('new-pic').onclick = (ev) => createImage(ev.shiftKey);
   $('discard-img').onclick = discardChanges;
   $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
+  EventsOn('menu-effect', (name) => applyEffectMenu(name)); // Effects menu
   EventsOn('menu-create', () => createImage()); // File → Create Image
   window.addEventListener('focus', () => { if (!$('empty').hidden) offerClipboard(); });
   offerClipboard();
   EventsOn('history-reset', () => { history.list.length = 0; history.at = -1; }); // a deleted picture cannot be brought back by undo
-  EventsOn('image', (info) => { const edit = editAfterImage; editAfterImage = false; showImage(info).then(() => { if (edit) setEdit(true); }); commit(); });
-  const typing = () => !!txt && document.activeElement === $('textbox'); // the Edit menu then works on the text
+  EventsOn('image', (info) => { const edit = editAfterImage; editAfterImage = false; showImage(info).then(() => { if (edit) setEdit(true); }); commit(`picture shown: ${info.name}`); });
+  const typing = () => { const el = document.activeElement; return !!el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable); }; // the Edit menu then works on the text (of the picture, or of the chat box)
   EventsOn('menu-undo', () => typing() ? document.execCommand('undo') : undo());
   EventsOn('menu-redo', () => typing() ? document.execCommand('redo') : redo());
   EventsOn('problem', (t) => problem(errText(t)));
   EventsOn('note', (t) => problem(t, false));
+  EventsOn('menu-select-all', () => { // Edit → Select All: the text that is being typed, else the whole picture
+    if (typing()) { document.execCommand('selectAll'); return; }
+    if (!pic.naturalWidth) return;
+    view.sel = {x0: 0, y0: 0, x1: dispW(), y1: dispH()}; view.selDrag = null; draw();
+  });
   EventsOn('menu-copy', () => typing() ? document.execCommand('copy') : copySelection()); // Edit → Copy
   EventsOn('menu-paste', () => typing() ? navigator.clipboard.readText().then((t) => document.execCommand('insertText', false, t)).catch(() => {}) : pasteImage()); // Edit → Paste
   EventsOn('menu-save', saveAs); // File → Save As…
@@ -1596,6 +1693,10 @@ function startViewer() {
     }
     pointerDown = true;
     const t = tool();
+    if (ev.button === 2 && RIGHT_LASSO.includes(t) && (view.sel || poly.closed || view.fl)) { // a selection is there: the polygon starts only when the pointer moves
+      rightHold = {x: ev.clientX, y: ev.clientY, ev: {clientX: ev.clientX, clientY: ev.clientY, button: 2}};
+      return;
+    }
     if (ev.button === 2 && RIGHT_LASSO.includes(t)) { // the right button, held: a free-hand polygon (what the rectangle had is let go)
       (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) { clearSelection(); polyDown(ev); } });
       return;
@@ -1608,7 +1709,7 @@ function startViewer() {
     if (t === 'fill') { fillAt(ev); return; }
     if (t === 'pick') { pickColor(ev); return; }
     if (t === 'text') { startText(ev); return; }
-    if (document.body.classList.contains('edit') && view.sel) { // an edge of the selection: stretch the selected part, or move it (see above)
+    if (view.sel && (ev.shiftKey || view.fl?.pasted)) { // Shift (in any mode), or a pasted picture: an edge of the selection stretches the selected part, its inside moves it (see above)
       const edge = edgeAt(ev.clientX, ev.clientY, true);
       if (edge) { startTransform(ev, edge); return; }
     }
@@ -1623,6 +1724,12 @@ function startViewer() {
     beginSelection(ev.clientX, ev.clientY);
   });
   $('stage').addEventListener('pointermove', (ev) => {
+    if (rightHold) {
+      if (Math.hypot(ev.clientX - rightHold.x, ev.clientY - rightHold.y) < 5) return; // (still a click)
+      const h = rightHold; rightHold = null;
+      (view.fl ? flushFloat({clear: true}) : Promise.resolve()).then(() => { if (pointerDown && !view.fl) { clearSelection(); polyDown(h.ev); polyMove(ev); } });
+      return;
+    }
     if (poly.down && (poly.button === 2 ? ev.buttons & 1 : ev.buttons & 2)) { cancelDraw(); return; } // (the other button drops it)
     if (poly.down) { polyMove(ev); return; }
     if ((shape || ink) && otherButton(ev, shape || ink)) { cancelDraw(); return; } // (a second button comes as a move, not as a press)
@@ -1663,7 +1770,7 @@ function startViewer() {
     draw();
   });
   const endDrag = (ev) => {
-    pointerDown = false;
+    pointerDown = false; rightHold = null;
     if (poly.down) { polyUp(); return; }
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
     if (shape) { const k = shape; shape = null; finishShape(k).then(() => updateHover(ev.shiftKey)); return; } // (see the pencil below)
@@ -1712,6 +1819,7 @@ function startViewer() {
       lastEsc = now;
     }
     if (view.fl?.pasted && (ev.key === 'Escape' || ev.key === 'Delete' || ev.key === 'Backspace')) { ev.preventDefault(); removeLayer(); return; }
+    if ((ev.key === 'Delete' || ev.key === 'Backspace') && pic.naturalWidth && !view.fl && view.sel && selectionRect()) { ev.preventDefault(); clearSelectedPart(); return; } // a selected part is cleared (Backspace goes to the previous picture only without one)
     if (ev.key === 'Escape') { clearSelection(); return; } // (Esc does not leave full screen: F and Enter do, and two Escs close the picture)
     if (ev.key === 'f' || ev.key === 'F') { ev.preventDefault(); ToggleFullscreen(); settleFullscreen(); return; } // (also on the home screen)
     if ((ev.key === 'c' || ev.key === 'C') && !ev.ctrlKey && !ev.metaKey && !ev.altKey) { ev.preventDefault(); toggleChat(); return; } // the chat panel
@@ -1775,6 +1883,38 @@ function ctlState() {
 async function ctlRun(m) {
   switch (m.cmd) {
     case 'state': return ctlState();
+    case 'history': return {ok: true, checkpoints: [...checkpoints].map(([name, e]) => ({name, step: history.list.indexOf(e)})).filter((c) => c.step >= 0), at: history.at, steps: history.list.map((e, i) => ({n: i, label: e.label || (i ? 'change' : 'start'), by: e.by || 'user'}))}; // the steps undo goes through, oldest first
+    case 'checkpoint': { // remember the step the window is at now under a name
+      const e = history.list[history.at]; if (!e) throw new Error('there is no step yet');
+      checkpoints.set(m.name, e); return {ok: true, step: history.at};
+    }
+    case 'goto': { // go to a step {step} of the history, or to a named checkpoint {checkpoint}: undo or redo as many times as it takes
+      let to = m.step;
+      if (m.checkpoint != null) { const e = checkpoints.get(m.checkpoint); to = e ? history.list.indexOf(e) : -1; if (to < 0) throw new Error(`there is no checkpoint "${m.checkpoint}" (any more)`); }
+      if (!Number.isInteger(to) || to < 0 || to >= history.list.length) throw new Error(`there is no step ${to}: 0 to ${history.list.length - 1}`);
+      await travel(to); await ctlSettle(); return {ok: true, at: history.at};
+    }
+    case 'show': { // make the part {x, y, w, h} fill the window (and, with mark, select it so that the user sees what is meant)
+      const b = stageSize(), s = Math.min(b.w / m.w, b.h / m.h);
+      view.free = true; view.sx = view.sy = s; view.ox = view.oy = 0; view.x = b.w / 2 - (m.x + m.w / 2) * s; view.y = b.h / 2 - (m.y + m.h / 2) * s;
+      if (m.mark) view.sel = {x0: m.x, y0: m.y, x1: m.x + m.w, y1: m.y + m.h};
+      draw(); await ctl.sleep(300); return ctlState();
+    }
+    case 'effect': { // an effect on a part: {op, …} (see effects.go); with selection: true the part is what the user selected
+      const spec = {...m}; delete spec.cmd; delete spec.selection; delete spec.clear;
+      if (m.selection) {
+        const part = effectPart();
+        if (!part.pts && part.x === undefined) throw new Error('nothing is selected in the window');
+        Object.assign(spec, part);
+      }
+      if (m.clear) { spec.op = 'fill'; if (!spec.color) spec.color = paint.bg; } // the second color, as Delete does
+      const info = await applyEffect(spec); return {...ctlState(), note: info.note || ''};
+    }
+    case 'transform': { // resize, rotate, flip or place (see transform.go)
+      await commitText(); if (view.fl) await flushFloat({clear: true});
+      const spec = {...m}; delete spec.cmd;
+      const info = await Transform(view.rot, JSON.stringify(spec)); await showImage(info, {rot: 0}); commit(`${m.op}${m.op === 'place' ? 'd picture' : ''}`); return ctlState();
+    }
     case 'wait': await ctl.sleep(m.ms ?? 200); return {ok: true};
     case 'menu': { const f = CTL_MENU[m.name]; if (!f) throw new Error(`no menu item "${m.name}": ${Object.keys(CTL_MENU).join(', ')}`); await f(); await ctlSettle(); return {ok: true}; }
     case 'edit': setEdit(m.on !== false); await ctl.sleep(250); return ctlState();
@@ -1791,7 +1931,7 @@ async function ctlRun(m) {
     }
     case 'zoomby': { const r = $('stage').getBoundingClientRect(), [cx, cy] = m.x === undefined ? [r.left + r.width / 2, r.top + r.height / 2] : ctlClient(m.x, m.y); zoomAt(m.factor, cx - r.left, cy - r.top); await ctl.sleep(300); return ctlState(); }
     case 'pan': { const b = stageSize(); view.free = true; view.x = b.w / 2 - (m.x + 0.5) * view.sx; view.y = b.h / 2 - (m.y + 0.5) * view.sy; draw(); await ctl.sleep(250); return ctlState(); }
-    case 'rotate': rotate(m.dir ?? 1); commit(); await ctl.sleep(500); return ctlState();
+    case 'rotate': rotate(m.dir ?? 1); commit('turned'); await ctl.sleep(500); return ctlState();
     case 'fullscreen': { const on = document.body.classList.contains('full'); if (m.on === undefined || m.on !== on) { await ToggleFullscreen(); settleFullscreen(); await ctl.sleep(2200); } return ctlState(); }
     case 'color': if (m.fg) paint.fg = m.fg.toUpperCase(); if (m.bg) paint.bg = m.bg.toUpperCase(); showColors(); return {ok: true};
     case 'option': // width, style (solid, dashed, dotted), fill (outline, both, fill), tolerance (0 to 100), font, size, bold, italic
@@ -1805,40 +1945,40 @@ async function ctlRun(m) {
     }
     case 'shape': { // a line, rect, ellipse or path put into the picture: {kind, x0, y0, x1, y1, pts, color, bg, width, style, fill}, one step of the history
       await commitText(); if (view.fl) await flushFloat();
-      const info = await DrawShape(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(); return ctlState();
+      const info = await DrawShape(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(`${m.kind} drawn`); return ctlState();
     }
     case 'resize': { // the canvas made w × h, the picture where the anchor says: {w, h, anchor, bg}, one step of the history
       await commitText(); if (view.fl) await flushFloat();
-      const info = await ResizeCanvas(view.rot, m.w, m.h, m.anchor || '', m.bg || ''); await showImage(info, {rot: 0}); commit(); return ctlState();
+      const info = await ResizeCanvas(view.rot, m.w, m.h, m.anchor || '', m.bg || ''); await showImage(info, {rot: 0}); commit('canvas resized'); return ctlState();
     }
     case 'crop': { // only the part {x, y, w, h} is kept, one step of the history
       await commitText(); if (view.fl) await flushFloat();
-      const info = await CropPicture(view.rot, m.x, m.y, m.w, m.h); await showImage(info, {rot: 0}); commit(); return ctlState();
+      const info = await CropPicture(view.rot, m.x, m.y, m.w, m.h); await showImage(info, {rot: 0}); commit('cropped'); return ctlState();
     }
     case 'retouch': { // clone a part, blend its edges or fill a gap from its surroundings: {op: clone|blend|fill, …}, one step of the history
       await commitText(); if (view.fl) await flushFloat();
-      const info = await Retouch(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(); return {...ctlState(), note: info.note || ''};
+      const info = await Retouch(view.rot, JSON.stringify(m)); await showImage(info, {keepView: true, rot: 0}); commit(`retouch: ${m.op}`); return {...ctlState(), note: info.note || ''};
     }
     case 'fill': { // the paint bucket at the pixel {x, y}: {color, tolerance (0 to 100)}
       await commitText(); if (view.fl) await flushFloat({clear: true});
       const info = await FloodFill(view.rot, m.x, m.y, m.color, Math.round((m.tolerance ?? paint.tol) * 2.55));
-      if (info.state !== view.state) { await showImage(info, {keepView: true, rot: 0}); commit(); }
+      if (info.state !== view.state) { await showImage(info, {keepView: true, rot: 0}); commit('paint bucket fill'); }
       return ctlState();
     }
     case 'text': { // a text put into the picture with its top left corner at the pixel {x, y}: {value, color}, the font and size are the options
       await commitText(); if (view.fl) await flushFloat({clear: true});
       if (m.x < 0 || m.y < 0 || m.x >= dispW() || m.y >= dispH()) throw new Error('the text could not be placed: the pixel is outside the picture');
-      txt = {x: m.x, y: m.y, color: m.color || paint.fg}; $('textbox').value = m.value;
+      txt = {x: m.x, y: m.y, color: m.color || paint.fg, opts: {align: m.align, boxW: m.box_w, outline: m.outline, outlineW: m.outline_width, shadow: m.shadow}}; $('textbox').value = m.value;
       await commitText(); return ctlState();
     }
     case 'pixel': { if (pixelState === 'preparing') await preparePixels(); return {ok: true, pixel: await fetchPixel(m.x, m.y)}; }
     case 'saveto': { // save the picture to a full path without the dialog: {path, overwrite}
       await commitText(); if (view.fl) await flushFloat();
-      const note = await SaveToPath(m.path, view.rot, !!m.overwrite); await ctlSettle(); return {ok: true, note};
+      const note = await SaveToPathQ(m.path, view.rot, !!m.overwrite, m.quality || 0); await ctlSettle(); return {ok: true, note};
     }
     case 'pixels': { // set single pixels: {list: [[x, y, "#rrggbbaa"], …]}, one step of the history
       await commitText(); if (view.fl) await flushFloat();
-      const info = await PaintPixels(view.rot, JSON.stringify(m.list)); await showImage(info, {keepView: true, rot: 0}); commit(); await ctlSettle(); return ctlState();
+      const info = await PaintPixels(view.rot, JSON.stringify(m.list)); await showImage(info, {keepView: true, rot: 0}); commit('pixels set'); await ctlSettle(); return ctlState();
     }
     case 'new': { // a new blank picture {w, h, color: "#rrggbbaa"}; edit mode starts with it, and a small one is shown big, in whole pixels
       editAfterImage = true;
@@ -1857,7 +1997,8 @@ async function ctlRun(m) {
 
 EventsOn('control', async (id, m) => {
   let res;
-  try { res = await ctlRun(m); } catch (e) { res = {error: errText(e)}; }
+  actor = 'AI';
+  try { res = await ctlRun(m); } catch (e) { res = {error: errText(e)}; } finally { actor = 'user'; }
   try { await ControlReply(id, JSON.stringify(res)); } catch {}
 });
 
@@ -1868,5 +2009,5 @@ EventsOn('control', async (id, m) => {
   revealWhenHidden();
   startViewer();
   showImage(await Image());
-  commit(); // the way the window starts is where undo ends
+  commit('start'); // the way the window starts is where undo ends
 })();

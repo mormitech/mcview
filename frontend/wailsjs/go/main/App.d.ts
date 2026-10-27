@@ -42,6 +42,8 @@ export function DrawShape(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function DrawStroke(arg1:number,arg2:Array<number>,arg3:string,arg4:number):Promise<main.ImageInfo>;
 
+export function Effect(arg1:number,arg2:string):Promise<main.ImageInfo>;
+
 export function ExitFullscreen():Promise<void>;
 
 export function FloodFill(arg1:number,arg2:number,arg3:number,arg4:string,arg5:number):Promise<main.ImageInfo>;
@@ -98,6 +100,8 @@ export function SaveSelectionAs(arg1:number,arg2:number,arg3:number,arg4:number,
 
 export function SaveToPath(arg1:string,arg2:number,arg3:boolean):Promise<string>;
 
+export function SaveToPathQ(arg1:string,arg2:number,arg3:boolean,arg4:number):Promise<string>;
+
 export function SaveWindow():Promise<void>;
 
 export function SelectionPNG(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number):Promise<string>;
@@ -119,5 +123,7 @@ export function Step(arg1:number):Promise<string>;
 export function ToggleFullscreen():Promise<void>;
 
 export function Trace(arg1:string):Promise<void>;
+
+export function Transform(arg1:number,arg2:string):Promise<main.ImageInfo>;
 
 export function Version():Promise<string>;

@@ -43,7 +43,10 @@ button:hover { border-color:var(--accent); }
 #empty-actions .card kbd { margin-top:8px; font:600 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 #newform { pointer-events:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--muted); } #newform[hidden] { display:none; } #newform input[type=number] { width:76px; } #newform label { display:flex; align-items:center; gap:4px; }
 #empty[hidden] { display:none; } #empty button { pointer-events:auto; margin-top:8px; } #empty h1 { font-size:28px; margin:8px 0 0; }
-#status { position:absolute; left:0; right:0; bottom:0; height:34px; padding:0 12px; /* one height, with the pixel readout or without */ font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; align-items:center; gap:16px; }
+#status { position:absolute; left:0; right:0; bottom:0; min-height:34px; box-sizing:border-box; padding:3px 12px; /* one height, with the pixel readout or without; when the width is short the items wrap into more rows */ font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:center; gap:0 16px; }
+#status .sl, #status .sr { display:flex; align-items:center; gap:16px; min-height:26px; min-width:0; } /* two groups: the file on the left, the readout and the buttons on the right; when the width is short the right one goes to a row of its own */
+#status .sl { flex:1 1 300px; }
+#status .sr { flex:0 0 auto; margin-left:auto; }
 #status[hidden] { display:none; }
 /* full screen: the bar is there while Shift is held (and for a message); it slides and fades in and out, quickly */
 #status { transition: transform .12s ease-out, opacity .12s ease-out; }
@@ -52,7 +55,8 @@ body.full #empty h1 { color:#e6ecf5; } body.full #empty .muted { color:#9fb2cc; 
 #status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
 body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
 #name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
-#folder { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#folder { flex:0 1 auto; min-width:0; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#clipflag { flex:1 0 0; display:flex; align-items:center; } /* takes the rest of the bar, and holds the clipboard right after the folder */
 #info { white-space:nowrap; }
 #close-img, #discard-img { display:none; flex:none; width:22px; height:22px; padding:0; align-items:center; justify-content:center; border:1px solid transparent; background:none; color:var(--muted); border-radius:4px; pointer-events:auto; }
 #close-img svg, #discard-img svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
@@ -140,16 +144,14 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #sel.flash .ants .w { animation:ants-w .6s linear infinite, wflash 1.6s ease-in-out; }
 @keyframes kflash { 0%, 100% { stroke:#000; } 18%, 62% { stroke:#ff8a00; } }
 @keyframes wflash { 0%, 100% { stroke:#ececec; } 18%, 62% { stroke:#fff; } }
-#sel .clipmark { display:none; position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:0;
+#sel .clipmark { display:none; position:absolute; left:50%; top:50%; width:44px; height:44px; margin:-22px 0 0 -22px; fill:none; stroke:#ffa31a; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; opacity:0;
   filter:drop-shadow(0 0 1px #000) drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000); }
 #sel.flash .clipmark { display:block; animation:clipfade 1.6s ease-in-out; }
 @keyframes clipfade { 0% { opacity:0; transform:scale(.8); } 22% { opacity:.95; transform:scale(1); } 65% { opacity:.95; } 100% { opacity:0; transform:scale(1); } }
-/* the message in the status bar: it lights up and settles */
-#status.ok-flash { animation:okflash 1.6s ease-out; }
-#status.ok-flash #folder { color:var(--text); font-weight:600; animation:okslide .35s ease-out; }
-@keyframes okflash { 0% { background:rgba(255,138,0,.5); } 100% { background:var(--bar); } }
-@keyframes okslide { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
-@media (prefers-reduced-motion: reduce) { #sel.flash .ants .k, #sel.flash .ants .w, #sel.flash .clipmark, #status.ok-flash, #status.ok-flash #folder { animation:none; } }
+/* the same clipboard, orange, at the end of the folder label in the status bar */
+#clipflag svg { display:none; width:16px; height:16px; fill:none; stroke:#ffa31a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
+#clipflag.on svg { display:block; animation:clipfade 1.6s ease-in-out; }
+@media (prefers-reduced-motion: reduce) { #sel.flash .ants .k, #sel.flash .ants .w, #sel.flash .clipmark, #clipflag.on svg { animation:none; } }
 
 /* Create image with chosen parameters (Shift-click on Create image) */
 #newdlg { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); }
@@ -171,7 +173,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #chat-toggle { position:absolute; top:10px; right:12px; z-index:6; width:34px; height:34px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--bar); }
 #chat-toggle svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
 #chat-toggle { transition:opacity .2s ease, transform .2s ease; }
-body.chat-open #chat-toggle { opacity:0; transform:scale(.8); pointer-events:none; } body.full #chat-toggle { display:none; }
+body.chat-open #chat-toggle { opacity:0; transform:scale(.8); pointer-events:none; } body.full:not(.edit) #chat-toggle { display:none; } /* full screen has the button in edit mode only */
 #viewer { transition:right .28s cubic-bezier(.3,.7,.2,1); } body.chat-open #viewer { right:var(--chat-w, 360px); }
 #chat { position:fixed; top:0; right:0; bottom:0; width:var(--chat-w, 360px); z-index:20; display:flex; flex-direction:column; background:var(--panel); border-left:1px solid var(--line); transform:translateX(100%); visibility:hidden; transition:transform .28s cubic-bezier(.3,.7,.2,1), visibility 0s linear .28s; }
 #chat.open { transform:none; visibility:visible; transition:transform .28s cubic-bezier(.3,.7,.2,1), visibility 0s; }

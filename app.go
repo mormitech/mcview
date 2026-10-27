@@ -31,27 +31,29 @@ type App struct {
 	pix      pixelCache           // the decoded picture for the pixel readout (see pixel.go)
 	infoWins map[string]*exec.Cmd // the windows of their own that are open, by key
 
-	clip        image.Image    // a picture pasted from the clipboard, which has no file yet (image is "" then); see clip.go
-	clipPNG     []byte         // the same as a PNG, for the web view
-	workDir     string         // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
-	titleInfo   string         // size, place in the folder and zoom of the picture, for the title
-	ctl         *control       // the commands of the window (see control.go); nil until control mode or the chat panel needs it
-	masks       maskStore      // the areas the chat panel's tools named (see masks.go)
-	cloneLog    []cloneEntry   // where parts were copied from and to (see retouch.go)
-	deleteItem  *menu.MenuItem // File → Delete Image…: only on while the picture has a file (see updateMenuItems)
-	discardItem *menu.MenuItem // File → Discard Changes: only on while the picture is modified
-	saveItem    *menu.MenuItem // File → Save As…: only on while there is a picture
-	closeItem   *menu.MenuItem // File → Close Image: only on while there is a picture
-	origImg     *image.NRGBA   // the picture with no file as it was made or pasted, for Discard Changes (see revert.go)
-	chat        chatState      // the chat panel: Claude Code in the background (see chat.go)
-	blank       bool           // the picture is a new blank one or one from the clipboard that nothing was done to: it is not modified, and closing it asks nothing (see setClip)
-	edit        bool           // edit mode is on: the title says so
-	lastPaste   time.Time      // the menu and the key can both ask for one paste
-	lastNew     time.Time      // the same for a new window
-	deleting    bool           // the question about deleting a picture is open
-	saving      bool           // the Save As dialog is open
-	spawned     int            // the windows this one started, so that each opens a little further down and right
-	cascade     int            // --cascade: how many steps of that this window was started at
+	clip        image.Image      // a picture pasted from the clipboard, which has no file yet (image is "" then); see clip.go
+	clipPNG     []byte           // the same as a PNG, for the web view
+	workDir     string           // the folder of a pasted picture and the one Save As starts in: the Pictures folder, until a picture is saved elsewhere
+	titleInfo   string           // size, place in the folder and zoom of the picture, for the title
+	ctl         *control         // the commands of the window (see control.go); nil until control mode or the chat panel needs it
+	masks       maskStore        // the areas the chat panel's tools named (see masks.go)
+	cloneLog    []cloneEntry     // where parts were copied from and to (see retouch.go)
+	deleteItem  *menu.MenuItem   // File → Delete Image…: only on while the picture has a file (see updateMenuItems)
+	discardItem *menu.MenuItem   // File → Discard Changes: only on while the picture is modified
+	effectItems []*menu.MenuItem // the Effects menu: only on while there is a picture
+	saveQuality int              // the quality of the JPEG that SaveToPathQ is writing (0: the usual 95)
+	saveItem    *menu.MenuItem   // File → Save As…: only on while there is a picture
+	closeItem   *menu.MenuItem   // File → Close Image: only on while there is a picture
+	origImg     *image.NRGBA     // the picture with no file as it was made or pasted, for Discard Changes (see revert.go)
+	chat        chatState        // the chat panel: Claude Code in the background (see chat.go)
+	blank       bool             // the picture is a new blank one or one from the clipboard that nothing was done to: it is not modified, and closing it asks nothing (see setClip)
+	edit        bool             // edit mode is on: the title says so
+	lastPaste   time.Time        // the menu and the key can both ask for one paste
+	lastNew     time.Time        // the same for a new window
+	deleting    bool             // the question about deleting a picture is open
+	saving      bool             // the Save As dialog is open
+	spawned     int              // the windows this one started, so that each opens a little further down and right
+	cascade     int              // --cascade: how many steps of that this window was started at
 
 	states    map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
 	stateID   int              // the number of the one it is in; 0 is the empty window
@@ -195,6 +197,15 @@ func (a *App) updateMenuItems() {
 	for item, off := range map[*menu.MenuItem]bool{del: cur.Path == "", save: cur.URL == "", closeImg: cur.URL == "", discard: !cur.Modified} {
 		if item != nil && item.Disabled != off {
 			item.Disabled = off
+			changed = true
+		}
+	}
+	a.mu.Lock()
+	fx := append([]*menu.MenuItem(nil), a.effectItems...)
+	a.mu.Unlock()
+	for _, item := range fx {
+		if item.Disabled != (cur.URL == "") {
+			item.Disabled = cur.URL == ""
 			changed = true
 		}
 	}

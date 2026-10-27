@@ -6,10 +6,10 @@ look at the picture, to draw on it, to change it; the changes appear in the wind
 ## How it works
 
 mcView starts the **Claude Code** that is installed on the computer (`claude -p`, with streamed JSON output) in the background and gives it the
-picture tools of this window, and nothing else:
+picture tools of this window, and the web:
 
 - no terminal has to be open, and no API key is used: Claude Code works with the user's **Claude subscription**;
-- Claude can use the mcView tools (below) and nothing else: no files, no shell, no web (`--tools ""`, only `mcp__mcview` allowed);
+- Claude can use the mcView tools (below) and web search and fetch, and nothing else: no files, no shell (`--tools "WebSearch,WebFetch"`, only `mcp__mcview` and those two allowed). **AI → Web search and fetch** turns the web off (it is on by default, and the choice is kept in `ai.json` in the settings folder). A page it reads is untrusted text, so it can be asked to look things up, but it is not given anything that reaches outside the picture except the web;
 - the tools come from a **private MCP server** of the window: it listens on `127.0.0.1` on a free port, only while the panel has been used, and only
   answers requests with a token that exists in this program and, for the length of one answer, in a temporary file (mode 0600) that Claude Code
   reads. It refuses requests with an `Origin` header (a web page) or another host. There is no setting for it and no other program is given access;
@@ -37,6 +37,17 @@ and nothing is written to a file until `save_image`. The tools change the pictur
 | tool | does |
 |---|---|
 | `window_info` | the picture's name and size, unsaved changes, tool, selection, zoom |
+| `image_info` | the file name (not the folder), type and size, the EXIF data of a photo (camera, time, exposure, ISO; only *whether* there is a GPS place), and how the colors are used: the number of colors, the main colors with their share, average color, brightness, transparency |
+| `apply_effect` | an effect on a box, a polygon, a mask or the user's selection (or all of the picture): blur, pixelize, emboss, explosion, grayscale, negative, sepia, censor (mosaic or bar), fill, gradient, sharpen, and the adjustments brightness, contrast, saturation, temperature, hue, gamma, levels, auto levels; with a soft edge (`feather`) if wanted |
+| `resize_image`, `rotate_image`, `flip_image` | scale the picture (smooth, sharp or whole pixels), turn it by any angle, mirror it |
+| `place_image` | lay a picture from a file over this one, scaled and see-through if wanted |
+| `draw_polygon`, `draw_callout` | a closed polygon (outline and/or fill), a speech bubble with a tail; `draw_rect` has rounded corners, and the shapes can be see-through and have a shadow |
+| `clear_selection` | fill the user's selection (or a box, polygon, mask) with the window's second color, like Delete in Paint |
+| `diff_original` | what changed against the file: pixels, box, strength |
+| `list_folder`, `list_fonts` | the picture names in the folder (no path), the fonts for `add_text` (which also has align, wrapping, outline, shadow) |
+| `goto_step`, `checkpoint`, `goto_checkpoint` | jump in the history, and name a state to come back to |
+| `show_area` | scroll and zoom the window to a part (and mark it), so the user sees what is meant |
+| `history` | the steps of the undo history, each with what was done and who did it (the user or Claude): the ones undo takes back, and the ones redo brings back |
 | `get_image` | the whole picture, with the changes so far, pixel for pixel (a PNG at its real size). A picture of up to 64 × 64 pixels also comes back as text, a palette and one string per row, in the form `set_pixels` takes |
 | `snapshot` | for a big picture: a scaled-down view (`max`: longest side, 1568 by default), or a part of it in full detail (`x`,`y`,`w`,`h`); `zoom` (2 to 32) enlarges a small part in whole pixels, `outline` (`[[x, y], …]`) draws a shape over the answer only, `mask` tints a mask, `compare` shows the original file (left) beside the picture now (right) |
 | `new_image` | a new blank picture of `width` × `height`, white, a color or `transparent` (refused over unsaved changes unless `discard`) |

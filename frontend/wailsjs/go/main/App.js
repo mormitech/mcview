@@ -82,6 +82,10 @@ export function DrawStroke(arg1, arg2, arg3, arg4) {
   return window['go']['main']['App']['DrawStroke'](arg1, arg2, arg3, arg4);
 }
 
+export function Effect(arg1, arg2) {
+  return window['go']['main']['App']['Effect'](arg1, arg2);
+}
+
 export function ExitFullscreen() {
   return window['go']['main']['App']['ExitFullscreen']();
 }
@@ -194,6 +198,10 @@ export function SaveToPath(arg1, arg2, arg3) {
   return window['go']['main']['App']['SaveToPath'](arg1, arg2, arg3);
 }
 
+export function SaveToPathQ(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SaveToPathQ'](arg1, arg2, arg3, arg4);
+}
+
 export function SaveWindow() {
   return window['go']['main']['App']['SaveWindow']();
 }
@@ -236,6 +244,10 @@ export function ToggleFullscreen() {
 
 export function Trace(arg1) {
   return window['go']['main']['App']['Trace'](arg1);
+}
+
+export function Transform(arg1, arg2) {
+  return window['go']['main']['App']['Transform'](arg1, arg2);
 }
 
 export function Version() {

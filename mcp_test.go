@@ -598,3 +598,18 @@ func TestHubSelectionTools(t *testing.T) {
 		t.Errorf("commands: %d polygon, %d discard, %d mask", polys, discards, masks)
 	}
 }
+
+func TestToolNamesAreUnique(t *testing.T) {
+	seen := map[string]bool{}
+	for _, tl := range mcpTools() {
+		if seen[tl.Name] {
+			t.Errorf("the tool %s is there twice", tl.Name)
+		}
+		seen[tl.Name] = true
+	}
+	for _, want := range []string{"apply_effect", "resize_image", "rotate_image", "flip_image", "place_image", "draw_polygon", "draw_callout", "clear_selection", "diff_original", "list_folder", "list_fonts", "goto_step", "checkpoint", "goto_checkpoint", "show_area", "image_info", "history", "discard_changes"} {
+		if !seen[want] {
+			t.Errorf("no tool %s", want)
+		}
+	}
+}

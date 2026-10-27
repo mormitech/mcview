@@ -54,15 +54,20 @@ const chatSystemPrompt = `You are the assistant inside the picture editor mcView
 	`Then: first take a snapshot and find the marking (say which shape you found if the user did not), and note exactly which area it points at, its box and what is inside it, before anything changes. ` +
 	`The marking is not part of the picture the user wants to keep: if it was the last step in the window, call undo once to take it away, take another snapshot, and check that only the marking is gone; if the undo took away something else, call redo. ` +
 	`If the marking is not the last step, do not undo; leave the earlier edits alone and cover the marking as part of your change. Then make the change on the area you noted. If you cannot tell what is marked, ask the user instead of guessing. ` +
+	`To hide something (a face, a plate, a name, a screen) use apply_effect censor on a polygon or mask that hugs it; blur, pixelize, grayscale, negative, sepia, emboss, explosion and the color adjustments (brightness, contrast, saturation, temperature, hue, levels) work on a box, a polygon, a mask or the user's selection the same way. For a speech bubble use draw_callout and then add_text inside it. After a change you can check that only the intended area changed with diff_original. ` +
 	`Answer in the language of the user, briefly and plainly.`
 
 // chatArgs are the arguments of the program for one message. The message itself goes in through the standard input.
-func chatArgs(session, mcpFile string) []string {
+func chatArgs(session, mcpFile string, web bool) []string {
+	tools, allowed := "", "mcp__"+mcpServerName
+	if web { // (AI → Web search and fetch)
+		tools, allowed = "WebSearch,WebFetch", allowed+",WebSearch,WebFetch"
+	}
 	args := []string{
 		"-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
 		"--strict-mcp-config", "--mcp-config", mcpFile,
-		"--tools", "", // no file, shell or web tools: the picture is all it can touch
-		"--allowedTools", "mcp__" + mcpServerName,
+		"--tools", tools, // no file or shell tools: the picture, and the web when the AI menu allows it, are all it can touch
+		"--allowedTools", allowed,
 		"--append-system-prompt", chatSystemPrompt,
 	}
 	if session != "" {
@@ -184,7 +189,7 @@ func (a *App) ChatSend(text string) error {
 		a.chat.mu.Unlock()
 		return fmt.Errorf("an answer is being written: wait for it, or stop it")
 	}
-	cmd := exec.Command(claude, chatArgs(a.chat.session, file)...)
+	cmd := exec.Command(claude, chatArgs(a.chat.session, file, !loadAI().NoWeb)...)
 	cmd.Dir = dir
 	cmd.Stdin = strings.NewReader(text)
 	out, err := cmd.StdoutPipe()

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"image/draw"
 	"math"
+	"sort"
 )
 
 // Lines, rectangles, ellipses and freehand paths put into the picture by Go, at once: the chat panel's draw tools (see mcp.go). They use no pointer and
@@ -23,6 +25,18 @@ type shapeSpec struct {
 	Width int      `json:"width"`
 	Style string   `json:"style"` // solid, dashed, dotted
 	Fill  string   `json:"fill"`  // outline, both, fill
+	// Radius rounds the corners of a rect or a callout; Opacity (0 to 1) makes the whole shape see-through; Shadow puts a soft shadow under it;
+	// TX, TY are the point a callout's tail points at.
+	Radius  int      `json:"radius"`
+	Opacity *float64 `json:"opacity"`
+	Shadow  *struct {
+		DX    int    `json:"dx"`
+		DY    int    `json:"dy"`
+		Blur  int    `json:"blur"`
+		Color string `json:"color"` // #rrggbb (black by default); the shadow is half see-through
+	} `json:"shadow"`
+	TX int `json:"tx"`
+	TY int `json:"ty"`
 }
 
 // pen puts down the tip: round (a circle as wide as the width, like the pencil) or square (the corners of a rectangle).
@@ -164,14 +178,40 @@ func (a *App) DrawShape(rot int, spec string) (ImageInfo, error) {
 	bb := base.Bounds()
 	w := max(1, min(s.Width, 200))
 	dash := dashPattern(w, s.Style)
+	opacity := 1.0
+	if s.Opacity != nil {
+		opacity = math.Max(0, math.Min(1, *s.Opacity))
+	}
+	layered := opacity < 1 || s.Shadow != nil // such a shape is drawn on a layer of its own, and the layer is put over the picture
+	dst := base
+	if layered {
+		dst = image.NewNRGBA(bb)
+	}
 	switch s.Kind {
+	case "polygon":
+		if len(s.Pts) < 3 {
+			return ImageInfo{}, fmt.Errorf("a polygon needs three points or more")
+		}
+		if s.Fill == "fill" || s.Fill == "both" {
+			fc := c1
+			if s.Fill == "both" {
+				fc = c2
+			}
+			fillPolygon(dst, s.Pts, fc)
+		}
+		if s.Fill != "fill" {
+			closed := append(append([][2]int{}, s.Pts...), s.Pts[0])
+			(&pen{img: dst, c: c1, width: w}).path(closed, dash)
+		}
+	case "callout":
+		drawCallout(dst, s, c1, c2, w)
 	case "path":
 		if len(s.Pts) < 2 {
 			return ImageInfo{}, fmt.Errorf("a path needs two points or more")
 		}
-		(&pen{img: base, c: c1, width: w}).path(s.Pts, nil)
+		(&pen{img: dst, c: c1, width: w}).path(s.Pts, nil)
 	case "line":
-		(&pen{img: base, c: c1, width: w}).path([][2]int{{s.X0, s.Y0}, {s.X1, s.Y1}}, dash)
+		(&pen{img: dst, c: c1, width: w}).path([][2]int{{s.X0, s.Y0}, {s.X1, s.Y1}}, dash)
 	case "rect", "ellipse":
 		xa, ya := min(s.X0, s.X1), min(s.Y0, s.Y1)
 		W, H := abs(s.X1-s.X0)+1, abs(s.Y1-s.Y0)+1
@@ -181,12 +221,18 @@ func (a *App) DrawShape(rot int, spec string) (ImageInfo, error) {
 			for y := max(ya, bb.Min.Y); y < min(ya+H, bb.Max.Y); y++ {
 				for x := max(xa, bb.Min.X); x < min(xa+W, bb.Max.X); x++ {
 					if in(x, y) {
-						base.SetNRGBA(x, y, c)
+						dst.SetNRGBA(x, y, c)
 					}
 				}
 			}
 		}
-		whole := func(x, y int) bool { return !round || inEllipse(x, y, cx, cy, rx, ry) }
+		rad := min(max(s.Radius, 0), min(W, H)/2)
+		whole := func(x, y int) bool {
+			if round {
+				return inEllipse(x, y, cx, cy, rx, ry)
+			}
+			return rad == 0 || inRoundRect(x, y, xa, ya, W, H, rad)
+		}
 		switch {
 		case s.Fill == "fill" || W <= w || H <= w: // (a shape that is all outline is a filled one)
 			area(c1, whole)
@@ -195,12 +241,16 @@ func (a *App) DrawShape(rot int, spec string) (ImageInfo, error) {
 				area(c2, whole)
 			}
 			switch {
+			case !round && rad > 0 && dash == nil: // a rounded outline: the rounded box without the one that is smaller by the width
+				area(c1, func(x, y int) bool {
+					return whole(x, y) && !inRoundRect(x, y, xa+w, ya+w, W-2*w, H-2*w, max(0, rad-w))
+				})
 			case !round && dash == nil: // the outline is inside the box
 				ring := func(x, y int) bool { return x < xa+w || x >= xa+W-w || y < ya+w || y >= ya+H-w }
 				area(c1, ring)
 			case !round:
 				o := w / 2
-				p := &pen{img: base, c: c1, width: w, square: s.Style == "dashed"}
+				p := &pen{img: dst, c: c1, width: w, square: s.Style == "dashed"}
 				x0, y0, x1, y1 := xa+o, ya+o, xa+W-w+o, ya+H-w+o
 				p.path([][2]int{{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}, {x0, y0}}, dash)
 			case dash == nil:
@@ -215,14 +265,185 @@ func (a *App) DrawShape(rot int, spec string) (ImageInfo, error) {
 					t := 2 * math.Pi * float64(i) / float64(n)
 					pts = append(pts, [2]int{int(math.Floor(cx + mrx*math.Cos(t))), int(math.Floor(cy + mry*math.Sin(t)))})
 				}
-				(&pen{img: base, c: c1, width: w, square: s.Style == "dashed"}).path(pts, dash)
+				(&pen{img: dst, c: c1, width: w, square: s.Style == "dashed"}).path(pts, dash)
 			}
 		}
 	default:
-		return ImageInfo{}, fmt.Errorf("a shape is a line, a rect, an ellipse or a path, not %q", s.Kind)
+		return ImageInfo{}, fmt.Errorf("a shape is a line, a rect, an ellipse, a path, a polygon or a callout, not %q", s.Kind)
+	}
+	if layered {
+		if err := layerOver(base, dst, s, opacity); err != nil {
+			return ImageInfo{}, err
+		}
 	}
 	if err := a.setPixelsEmit(base, a.current().Path, false); err != nil {
 		return ImageInfo{}, err
 	}
 	return a.Image(), nil
+}
+
+// inRoundRect says whether the middle of the pixel is inside the box xa, ya, W × H with corners of the radius r.
+func inRoundRect(x, y, xa, ya, W, H, r int) bool {
+	if W <= 0 || H <= 0 || x < xa || y < ya || x >= xa+W || y >= ya+H {
+		return false
+	}
+	r = min(r, min(W, H)/2)
+	if r <= 0 {
+		return true
+	}
+	cx, cy := x, y // the corner circle the pixel is near, if any
+	switch {
+	case x < xa+r:
+		cx = xa + r
+	case x >= xa+W-r:
+		cx = xa + W - r - 1
+	}
+	switch {
+	case y < ya+r:
+		cy = ya + r
+	case y >= ya+H-r:
+		cy = ya + H - r - 1
+	}
+	if cx == x && cy == y {
+		return true
+	}
+	dx, dy := float64(x-cx), float64(y-cy)
+	return dx*dx+dy*dy <= float64(r)*float64(r)
+}
+
+// fillPolygon fills the inside of the polygon (the pixels whose middle is inside), the part that is in the picture.
+func fillPolygon(img *image.NRGBA, pts [][2]int, c color.NRGBA) {
+	bb := img.Bounds()
+	n := len(pts)
+	minY, maxY := math.MaxInt, math.MinInt
+	for _, p := range pts {
+		minY, maxY = min(minY, p[1]), max(maxY, p[1])
+	}
+	for y := max(minY, bb.Min.Y); y <= min(maxY, bb.Max.Y-1); y++ {
+		yc := float64(y) + 0.5
+		var xs []float64
+		for i := 0; i < n; i++ {
+			a, b := pts[i], pts[(i+1)%n]
+			if (float64(a[1]) <= yc) != (float64(b[1]) <= yc) {
+				xs = append(xs, float64(a[0])+(yc-float64(a[1]))*float64(b[0]-a[0])/float64(b[1]-a[1]))
+			}
+		}
+		sort.Float64s(xs)
+		for i := 0; i+1 < len(xs); i += 2 {
+			for x := max(int(math.Ceil(xs[i]-0.5)), bb.Min.X); float64(x)+0.5 < xs[i+1] && x < bb.Max.X; x++ {
+				img.SetNRGBA(x, y, c)
+			}
+		}
+	}
+}
+
+// drawCallout draws a speech bubble: a rounded box (x0, y0 to x1, y1) with a tail that points at (tx, ty), filled with bg and outlined with color.
+func drawCallout(dst *image.NRGBA, s shapeSpec, outline, fill color.NRGBA, w int) {
+	bb := dst.Bounds()
+	xa, ya := min(s.X0, s.X1), min(s.Y0, s.Y1)
+	W, H := abs(s.X1-s.X0)+1, abs(s.Y1-s.Y0)+1
+	rad := s.Radius
+	if rad <= 0 {
+		rad = 12
+	}
+	rad = min(rad, min(W, H)/2)
+	xb, yb := xa+W-1, ya+H-1
+	var tail [][2]int // the triangle of the tail, its base a little inside the box so that nothing shows between
+	half := min(18, max(6, min(W, H)/6))
+	clampX := func(v int) int { return max(xa+rad+half, min(v, xb-rad-half)) }
+	clampY := func(v int) int { return max(ya+rad+half, min(v, yb-rad-half)) }
+	switch {
+	case s.TY > yb:
+		cx := clampX(s.TX)
+		tail = [][2]int{{cx - half, yb - 2}, {cx + half, yb - 2}, {s.TX, s.TY}}
+	case s.TY < ya:
+		cx := clampX(s.TX)
+		tail = [][2]int{{cx - half, ya + 2}, {cx + half, ya + 2}, {s.TX, s.TY}}
+	case s.TX < xa:
+		cy := clampY(s.TY)
+		tail = [][2]int{{xa + 2, cy - half}, {xa + 2, cy + half}, {s.TX, s.TY}}
+	case s.TX > xb:
+		cy := clampY(s.TY)
+		tail = [][2]int{{xb - 2, cy - half}, {xb - 2, cy + half}, {s.TX, s.TY}}
+	}
+	cov := &maskData{w: bb.Dx(), h: bb.Dy(), bits: make([]uint8, bb.Dx()*bb.Dy())}
+	for y := max(ya, bb.Min.Y); y <= min(yb, bb.Max.Y-1); y++ {
+		for x := max(xa, bb.Min.X); x <= min(xb, bb.Max.X-1); x++ {
+			if inRoundRect(x, y, xa, ya, W, H, rad) {
+				cov.bits[y*cov.w+x] = 255
+			}
+		}
+	}
+	if tail != nil {
+		tmp := image.NewNRGBA(bb)
+		fillPolygon(tmp, tail, color.NRGBA{A: 255})
+		for i := 0; i < len(cov.bits); i++ {
+			if tmp.Pix[4*i+3] != 0 {
+				cov.bits[i] = 255
+			}
+		}
+	}
+	inner := &maskData{w: cov.w, h: cov.h, bits: append([]uint8(nil), cov.bits...)}
+	inner.morph(-w)
+	for i, v := range cov.bits {
+		if v == 0 {
+			continue
+		}
+		c := outline
+		if inner.bits[i] != 0 {
+			if s.Fill == "outline" {
+				continue
+			}
+			c = fill
+		}
+		dst.SetNRGBA(i%cov.w, i/cov.w, c)
+	}
+}
+
+// layerOver puts the layer over base: first its shadow (if it has one), then the layer itself, as see-through as opacity says.
+func layerOver(base, layer *image.NRGBA, s shapeSpec, opacity float64) error {
+	bb := base.Bounds()
+	if sh := s.Shadow; sh != nil {
+		c := color.NRGBA{A: 255}
+		if sh.Color != "" {
+			var err error
+			if c, err = parseRGB(sh.Color); err != nil {
+				return err
+			}
+		}
+		dx, dy := sh.DX, sh.DY
+		if dx == 0 && dy == 0 {
+			dx, dy = 3, 3
+		}
+		blurPx := sh.Blur
+		if blurPx <= 0 {
+			blurPx = 4
+		}
+		w, h := bb.Dx(), bb.Dy()
+		a := make([]float32, w*h) // the shadow is the shape's outline moved over
+		for y := 0; y < h; y++ {
+			for x := 0; x < w; x++ {
+				if v := layer.Pix[y*layer.Stride+4*x+3]; v != 0 {
+					if tx, ty := x+dx, y+dy; tx >= 0 && ty >= 0 && tx < w && ty < h {
+						a[ty*w+tx] = float32(v)
+					}
+				}
+			}
+		}
+		a = boxBlur(a, w, h, max(1, blurPx/2))
+		shadow := image.NewNRGBA(bb)
+		for i, v := range a {
+			if v >= 1 {
+				shadow.Pix[4*i], shadow.Pix[4*i+1], shadow.Pix[4*i+2], shadow.Pix[4*i+3] = c.R, c.G, c.B, clamp8(float64(v)*0.5*opacity)
+			}
+		}
+		draw.Draw(base, bb, shadow, bb.Min, draw.Over)
+	}
+	if opacity < 1 {
+		for i := 3; i < len(layer.Pix); i += 4 {
+			layer.Pix[i] = clamp8(float64(layer.Pix[i]) * opacity)
+		}
+	}
+	draw.Draw(base, bb, layer, bb.Min, draw.Over)
+	return nil
 }

@@ -47,7 +47,7 @@ func TestChatEvents(t *testing.T) {
 }
 
 func TestChatArgs(t *testing.T) {
-	a := strings.Join(chatArgs("", "/tmp/c.json"), "\x00")
+	a := strings.Join(chatArgs("", "/tmp/c.json", true), "\x00")
 	for _, want := range []string{"-p", "stream-json", "--strict-mcp-config", "/tmp/c.json", "mcp__mcview", "call undo once", "note exactly which area"} {
 		if !strings.Contains(a, want) {
 			t.Errorf("the arguments lack %q: %q", want, a)
@@ -56,14 +56,24 @@ func TestChatArgs(t *testing.T) {
 	if strings.Contains(a, "--resume") {
 		t.Errorf("a first message resumes nothing")
 	}
-	args := chatArgs("sess-1", "/tmp/c.json")
+	args := chatArgs("sess-1", "/tmp/c.json", true)
 	if args[len(args)-2] != "--resume" || args[len(args)-1] != "sess-1" {
 		t.Errorf("the next message continues the session: %v", args[len(args)-2:])
 	}
-	for i, x := range args { // no file, shell or web tools
-		if x == "--tools" && args[i+1] != "" {
+	for i, x := range args { // no file or shell tools: just the web ones
+		if x == "--tools" && args[i+1] != "WebSearch,WebFetch" {
 			t.Errorf("tools = %q", args[i+1])
 		}
+	}
+}
+
+func TestChatArgsWebOff(t *testing.T) {
+	a := strings.Join(chatArgs("", "/tmp/c.json", false), "\x00")
+	if strings.Contains(a, "Web") {
+		t.Errorf("no web tools when the AI menu has them off: %q", a)
+	}
+	if !strings.Contains(a, "mcp__mcview") {
+		t.Errorf("the picture tools stay: %q", a)
 	}
 }
 

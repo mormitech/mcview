@@ -3,6 +3,29 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.38.7 – 2026-10-27
+
+Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more tools for the chat's Claude, and a lot of polish.
+
+### Added
+- **Effects menu**: Clear, Blur, Pixelize, Emboss, Explosion, Censor, Sharpen, Grayscale, Negative, Sepia, Brighter/Darker, More/Less Contrast, More/Less Color, Warmer/Cooler, Auto Levels and Fill with the foreground color. Each works on the part that is selected (a polygon, or else the box), or on all of the picture when nothing is selected, and is one step of the history (using one again makes it stronger). The selection stays, also through undo and redo, so you can try one effect after the other.
+- **Clear** (Effects → Clear, or **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint. Without a selection Backspace still goes to the previous picture.
+- **AI menu** with **Web search and fetch**: whether the chat's Claude may use the web (on by default; the choice is kept in `ai.json` in the settings folder).
+- **Edit → Select All** (Cmd+A): all the text in the chat box (or the text being typed), the whole picture otherwise. Copy, paste, undo and redo of the Edit menu work in the chat box too.
+- **Chat tools**: `apply_effect` (all the effects, and gradient, hue, gamma, levels, with strengths and a soft edge, on a box, polygon, mask or the user's selection), `clear_selection`, `resize_image`, `rotate_image` (any angle), `flip_image`, `place_image` (a picture from a file, scaled, see-through), `draw_polygon`, `draw_callout` (a speech bubble), rounded corners, opacity and shadows for shapes, `add_text` with alignment, wrapping, outline and shadow, `history` (the undo steps, by the user or Claude), `goto_step`, `checkpoint` and `goto_checkpoint`, `image_info` (file name without the folder, EXIF, how the colors are used, also for a part), `diff_original`, `list_folder`, `list_fonts`, `show_area`, and a JPEG quality for `save_image`.
+
+### Changed
+- Dragging a selection no longer depends on edit mode: a plain drag of its inside or an edge moves or resizes just the frame, and **Shift** and drag moves or stretches the selected picture itself (the place it came from turns white). A pasted picture still moves without Shift.
+- A right click no longer drops the selection; only a drag with the right button draws a new polygon.
+- A copy to the clipboard no longer flashes the status bar: an orange clipboard appears at the end of the folder label for a moment, and the clipboard in the middle of the selection is orange too.
+- The status bar has two groups, the file on the left and the readout and buttons on the right; when the window is too narrow the right group goes to a second row of its own.
+- In edit mode a picture bigger than the window can be moved so that its whole left and bottom edge is in the open (not under the tool rail and the status bar), and the modes 4, 5 and 6 (stretch, fit width, fit height) fill only the visible part of the window.
+- The chat button is shown in full screen when edit mode is on.
+- The chat's Claude can use the web search and fetch tools as well as the picture tools; files and the shell stay off.
+
+### Fixed
+- Pasting onto a clipboard picture that is not saved yet (edit mode off) no longer always starts another new image: a small clipboard picture is laid over it, one about as big as the picture is asked about, as in edit mode.
+
 ## 0.37.8 – 2026-10-26
 
 Everything since 0.31.0, in one release: a chat with Claude next to the picture, and the tools to remove things from a photo.

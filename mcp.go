@@ -455,9 +455,14 @@ func retouchCmd(op string, args map[string]any) (map[string]any, string, error) 
 	return cmd, what, nil
 }
 
-func mcpTools() []toolDef {
+func mcpTools() []toolDef { return append(baseTools(), moreTools()...) }
+
+func baseTools() []toolDef {
 	return []toolDef{
 		{"window_info", "Returns the state of the window: the name of the picture, its folder, size, whether it has unsaved changes, the tool in use, the selection and the zoom.", schema(nil, map[string]any{})},
+		{"image_info", "Tells you about the picture (or about a part of it: a box x, y, w, h, a polygon or a mask, for the color statistics): the file name (without its folder), type, size in bytes and in pixels, whether there are unsaved changes, the EXIF data of a photo (camera, lens, time, exposure, ISO, focal length; only whether there is a GPS place, not where), and how the colors are used: the number of different colors, the main colors with their share, the average color, the brightness (average, spread, darkest, brightest, a histogram), how much is transparent, whether it is gray. It reads the picture as it is now, with the changes made so far. Does not change the picture.", schema(nil, map[string]any{
+			"x": pX, "y": pY, "w": prop("integer", "width of a box to describe instead of all of the picture"), "h": prop("integer", "height of the box"), "polygon": pPoly, "mask": pMask})},
+		{"history", "Lists the steps of the window's undo history (and the named checkpoints), each with a number, what was done and who did it (the user or you). \"undoable\" are the steps undo would take back (the last one first), \"redoable\" the ones that were undone and redo brings back. Use it to see what has been done to the picture so far before you decide what to undo or redo; goto_step jumps to a step. Does not change the picture.", schema(nil, map[string]any{})},
 		{"get_image", "Returns the whole picture of the window, with the changes made so far, pixel for pixel (a PNG at its real size; one over 4096 pixels on a side is scaled down, and the text says so). A picture of up to 64 × 64 pixels is also returned as text, a palette and one string per row, which is exactly what set_pixels takes: the pixel art can be read, changed and written back.", schema(nil, map[string]any{})},
 		{"snapshot", "A scaled-down view of a big picture (a photo), or a part of it at full detail with x, y, w, h. For a small picture use get_image.", schema(nil, map[string]any{
 			"x": prop("integer", "region: left edge (default: the whole picture)"), "y": prop("integer", "region: top edge"),
@@ -473,8 +478,8 @@ func mcpTools() []toolDef {
 			"style": map[string]any{"type": "string", "enum": []string{"solid", "dashed", "dotted"}, "description": "Default solid"}, "snapshot": pSnap})},
 		{"draw_rect", "Draws a rectangle with its top left corner at (x,y), w by h pixels.", schema([]string{"x", "y", "w", "h"}, map[string]any{
 			"x": pX, "y": pY, "w": prop("integer", "width in pixels"), "h": prop("integer", "height in pixels"), "color": pColor, "width": pWidth,
-			"fill_color": prop("string", "Fill the inside with this color (same notation as color); left out: outline only"),
-			"style":      map[string]any{"type": "string", "enum": []string{"solid", "dashed", "dotted"}, "description": "Default solid"}, "snapshot": pSnap})},
+			"fill_color": prop("string", "Fill the inside with this color (same notation as color); left out: outline only"), "radius": prop("integer", "Round the corners by this many pixels"), "opacity": pOpacity, "shadow": pShadow,
+			"style": map[string]any{"type": "string", "enum": []string{"solid", "dashed", "dotted"}, "description": "Default solid"}, "snapshot": pSnap})},
 		{"draw_ellipse", "Draws an ellipse (a circle when w = h) in the box with its top left corner at (x,y), w by h pixels.", schema([]string{"x", "y", "w", "h"}, map[string]any{
 			"x": pX, "y": pY, "w": prop("integer", "width in pixels"), "h": prop("integer", "height in pixels"), "color": pColor, "width": pWidth,
 			"fill_color": prop("string", "Fill the inside with this color; left out: outline only"),
@@ -485,7 +490,9 @@ func mcpTools() []toolDef {
 		{"add_text", "Writes text with its top left corner at (x,y).", schema([]string{"x", "y", "text"}, map[string]any{
 			"x": pX, "y": pY, "text": prop("string", "The text (a new line starts a new row)"), "color": pColor,
 			"size": prop("integer", "Font size in pixels. Default: about 1/40 of the picture's longer side, at least 16"),
-			"bold": prop("boolean", "Bold"), "italic": prop("boolean", "Italic"), "font": prop("string", "Font family (default: the app's)"), "snapshot": pSnap})},
+			"bold": prop("boolean", "Bold"), "italic": prop("boolean", "Italic"), "font": prop("string", "Font family (default: the app's; see list_fonts)"),
+			"align": map[string]any{"type": "string", "enum": []string{"left", "center", "right"}, "description": "Alignment of the rows inside box_w (default left)"}, "box_w": prop("integer", "Wrap the text into rows at most this wide, in pixels; the box starts at x"),
+			"outline": prop("string", "Color of an outline round the letters (for text on a busy picture)"), "outline_width": prop("integer", "Width of the outline in pixels (default 2)"), "shadow": pShadow, "snapshot": pSnap})},
 		{"new_image", "Makes a new blank picture in the window (it has no file until save_image). Refused when the window has unsaved changes, unless discard is true.", schema([]string{"width", "height"}, map[string]any{
 			"width": prop("integer", "pixels"), "height": prop("integer", "pixels"),
 			"background": prop("string", "A color (#rrggbb, #rrggbbaa or a name) or \"transparent\". Default white"),
@@ -548,7 +555,8 @@ func mcpTools() []toolDef {
 		{"open_image", "Opens a picture file in the window. Refused when the window has unsaved changes, unless discard is true.", schema([]string{"path"}, map[string]any{
 			"path": prop("string", "Full path of the picture"), "discard": prop("boolean", "Throw away unsaved changes (default false)")})},
 		{"save_image", "Saves the picture of the window to a file; the type is the one the name ends with (png, jpg, gif, bmp, tif). The window then shows that file. Refuses to replace a file that exists unless overwrite is true.", schema([]string{"path"}, map[string]any{
-			"path": prop("string", "Full path to save to"), "overwrite": prop("boolean", "Replace the file if it exists (default false)")})},
+			"path": prop("string", "Full path to save to"), "overwrite": prop("boolean", "Replace the file if it exists (default false)"),
+			"quality": prop("integer", "JPEG quality 1 to 100 (default 95; a JPEG that was not changed is copied as it is)")})},
 	}
 }
 
@@ -643,11 +651,38 @@ func (h *chatHub) callTool(name string, args map[string]any) ([]any, error) {
 	if name == "window_info" {
 		return h.windowInfo()
 	}
+	if content, handled, err := h.moreCall(name, args); handled {
+		return content, err
+	}
 	var content []any
 	snapMask := "" // the mask a snapshot asked for with the answer shows tinted
 	switch name {
 	case "snapshot":
 		return h.snapshotTool(args)
+	case "image_info":
+		cmd := map[string]any{"cmd": "imageinfo"}
+		for _, k := range []string{"x", "y", "w", "h", "mask"} {
+			if v, ok := args[k]; ok {
+				cmd[k] = v
+			}
+		}
+		if pts, err := polygonArg(args); err != nil {
+			return nil, err
+		} else if pts != nil {
+			cmd["pts"] = pts
+		}
+		res, err := h.window(cmd)
+		if err != nil {
+			return nil, err
+		}
+		delete(res, "ok")
+		return []any{jsonText(res)}, nil
+	case "history":
+		res, err := h.window(map[string]any{"cmd": "history"})
+		if err != nil {
+			return nil, err
+		}
+		return []any{jsonText(historyReport(res))}, nil
 	case "get_image":
 		return h.snapshotTool(map[string]any{"max": 4096})
 	case "new_image":
@@ -970,7 +1005,11 @@ func (h *chatHub) callTool(name string, args map[string]any) ([]any, error) {
 		if fi, err := os.Stat(path); err == nil && !fi.IsDir() && args["overwrite"] != true {
 			return nil, fmt.Errorf("%s exists: call again with overwrite=true to replace it, or choose another name", path)
 		}
-		res, err := h.window(map[string]any{"cmd": "saveto", "path": path, "overwrite": args["overwrite"] == true})
+		save := map[string]any{"cmd": "saveto", "path": path, "overwrite": args["overwrite"] == true}
+		if q, ok := args["quality"]; ok {
+			save["quality"] = q
+		}
+		res, err := h.window(save)
 		if err != nil {
 			return nil, err
 		}
@@ -984,6 +1023,7 @@ func (h *chatHub) callTool(name string, args map[string]any) ([]any, error) {
 		if err != nil {
 			return nil, err
 		}
+		addShapeExtras(cmds, args)
 		for _, c := range cmds {
 			if _, err := h.window(c); err != nil {
 				return nil, fmt.Errorf("%s: %w", name, err)
@@ -1257,6 +1297,51 @@ func (h *chatHub) drawCommands(name string, args map[string]any) ([]map[string]a
 		}
 		cmds := []map[string]any{cmd}
 		return cmds, fmt.Sprintf("Drew a %s at %d,%d, %d × %d (%s, width %d)", what, v[0], v[1], v[2], v[3], color, width), nil
+	case "draw_polygon":
+		pts, err := polygonArg(args)
+		if err != nil {
+			return nil, "", err
+		}
+		if pts == nil {
+			return nil, "", fmt.Errorf("\"polygon\" is missing")
+		}
+		for i := range pts {
+			pts[i] = clamp(pts[i][0], pts[i][1])
+		}
+		cmd := map[string]any{"cmd": "shape", "kind": "polygon", "pts": pts, "color": color, "width": width, "style": style, "fill": "outline"}
+		if f := str(args, "fill_color"); f != "" {
+			fc, err := parseColor(f, "")
+			if err != nil {
+				return nil, "", err
+			}
+			cmd["bg"], cmd["fill"] = fc, "both"
+		}
+		return []map[string]any{cmd}, fmt.Sprintf("Drew a polygon of %d points (%s, width %d)", len(pts), color, width), nil
+	case "draw_callout":
+		v, err := ints(args, "x", "y", "w", "h", "tail_x", "tail_y")
+		if err != nil {
+			return nil, "", err
+		}
+		if v[2] < 20 || v[3] < 20 {
+			return nil, "", fmt.Errorf("a bubble must be at least 20 × 20 pixels")
+		}
+		if err := inside(v[0], v[1]); err != nil {
+			return nil, "", err
+		}
+		c1 := clamp(v[0]+v[2]-1, v[1]+v[3]-1)
+		tip := clamp(v[4], v[5])
+		fill, err := parseColor(str(args, "fill_color"), "white")
+		if err != nil {
+			return nil, "", err
+		}
+		radius := 12
+		if _, ok := args["radius"]; ok {
+			radius, _ = intArg(args, "radius")
+		}
+		cmd := map[string]any{"cmd": "shape", "kind": "callout", "x0": v[0], "y0": v[1], "x1": c1[0], "y1": c1[1], "tx": tip[0], "ty": tip[1], "color": color, "bg": fill, "width": width, "fill": "both"}
+		pad := max(8, width+radius/3)
+		return []map[string]any{cmd}, fmt.Sprintf("Drew a speech bubble at %d,%d, %d × %d, its tail pointing at %d,%d. The text fits in the box x=%d, y=%d, w=%d, h=%d: use add_text there with box_w=%d and align center",
+			v[0], v[1], v[2], v[3], tip[0], tip[1], v[0]+pad, v[1]+pad, v[2]-2*pad, v[3]-2*pad, v[2]-2*pad), nil
 	case "draw_path":
 		raw, _ := args["points"].([]any)
 		if len(raw) < 2 {
@@ -1326,4 +1411,34 @@ func (h *chatHub) drawCommands(name string, args map[string]any) ([]map[string]a
 		return cmds, fmt.Sprintf("Filled the area around %d,%d with %s", v[0], v[1], color), nil
 	}
 	return nil, "", fmt.Errorf("unknown tool %q", name)
+}
+
+// historyReport shapes the steps the window sent (oldest first, "at" is the one shown now) for the model: the steps undo takes back, last first, and the ones redo brings back.
+func historyReport(res map[string]any) map[string]any {
+	steps, _ := res["steps"].([]any)
+	at := 0
+	if f, ok := res["at"].(float64); ok {
+		at = int(f)
+	}
+	line := func(s any) map[string]any {
+		m, _ := s.(map[string]any)
+		return map[string]any{"step": m["n"], "what": m["label"], "by": m["by"]}
+	}
+	undoable, redoable := []any{}, []any{}
+	for i := len(steps) - 1; i >= 0; i-- {
+		switch {
+		case i > at:
+			redoable = append([]any{line(steps[i])}, redoable...) // the next redo first
+		case i > 0 && i <= at:
+			undoable = append(undoable, line(steps[i]))
+		}
+	}
+	out := map[string]any{"undoable": undoable, "redoable": redoable}
+	if cp, ok := res["checkpoints"].([]any); ok && len(cp) > 0 {
+		out["checkpoints"] = cp // named steps, for goto_checkpoint
+	}
+	if len(steps) > 0 {
+		out["start"] = line(steps[0])["what"]
+	}
+	return out
 }

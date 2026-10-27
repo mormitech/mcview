@@ -70,7 +70,7 @@ A picture with transparent parts has chequered squares behind it.
 
 | Tool | What it does |
 |---|---|
-| **Select** | Drag to select a rectangle. Drag an edge to stretch the selected part, or its inside to move it; the place it came from turns white (transparent where the picture can have it). **Shift** and drag moves just the frame |
+| **Select** | Drag to select a rectangle. Drag an edge or the inside of the selection to resize or move just the frame (the picture is not touched, in view mode and in edit mode alike). Hold **Shift** and drag an edge to stretch the selected part, or its inside to move it; the place it came from turns white (transparent where the picture can have it) |
 | **Polygon select** | Select any shape, free-hand: see [below](#selecting) |
 | **Pencil** | Drag to draw. Left button: first color. Right button: second color. The ribbon above the bottom bar sets the width |
 | **Line**, **Rectangle**, **Circle and ellipse** | Drag them out. **Shift** makes a line at a multiple of 45°, a square, a true circle. The ribbon sets the width, solid / dashed / dotted, and outline, outline with fill, or fill |
@@ -87,6 +87,12 @@ The two **color wells** at the bottom of the rail are the first and the second c
 - **Ctrl+Z** undoes, **Ctrl+Shift+Z** (or **Ctrl+Y**) redoes. Every change of the picture can be undone. Zooming, moving and selecting are not steps.
 - **File → Discard Changes**, or the round-arrow button at the bottom right of the edit bar, takes the picture back to what it was when you opened it (the file on the disk, or the pasted or new picture). It is a step too: **undo brings your changes back**, redo discards them again.
 - A picture with changes has a **●** after its name.
+
+### Effects
+
+The **Effects** menu changes the picture, or only the part you selected (a rectangle or a free-hand polygon; with nothing selected, all of it). **Clear** (also **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint; the selection stays, so you can undo and try another effect. The effects: **Blur**, **Pixelize**, **Emboss**, **Explosion** (a burst from the middle), **Censor** (a mosaic too coarse to read, for faces, plates and names), **Sharpen**, **Grayscale**, **Negative**, **Sepia**, **Brighter/Darker**, **More/Less Contrast**, **More/Less Color**, **Warmer/Cooler**, **Auto Levels**, and **Fill** with the foreground or background color. Each is one step of the history (Ctrl+Z takes it back); using one again makes it stronger. Claude can do the same, with settings, through the chat.
+
+The **AI** menu has **Web search and fetch**, which says whether Claude may use the web in the chat (on by default).
 
 ### Create image
 
@@ -160,7 +166,7 @@ Claude is good at taking small things out of a photo: letters, labels, spots, sc
 
 mcView has no accounts, ads or telemetry. The chat is the one place where a picture leaves the computer, and only when **you** ask: Claude looks at the picture (screenshots of it) through your own Claude Code, so **what you chat about is sent to Anthropic**, under your Claude account's terms. Nothing is sent when the panel is closed.
 
-Claude can use mcView's picture tools and nothing else: no files, no shell, no web. It reaches the picture through a private connection inside the window that no other program can use.
+Claude can use mcView's picture tools and web search and fetch, and nothing else: no files, no shell. The **AI** menu turns the web off. It reaches the picture through a private connection inside the window that no other program can use.
 
 ---
 

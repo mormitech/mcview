@@ -267,6 +267,14 @@ func (c *control) do(m map[string]any) (map[string]any, error) {
 		return a.maskCommand(m)
 	case "seam": // how much the edge of a shape shows (see masks.go)
 		return a.seamCommand(m)
+	case "diff": // how the picture differs from the file (see extras.go)
+		return a.diffCommand(m)
+	case "folder": // the pictures of the folder, by name
+		return a.folderCommand(m)
+	case "fonts":
+		return map[string]any{"ok": true, "fonts": fontNames()}, nil
+	case "imageinfo": // the file name, the EXIF block and how the colors are used (see imageinfo.go)
+		return a.imageInfoCommand(m)
 	case "snapshot": // the picture as a PNG (see mcp.go): {x, y, w, h} for a part, "max" for the longest side of the answer
 		return a.snapshot(m)
 	case "quit": // without asking anything
