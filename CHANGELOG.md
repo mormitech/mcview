@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.9 – 2026-10-27
+
+### Added
+
+- `scripts/make-cask.mjs`, `make-scoop-manifest.mjs` and `make-winget-manifest.mjs` write the Homebrew cask, the Scoop manifest and the winget manifests of a published release (checksums computed from the published files).
+
 ## 0.51.8 – 2026-10-27
 
 ### Added
