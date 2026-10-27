@@ -39,6 +39,16 @@ type gifSession struct {
 	origDelays []int          // ... of the frames of orig
 	cur        int            // the frame that is shown (and that the tools work on)
 	started    bool           // made from a picture (Start animation), not opened as a GIF
+	ovr        bool           // a tool of the chat works on another frame than the one the user has shown: cur is that frame, userCur the user's
+	userCur    int
+}
+
+// shown is the frame the user has on the screen (what the chat does on other frames does not move it).
+func (g *gifSession) shown() int {
+	if g.ovr {
+		return g.userCur
+	}
+	return g.cur
 }
 
 // gifSnap is the frames and their delays as one state of the history has them.
@@ -79,6 +89,12 @@ func (a *App) gifNoteEditLocked(img *image.NRGBA, file string) {
 	frames := append([]*image.NRGBA(nil), g.frames...)
 	frames[g.cur] = img
 	g.frames = frames
+	if g.ovr && g.userCur != g.cur && g.userCur < len(frames) { // the picture of the window (and what the page shows of it) stays the frame of the user; the tools read g.cur's frame from pix
+		var buf bytes.Buffer
+		if (&png.Encoder{CompressionLevel: png.BestSpeed}).Encode(&buf, frames[g.userCur]) == nil {
+			a.clip, a.clipPNG = frames[g.userCur], buf.Bytes()
+		}
+	}
 }
 
 // gifOpen decodes and composes the frames of a GIF file; nil when it has one frame only, or is too big.
@@ -157,7 +173,7 @@ func (a *App) GifInfo() (GifMeta, error) {
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	m := GifMeta{Frames: len(g.frames), Delays: g.delays, Cur: g.cur, Fresh: fresh}
+	m := GifMeta{Frames: len(g.frames), Delays: g.delays, Cur: g.shown(), Fresh: fresh}
 	m.Edited = g.started || len(g.frames) != len(g.orig)
 	for i, f := range g.frames {
 		m.Keys = append(m.Keys, fmt.Sprintf("%d:%p", g.id, f))
@@ -370,7 +386,7 @@ func (a *App) GifStart(rot int) (ImageInfo, error) {
 
 // GifAddFrame puts a new frame after frame number after (0 based; -1: the one that is shown), a copy of the one that is shown or an empty (transparent) one; it
 // is the frame that is shown afterwards. The animation is started first when the picture is none yet.
-func (a *App) GifAddFrame(rot int, blank bool, after int) (ImageInfo, error) {
+func (a *App) GifAddFrame(rot int, blank bool, after int, follow bool) (ImageInfo, error) {
 	if _, err := a.GifStart(rot); err != nil {
 		return ImageInfo{}, err
 	}
@@ -399,14 +415,17 @@ func (a *App) GifAddFrame(rot int, blank bool, after int) (ImageInfo, error) {
 	d := g.delays[g.cur]
 	frames := append(append(append([]*image.NRGBA(nil), g.frames[:after+1]...), nf), g.frames[after+1:]...)
 	delays := append(append(append([]int(nil), g.delays[:after+1]...), d), g.delays[after+1:]...)
-	g.frames, g.delays, g.cur = frames, delays, after+1
+	old := g.shown()
+	oldFrame := g.frames[old]
+	g.frames, g.delays = frames, delays
+	g.keepShown(old, oldFrame, follow, after+1)
 	a.mu.Unlock()
 	return a.gifBump(g)
 }
 
 // GifDuplicateFrame puts a copy of frame source (0 based) in the place target (0 based, 0 to the number of frames: the copy has that number afterwards, the
 // frames from there on move up); it is the frame that is shown afterwards. The animation is started first when the picture is none yet.
-func (a *App) GifDuplicateFrame(rot, source, target int) (ImageInfo, error) {
+func (a *App) GifDuplicateFrame(rot, source, target int, follow bool) (ImageInfo, error) {
 	if _, err := a.GifStart(rot); err != nil {
 		return ImageInfo{}, err
 	}
@@ -424,22 +443,24 @@ func (a *App) GifDuplicateFrame(rot, source, target int) (ImageInfo, error) {
 		a.mu.Unlock()
 		return ImageInfo{}, fmt.Errorf("the animation would be too big (%d frames of %d × %d)", n+1, g.w, g.h)
 	}
+	old := g.shown()
+	oldFrame := g.frames[old]
 	g.frames = append(append(append([]*image.NRGBA(nil), g.frames[:target]...), cloneNRGBA(g.frames[source])), g.frames[target:]...)
 	g.delays = append(append(append([]int(nil), g.delays[:target]...), g.delays[source]), g.delays[target:]...)
-	g.cur = target
+	g.keepShown(old, oldFrame, follow, target)
 	a.mu.Unlock()
 	return a.gifBump(g)
 }
 
 // GifDeleteFrame takes frame i (0 based; -1: the one that is shown) out; the animation keeps at least one frame.
-func (a *App) GifDeleteFrame(i int) (ImageInfo, error) {
+func (a *App) GifDeleteFrame(i int, follow bool) (ImageInfo, error) {
 	g, err := a.gifLive()
 	if err != nil {
 		return ImageInfo{}, err
 	}
 	a.mu.Lock()
 	if i < 0 {
-		i = g.cur
+		i = g.shown()
 	}
 	if i >= len(g.frames) {
 		a.mu.Unlock()
@@ -449,15 +470,17 @@ func (a *App) GifDeleteFrame(i int) (ImageInfo, error) {
 		a.mu.Unlock()
 		return ImageInfo{}, fmt.Errorf("the animation has one frame only")
 	}
+	old := g.shown()
+	oldFrame := g.frames[old]
 	g.frames = append(append([]*image.NRGBA(nil), g.frames[:i]...), g.frames[i+1:]...)
 	g.delays = append(append([]int(nil), g.delays[:i]...), g.delays[i+1:]...)
-	g.cur = min(i, len(g.frames)-1)
+	g.keepShown(old, oldFrame, follow, min(i, len(g.frames)-1))
 	a.mu.Unlock()
 	return a.gifBump(g)
 }
 
 // GifMoveFrame moves frame from (0 based) to the place to; it is the frame that is shown afterwards.
-func (a *App) GifMoveFrame(from, to int) (ImageInfo, error) {
+func (a *App) GifMoveFrame(from, to int, follow bool) (ImageInfo, error) {
 	g, err := a.gifLive()
 	if err != nil {
 		return ImageInfo{}, err
@@ -468,12 +491,14 @@ func (a *App) GifMoveFrame(from, to int) (ImageInfo, error) {
 		a.mu.Unlock()
 		return ImageInfo{}, fmt.Errorf("the frames are 1 to %d", n)
 	}
+	old := g.shown()
+	oldFrame := g.frames[old]
 	fr, d := g.frames[from], g.delays[from]
 	rest := append(append([]*image.NRGBA(nil), g.frames[:from]...), g.frames[from+1:]...)
 	restD := append(append([]int(nil), g.delays[:from]...), g.delays[from+1:]...)
 	g.frames = append(append(append([]*image.NRGBA(nil), rest[:to]...), fr), rest[to:]...)
 	g.delays = append(append(append([]int(nil), restD[:to]...), d), restD[to:]...)
-	g.cur = to
+	g.keepShown(old, oldFrame, follow, to)
 	a.mu.Unlock()
 	return a.gifBump(g)
 }
@@ -596,4 +621,53 @@ func (a *App) GifSheet(maxSide int) (map[string]any, error) {
 		return nil, err
 	}
 	return map[string]any{"ok": true, "png": base64.StdEncoding.EncodeToString(buf.Bytes()), "frames": n, "cols": cols, "rows": rows, "zoom": z, "w": w, "h": h}, nil
+}
+
+// GifTarget is for the chat's tools: frame n (1 based) is the one they work on until it is called with 0, and the frame the user has on the screen stays where it is.
+func (a *App) GifTarget(n int) error {
+	g, _, err := a.gifSession()
+	if err != nil {
+		return err
+	}
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	if g == nil {
+		if n == 0 {
+			return nil
+		}
+		return fmt.Errorf("this picture is not an animation")
+	}
+	if n == 0 { // back to the user's frame
+		if g.ovr {
+			g.ovr, g.cur = false, min(g.userCur, len(g.frames)-1)
+			a.pix = pixelCache{seq: a.imgSeq, img: g.frames[g.cur], orient: 1}
+		}
+		return nil
+	}
+	if n < 1 || n > len(g.frames) {
+		return fmt.Errorf("there is no frame %d (the animation has %d)", n, len(g.frames))
+	}
+	if !g.ovr {
+		g.ovr, g.userCur = true, g.cur
+	}
+	g.cur = n - 1
+	a.pix = pixelCache{seq: a.imgSeq, img: g.frames[g.cur], orient: 1}
+	return nil
+}
+
+// keepShown puts g.cur on the frame the user has on the screen after the frames were changed (the same picture, wherever it is now), or follows the change (the
+// new frame) for the user's own buttons. old is the user's frame before, oldFrame its picture, follow the index to go to.
+func (g *gifSession) keepShown(old int, oldFrame *image.NRGBA, follow bool, to int) {
+	g.ovr = false
+	if follow {
+		g.cur = min(max(to, 0), len(g.frames)-1)
+		return
+	}
+	for i, f := range g.frames {
+		if f == oldFrame {
+			g.cur = i
+			return
+		}
+	}
+	g.cur = min(old, len(g.frames)-1)
 }

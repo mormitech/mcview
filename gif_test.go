@@ -116,10 +116,10 @@ func TestAnimationFromAPicture(t *testing.T) {
 	if _, err := a.GifStart(0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := a.GifDuplicateFrame(0, 0, 1); err != nil { // a copy of frame 1 as frame 2
+	if _, err := a.GifDuplicateFrame(0, 0, 1, true); err != nil { // a copy of frame 1 as frame 2
 		t.Fatal(err)
 	}
-	if _, err := a.GifAddFrame(0, true, -2); err != nil { // an empty one at the end
+	if _, err := a.GifAddFrame(0, true, -2, true); err != nil { // an empty one at the end
 		t.Fatal(err)
 	}
 	meta, _ := a.GifInfo()
@@ -129,7 +129,7 @@ func TestAnimationFromAPicture(t *testing.T) {
 	if a.gifs.frames[1].NRGBAAt(1, 1).R != 255 || a.gifs.frames[2].NRGBAAt(1, 1).A != 0 {
 		t.Fatal("frame 2 is a copy, frame 3 is empty")
 	}
-	if _, err := a.GifMoveFrame(2, 0); err != nil {
+	if _, err := a.GifMoveFrame(2, 0, true); err != nil {
 		t.Fatal(err)
 	}
 	if a.gifs.frames[0].NRGBAAt(1, 1).A != 0 || a.gifs.cur != 0 {
@@ -138,7 +138,7 @@ func TestAnimationFromAPicture(t *testing.T) {
 	if _, err := a.GifSetDelay(-1, 250); err != nil || a.gifs.delays[2] != 250 {
 		t.Fatalf("delay: %v %v", err, a.gifs.delays)
 	}
-	if _, err := a.GifDeleteFrame(0); err != nil || len(a.gifs.frames) != 2 {
+	if _, err := a.GifDeleteFrame(0, true); err != nil || len(a.gifs.frames) != 2 {
 		t.Fatalf("delete: %v", err)
 	}
 	// every step has its frames: undo goes back through them
@@ -171,5 +171,39 @@ func TestAnimationFromAPicture(t *testing.T) {
 	}
 	if g, err := gif.DecodeAll(&buf); err != nil || len(g.Image) != 3 {
 		t.Fatalf("the animation: %v", err)
+	}
+}
+
+func TestChatEditsAnotherFrameWithoutMovingTheUser(t *testing.T) {
+	a := &App{}
+	img := image.NewNRGBA(image.Rect(0, 0, 6, 6))
+	if err := a.setPixelsEmit(img, "", false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.GifAddFrame(0, false, -2, false); err != nil { // the user stays on frame 1
+		t.Fatal(err)
+	}
+	if m, _ := a.GifInfo(); m.Frames != 2 || m.Cur != 0 {
+		t.Fatalf("the user's frame did not move: %+v", m)
+	}
+	if err := a.GifTarget(2); err != nil { // a tool works on frame 2
+		t.Fatal(err)
+	}
+	a.mu.Lock()
+	edited := image.NewNRGBA(image.Rect(0, 0, 6, 6))
+	edited.SetNRGBA(2, 2, color.NRGBA{9, 9, 9, 255})
+	a.gifNoteEditLocked(edited, "")
+	a.mu.Unlock()
+	if m, _ := a.GifInfo(); m.Cur != 0 {
+		t.Fatalf("the player is still on frame 1: %+v", m)
+	}
+	if a.gifs.frames[1] != edited || a.gifs.frames[0] == edited {
+		t.Fatal("the edit is in frame 2")
+	}
+	if a.clip == image.Image(edited) {
+		t.Fatal("the picture of the window is the user's frame, not the edited one")
+	}
+	if err := a.GifTarget(0); err != nil || a.gifs.cur != 0 {
+		t.Fatalf("back on the user's frame: %v", err)
 	}
 }

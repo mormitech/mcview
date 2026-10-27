@@ -184,9 +184,10 @@ func (a *App) originalPixels(turn int) (*image.NRGBA, error) {
 
 // chatHub is the MCP server of one window. do gives a command to the window and returns its answer (an "error" in the answer is an error here).
 type chatHub struct {
-	token string
-	do    func(cmd map[string]any) (map[string]any, error)
-	mu    sync.Mutex // one tool call at a time works on the window
+	token  string
+	do     func(cmd map[string]any) (map[string]any, error)
+	mu     sync.Mutex // one tool call at a time works on the window
+	framed bool       // the tool that runs works on a frame it was asked for (see applyFrame)
 }
 
 func (h *chatHub) handler() http.Handler {
@@ -651,6 +652,12 @@ func (h *chatHub) callTool(name string, args map[string]any) ([]any, error) {
 	if name == "window_info" {
 		return h.windowInfo()
 	}
+	h.framed = false
+	defer func() {
+		if h.framed { // the frame the user has on the screen was not moved by a tool that worked on another one
+			_, _ = h.window(map[string]any{"cmd": "gifframe", "frame": 0})
+		}
+	}()
 	if err := h.applyFrame(name, args); err != nil {
 		return nil, err
 	}

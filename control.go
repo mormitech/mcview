@@ -285,9 +285,8 @@ func (c *control) do(m map[string]any) (map[string]any, error) {
 		}
 		return map[string]any{"ok": true, "animation": true, "frames": meta.Frames, "frame": meta.Cur + 1, "delays_ms": meta.Delays}, nil
 	case "gifframe": // the frame that the tools work on from now on: {frame} (1 based)
-		n := num(m, "frame", 0)
-		if err := a.SetGifFrame(n - 1); err != nil {
-			return nil, fmt.Errorf("frame %d: %v", n, err)
+		if err := a.GifTarget(num(m, "frame", 0)); err != nil {
+			return nil, err
 		}
 		return map[string]any{"ok": true}, nil
 	case "gifsheet": // all frames in one picture

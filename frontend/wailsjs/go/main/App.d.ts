@@ -54,23 +54,25 @@ export function ExportFramesDialog():Promise<string>;
 
 export function FloodFill(arg1:number,arg2:number,arg3:number,arg4:string,arg5:number):Promise<main.ImageInfo>;
 
-export function GifAddFrame(arg1:number,arg2:boolean,arg3:number):Promise<main.ImageInfo>;
+export function GifAddFrame(arg1:number,arg2:boolean,arg3:number,arg4:boolean):Promise<main.ImageInfo>;
 
-export function GifDeleteFrame(arg1:number):Promise<main.ImageInfo>;
+export function GifDeleteFrame(arg1:number,arg2:boolean):Promise<main.ImageInfo>;
 
-export function GifDuplicateFrame(arg1:number,arg2:number,arg3:number):Promise<main.ImageInfo>;
+export function GifDuplicateFrame(arg1:number,arg2:number,arg3:number,arg4:boolean):Promise<main.ImageInfo>;
 
 export function GifFrame(arg1:number):Promise<string>;
 
 export function GifInfo():Promise<main.GifMeta>;
 
-export function GifMoveFrame(arg1:number,arg2:number):Promise<main.ImageInfo>;
+export function GifMoveFrame(arg1:number,arg2:number,arg3:boolean):Promise<main.ImageInfo>;
 
 export function GifSetDelay(arg1:number,arg2:number):Promise<main.ImageInfo>;
 
 export function GifSheet(arg1:number):Promise<Record<string, any>>;
 
 export function GifStart(arg1:number):Promise<main.ImageInfo>;
+
+export function GifTarget(arg1:number):Promise<void>;
 
 export function HasTransparency():Promise<boolean>;
 

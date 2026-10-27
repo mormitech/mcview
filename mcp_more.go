@@ -56,14 +56,14 @@ func moreTools() []toolDef {
 			"path": prop("string", "full path of the file"), "overwrite": prop("boolean", "replace the file if it exists"), "quality": prop("integer", "JPEG quality 1 to 100 (default 95)")})},
 		{"print_selection", "Prints what the user selected in the window (or the whole picture when nothing is selected) on the default printer. Only do this when the user asked for it: it uses paper.", schema(nil, map[string]any{})},
 		{"animation_start", "Makes the picture the first frame of an animation (100 ms per frame). The window shows a frame player then. Only needed to say so explicitly: add_frame starts the animation by itself. To make an animated GIF: draw the first frame, then add_frame and draw what changes in it, again and again; the user plays it in the window and saves it as a GIF when it is good. Pictures up to 2048 pixels on a side, and the frames together up to about 25 million pixels.", schema(nil, map[string]any{})},
-		{"add_frame", "Adds a frame to the animation (it starts one when the picture is not one yet) and makes it the frame you draw on next. By default it is a copy of the last frame, added at the end: draw what changes in it. blank gives an empty (transparent) frame instead, copy_of a copy of another frame, after puts it after that frame number instead of at the end. One step of the history. Frame numbers start at 1.", schema(nil, map[string]any{
+		{"add_frame", "Adds a frame to the animation (it starts one when the picture is not one yet). By default it is a copy of the last frame, added at the end; the answer gives its number: draw what changes in it with the tools' frame parameter set to that number. The frame the user has on the screen does not change. blank gives an empty (transparent) frame instead, copy_of a copy of another frame, after puts it after that frame number instead of at the end. One step of the history. Frame numbers start at 1.", schema(nil, map[string]any{
 			"blank": prop("boolean", "an empty, transparent frame instead of a copy"), "copy_of": prop("integer", "the number of the frame to copy (default: the one it follows)"), "after": prop("integer", "the number of the frame it comes after (default: the last)")})},
-		{"duplicate_frame", "Puts a copy of one frame in another place of the animation: source is the number of the frame to copy, target the number the copy has afterwards (the frames from there on move up by one; a target one more than the number of frames puts it at the end). It is the frame you draw on next. One step of the history. Frame numbers start at 1.", schema([]string{"source", "target"}, map[string]any{
+		{"duplicate_frame", "Puts a copy of one frame in another place of the animation: source is the number of the frame to copy, target the number the copy has afterwards (the frames from there on move up by one; a target one more than the number of frames puts it at the end). The frame the user has on the screen does not change. One step of the history. Frame numbers start at 1.", schema([]string{"source", "target"}, map[string]any{
 			"source": prop("integer", "the number of the frame to copy"), "target": prop("integer", "the number the copy gets")})},
 		{"delete_frame", "Takes a frame out of the animation. The animation keeps at least one frame. One step of the history.", schema([]string{"frame"}, map[string]any{"frame": prop("integer", "the number of the frame (the first is 1)")})},
 		{"move_frame", "Moves a frame to another place in the animation: from and to are frame numbers (the first is 1). One step of the history.", schema([]string{"from", "to"}, map[string]any{"from": prop("integer", "the number of the frame to move"), "to": prop("integer", "the number it has afterwards")})},
 		{"set_frame_delay", "Sets how long a frame is shown, in milliseconds (20 to 60000; 100 is 10 frames a second). Without a frame number, all frames get the delay. One step of the history.", schema([]string{"ms"}, map[string]any{"ms": prop("integer", "milliseconds"), "frame": prop("integer", "the number of the frame (default: all)")})},
-		{"animation_info", "Tells whether the picture is an animation, how many frames it has, which frame is shown to the user, and the delay of each frame. Does not change anything.", schema(nil, map[string]any{})},
+		{"animation_info", "Tells whether the picture is an animation, how many frames it has, which frame the user has on the screen (only needed when the user asks about the current frame or what they see), and the delay of each frame. Does not change anything.", schema(nil, map[string]any{})},
 		{"frames_sheet", "Returns all frames of the animation in one picture (rows, left to right and top to bottom in the order of the animation, a magenta grid between them) so that you can check the whole motion at once. Does not change anything.", schema(nil, map[string]any{"max": prop("integer", "longest side of the sheet in pixels (default 1568)")})},
 		{"diff_original", "Compares the picture as it is now with the file on the disk: whether it changed, how many pixels, the box of the change and how strong it is on average. Use it to check that an edit touched only what you meant. Does not change the picture.", schema(nil, map[string]any{})},
 		{"list_folder", "Lists the pictures in the folder of the open file, by file name (not the path), and where the current one is among them. Does not change anything.", schema(nil, map[string]any{})},
@@ -356,7 +356,7 @@ func (h *chatHub) animationTool(name string, args map[string]any) ([]any, error)
 		if blank || frames == 0 && false {
 			what = "an empty frame"
 		}
-		return []any{textContent(fmt.Sprintf("Frame %d added (%s). The animation has %d frames; frame %d is the one you draw on next.", after+1, what, n+1, after+1))}, nil
+		return []any{textContent(fmt.Sprintf("Frame %d added (%s). The animation has %d frames. Draw on it with the frame parameter set to %d.", after+1, what, n+1, after+1))}, nil
 	case "duplicate_frame":
 		v, err := ints(args, "source", "target")
 		if err != nil {
@@ -365,7 +365,7 @@ func (h *chatHub) animationTool(name string, args map[string]any) ([]any, error)
 		if err := gif(map[string]any{"op": "duplicate", "source": v[0] - 1, "target": v[1] - 1}); err != nil {
 			return nil, err
 		}
-		return []any{textContent(fmt.Sprintf("Frame %d was copied: the copy is frame %d now, and the one you draw on next", v[0], v[1]))}, nil
+		return []any{textContent(fmt.Sprintf("Frame %d was copied: the copy is frame %d now (give that number as the frame parameter to draw on it)", v[0], v[1]))}, nil
 	case "delete_frame":
 		f, err := intArg(args, "frame")
 		if err != nil {
@@ -418,8 +418,11 @@ func (h *chatHub) applyFrame(name string, args map[string]any) error {
 	if err != nil {
 		return fmt.Errorf("\"frame\" is %v: give the number of the frame (the first is 1)", v)
 	}
-	_, err = h.window(map[string]any{"cmd": "gifframe", "frame": n})
-	return err
+	if _, err = h.window(map[string]any{"cmd": "gifframe", "frame": n}); err != nil {
+		return err
+	}
+	h.framed = true // (callTool puts the user's frame back when the tool is done)
+	return nil
 }
 
 // withFrameParam adds the optional frame number to the tools that read or change pixels.
@@ -432,7 +435,7 @@ func withFrameParam(tools []toolDef) []toolDef {
 			continue
 		}
 		if props, ok := tools[i].InputSchema["properties"].(map[string]any); ok {
-			props["frame"] = prop("integer", "The frame of an animation to look at or change (the first is 1); without it, the frame that the user has shown. Only for an animation.")
+			props["frame"] = prop("integer", "The frame of an animation to look at or change (the first is 1). Always give it when you work on an animation: without it the tool works on the frame that the user has on the screen. It does not move the user's player.")
 		}
 	}
 	return tools
