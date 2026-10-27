@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.50.0 – 2026-10-27
+
+### Added
+- Making animations. Image → Start Animation makes the picture frame 1 of an animation; Add Frame (a copy of the frame that is shown, after it), Delete Frame and Export Frames as PNG… (every frame as a numbered PNG file) are in the menu, and the frame player has Add and Delete buttons and a field for the milliseconds each frame is shown. Every change of the frames is a step of the history. Save As of the animation offers the whole GIF or the frame that is shown.
+- The chat's Claude can make an animated GIF: new tools `animation_start`, `add_frame`, `duplicate_frame` (what to copy and where it goes), `delete_frame`, `move_frame`, `set_frame_delay`, `animation_info` and `frames_sheet` (all frames in one picture, to check the motion), and every tool that reads or changes pixels takes an optional `frame` number (the first is 1), so it can work on any frame without moving the user's player. Claude leaves the animation in the window; the user saves it.
+
 ## 0.49.5 – 2026-10-27
 
 ### Changed

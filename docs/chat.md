@@ -42,6 +42,7 @@ and nothing is written to a file until `save_image`. The tools change the pictur
 | `resize_image`, `rotate_image`, `flip_image` | scale the picture (smooth, sharp or whole pixels), turn it by any angle, mirror it |
 | `place_image` | lay a picture from a file over this one, scaled and see-through if wanted |
 | `draw_polygon`, `draw_callout` | a closed polygon (outline and/or fill), a speech bubble with a tail; `draw_rect` has rounded corners, and the shapes can be see-through and have a shadow |
+| `animation_start`, `add_frame`, `duplicate_frame`, `delete_frame`, `move_frame`, `set_frame_delay`, `animation_info`, `frames_sheet` | make an animated GIF: frames are added (a copy of the last one by default) and drawn with the usual tools, which take an optional `frame` number; the user plays it in the frame player and saves it |
 | `clear_selection` | fill the user's selection (or a box, polygon, mask) with the window's second color, like Delete in Paint |
 | `cut_selection`, `crop_to_selection`, `save_selection`, `print_selection` | the right-click menu of a selection, for Claude: cut it, crop the picture to it, save only it to a file, print it |
 | `diff_original` | what changed against the file: pixels, box, strength |

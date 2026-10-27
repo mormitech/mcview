@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent, GifStart, GifAddFrame, GifDuplicateFrame, GifDeleteFrame, GifMoveFrame, GifSetDelay, ExportFramesDialog} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -312,6 +312,7 @@ async function gifShowFrame(i) {
   const url = await gifFrameURL(i);
   if (!gif.meta || !gif.shown) return;
   gif.i = i; pic.src = url; $('gif-count').textContent = `${i + 1} / ${gif.meta.frames}`;
+  if (document.activeElement !== $('gif-ms')) $('gif-ms').value = gif.meta.delays[i] || 100; // (the delay of the frame that is shown)
 }
 function gifTick() {
   if (!gif.playing) return;
@@ -351,6 +352,28 @@ function gifStepAny(d) { // (also outside edit mode: the player comes up, paused
   gifStepping = gifStepping.then(async () => { if (!gif.shown) await gifPresent(false, true); await gifStep(d); }); // (one after the other: the wheel comes in bursts)
 }
 
+// A change of the frames (the player's buttons, the Image menu and Claude's tools): the answer of Go is the picture, and the player follows it.
+async function gifDo(m) {
+  gifStop();
+  switch (m.op) {
+    case 'start': return GifStart(view.rot);
+    case 'add': return GifAddFrame(view.rot, !!m.blank, m.after ?? -1);
+    case 'duplicate': return GifDuplicateFrame(view.rot, m.source, m.target);
+    case 'delete': return GifDeleteFrame(m.frame ?? -1);
+    case 'move': return GifMoveFrame(m.from, m.to);
+    case 'delay': return GifSetDelay(m.frame ?? -1, m.ms);
+  }
+  throw new Error(`no animation operation "${m.op}"`);
+}
+async function gifEdit(m, label) { // the same, for the user: one step of the history
+  await commitText();
+  try {
+    if (view.fl) await flushFloat({clear: true});
+    const info = await gifDo(m);
+    await showImage(info, {keepView: true, rot: 0}); commit(label);
+  } catch (e) { problem(errText(e)); }
+}
+
 function gifSpace() { // Space: play or pause an animated GIF (outside edit mode the first press brings the player, paused)
   if (!gif.meta || !pic.naturalWidth) return;
   if (!gif.shown) gifPresent(false, true); else gifSetPlaying(!gif.playing);
@@ -375,7 +398,7 @@ async function gifSetup(info) { // a picture was shown
   try {
     const meta = await GifInfo();
     if (view.state !== info.state) return; // (another picture was asked for meanwhile)
-    if (!meta.frames || meta.frames < 2) { gifHide(); gif.meta = null; return; }
+    if (!meta.frames) { gifHide(); gif.meta = null; return; }
     gif.meta = meta; gif.url = info.url;
     if (editOn() || meta.edited) await gifPresent(meta.fresh || (!gif.shown && !meta.edited)); else gifHide();
   } catch { gifHide(); gif.meta = null; }
@@ -528,6 +551,10 @@ async function rotateByAngle() {
 // The Image menu: turn (a quarter, as the R key does) or flip the whole picture, or turn it by any angle.
 async function imageMenuAction(name) {
   if (!pic.naturalWidth) return;
+  if (name === 'anim-start') { gifEdit({op: 'start'}, 'animation started'); return; }
+  if (name === 'anim-add') { gifEdit({op: 'duplicate', source: gif.meta ? gif.i : 0, target: (gif.meta ? gif.i : 0) + 1}, 'frame added'); return; }
+  if (name === 'anim-delete') { if (gif.meta) gifEdit({op: 'delete', frame: gif.i}, 'frame deleted'); return; }
+  if (name === 'anim-export') { ExportFramesDialog().then((note) => { if (note) problem(note, false, 3500); }).catch((e) => problem(errText(e))); return; }
   if (name === 'rotate-angle') { rotateByAngle(); return; }
   await commitText();
   try {
@@ -1939,6 +1966,9 @@ function startViewer() {
   $('new-pic').onclick = (ev) => createImage(ev.shiftKey);
   $('scan-pic').onclick = () => ScanImage().catch((e) => problem(errText(e)));
   initTips();
+  $('gif-add').onclick = () => { if (gif.meta) gifEdit({op: 'duplicate', source: gif.i, target: gif.i + 1}, 'frame added'); };
+  $('gif-del').onclick = () => { if (gif.meta && gif.meta.frames > 1) gifEdit({op: 'delete', frame: gif.i}, 'frame deleted'); };
+  $('gif-ms').onchange = () => { const v = Math.round(+$('gif-ms').value); if (gif.meta && v >= 20) gifEdit({op: 'delay', frame: -1, ms: v}, 'frame delay'); };
   $('gif-prev').onclick = () => gifStep(-1); $('gif-next').onclick = () => gifStep(1); $('gif-play').onclick = () => gifSetPlaying(!gif.playing);
   $('stage').addEventListener('pointerdown', () => { if (gif.playing) gifSetPlaying(false); }, true); // (a tool is used on the frame that is shown)
   $('discard-img').onclick = discardChanges;
@@ -2219,6 +2249,11 @@ async function ctlRun(m) {
       await commitText(); if (view.fl) await flushFloat({clear: true});
       const spec = {...m}; delete spec.cmd;
       const info = await Transform(view.rot, JSON.stringify(spec)); await showImage(info, {rot: 0}); commit(`${m.op}${m.op === 'place' ? 'd picture' : ''}`); return ctlState();
+    }
+    case 'gif': { // the frames of an animation (1 based numbers are made 0 based by the tools): {op: start|add|duplicate|delete|move|delay, …}
+      await commitText(); if (view.fl) await flushFloat({clear: true});
+      const info = await gifDo(m);
+      await showImage(info, {keepView: true, rot: 0}); commit(`animation: ${m.op}`); await ctlSettle(); return ctlState();
     }
     case 'wait': await ctl.sleep(m.ms ?? 200); return {ok: true};
     case 'menu': { const f = CTL_MENU[m.name]; if (!f) throw new Error(`no menu item "${m.name}": ${Object.keys(CTL_MENU).join(', ')}`); await f(); await ctlSettle(); return {ok: true}; }

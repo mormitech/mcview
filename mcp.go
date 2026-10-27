@@ -455,7 +455,7 @@ func retouchCmd(op string, args map[string]any) (map[string]any, string, error) 
 	return cmd, what, nil
 }
 
-func mcpTools() []toolDef { return append(baseTools(), moreTools()...) }
+func mcpTools() []toolDef { return withFrameParam(append(baseTools(), moreTools()...)) }
 
 func baseTools() []toolDef {
 	return []toolDef{
@@ -650,6 +650,9 @@ func (h *chatHub) callTool(name string, args map[string]any) ([]any, error) {
 	defer h.mu.Unlock()
 	if name == "window_info" {
 		return h.windowInfo()
+	}
+	if err := h.applyFrame(name, args); err != nil {
+		return nil, err
 	}
 	if content, handled, err := h.moreCall(name, args); handled {
 		return content, err

@@ -55,6 +55,16 @@ func moreTools() []toolDef {
 		{"save_selection", "Saves only what the user selected in the window, as a picture of its own, to a file (the type is the one the name ends with: png, jpg, gif, bmp, tif); the window keeps its picture. Fails when nothing is selected, and will not replace a file that exists unless overwrite is true.", schema([]string{"path"}, map[string]any{
 			"path": prop("string", "full path of the file"), "overwrite": prop("boolean", "replace the file if it exists"), "quality": prop("integer", "JPEG quality 1 to 100 (default 95)")})},
 		{"print_selection", "Prints what the user selected in the window (or the whole picture when nothing is selected) on the default printer. Only do this when the user asked for it: it uses paper.", schema(nil, map[string]any{})},
+		{"animation_start", "Makes the picture the first frame of an animation (100 ms per frame). The window shows a frame player then. Only needed to say so explicitly: add_frame starts the animation by itself. To make an animated GIF: draw the first frame, then add_frame and draw what changes in it, again and again; the user plays it in the window and saves it as a GIF when it is good. Pictures up to 2048 pixels on a side, and the frames together up to about 25 million pixels.", schema(nil, map[string]any{})},
+		{"add_frame", "Adds a frame to the animation (it starts one when the picture is not one yet) and makes it the frame you draw on next. By default it is a copy of the last frame, added at the end: draw what changes in it. blank gives an empty (transparent) frame instead, copy_of a copy of another frame, after puts it after that frame number instead of at the end. One step of the history. Frame numbers start at 1.", schema(nil, map[string]any{
+			"blank": prop("boolean", "an empty, transparent frame instead of a copy"), "copy_of": prop("integer", "the number of the frame to copy (default: the one it follows)"), "after": prop("integer", "the number of the frame it comes after (default: the last)")})},
+		{"duplicate_frame", "Puts a copy of one frame in another place of the animation: source is the number of the frame to copy, target the number the copy has afterwards (the frames from there on move up by one; a target one more than the number of frames puts it at the end). It is the frame you draw on next. One step of the history. Frame numbers start at 1.", schema([]string{"source", "target"}, map[string]any{
+			"source": prop("integer", "the number of the frame to copy"), "target": prop("integer", "the number the copy gets")})},
+		{"delete_frame", "Takes a frame out of the animation. The animation keeps at least one frame. One step of the history.", schema([]string{"frame"}, map[string]any{"frame": prop("integer", "the number of the frame (the first is 1)")})},
+		{"move_frame", "Moves a frame to another place in the animation: from and to are frame numbers (the first is 1). One step of the history.", schema([]string{"from", "to"}, map[string]any{"from": prop("integer", "the number of the frame to move"), "to": prop("integer", "the number it has afterwards")})},
+		{"set_frame_delay", "Sets how long a frame is shown, in milliseconds (20 to 60000; 100 is 10 frames a second). Without a frame number, all frames get the delay. One step of the history.", schema([]string{"ms"}, map[string]any{"ms": prop("integer", "milliseconds"), "frame": prop("integer", "the number of the frame (default: all)")})},
+		{"animation_info", "Tells whether the picture is an animation, how many frames it has, which frame is shown to the user, and the delay of each frame. Does not change anything.", schema(nil, map[string]any{})},
+		{"frames_sheet", "Returns all frames of the animation in one picture (rows, left to right and top to bottom in the order of the animation, a magenta grid between them) so that you can check the whole motion at once. Does not change anything.", schema(nil, map[string]any{"max": prop("integer", "longest side of the sheet in pixels (default 1568)")})},
 		{"diff_original", "Compares the picture as it is now with the file on the disk: whether it changed, how many pixels, the box of the change and how strong it is on average. Use it to check that an edit touched only what you meant. Does not change the picture.", schema(nil, map[string]any{})},
 		{"list_folder", "Lists the pictures in the folder of the open file, by file name (not the path), and where the current one is among them. Does not change anything.", schema(nil, map[string]any{})},
 		{"list_fonts", "Lists font families that add_text can be asked for (the common ones, and the names of the font files found on this computer). Does not change anything.", schema(nil, map[string]any{})},
@@ -95,6 +105,8 @@ func (h *chatHub) moreCall(name string, args map[string]any) (content []any, han
 			}
 			content = []any{textContent(note)}
 		}
+	case "animation_start", "add_frame", "duplicate_frame", "delete_frame", "move_frame", "set_frame_delay", "animation_info", "frames_sheet":
+		content, err = h.animationTool(name, args)
 	case "diff_original", "list_folder", "list_fonts":
 		cmd := map[string]string{"diff_original": "diff", "list_folder": "folder", "list_fonts": "fonts"}[name]
 		var res map[string]any
@@ -265,4 +277,163 @@ func addShapeExtras(cmds []map[string]any, args map[string]any) {
 			}
 		}
 	}
+}
+
+// animationTool is the tools that make an animation: frames are numbered from 1 here, and every drawing tool takes a frame number (see applyFrame).
+func (h *chatHub) animationTool(name string, args map[string]any) ([]any, error) {
+	info := func() (frames, shown int, delays []any, err error) {
+		res, err := h.window(map[string]any{"cmd": "gifinfo"})
+		if err != nil {
+			return 0, 0, nil, err
+		}
+		if res["animation"] != true {
+			return 0, 0, nil, nil
+		}
+		f, _ := res["frames"].(float64)
+		c, _ := res["frame"].(float64)
+		d, _ := res["delays_ms"].([]any)
+		return int(f), int(c), d, nil
+	}
+	gif := func(cmd map[string]any) error {
+		cmd["cmd"] = "gif"
+		_, err := h.window(cmd)
+		return err
+	}
+	switch name {
+	case "animation_info":
+		frames, shown, delays, err := info()
+		if err != nil {
+			return nil, err
+		}
+		if frames == 0 {
+			return []any{jsonText(map[string]any{"animation": false})}, nil
+		}
+		return []any{jsonText(map[string]any{"animation": true, "frames": frames, "frame_shown": shown, "delays_ms": delays})}, nil
+	case "frames_sheet":
+		res, err := h.window(map[string]any{"cmd": "gifsheet", "max": args["max"]})
+		if err != nil {
+			return nil, err
+		}
+		data, _ := res["png"].(string)
+		return []any{map[string]any{"type": "image", "data": data, "mimeType": "image/png"},
+			textContent(fmt.Sprintf("%v frames, %v columns × %v rows, in the order of the animation (left to right, top to bottom); each frame is %v × %v pixels, enlarged %v×", res["frames"], res["cols"], res["rows"], res["w"], res["h"], res["zoom"]))}, nil
+	case "animation_start":
+		if err := gif(map[string]any{"op": "start"}); err != nil {
+			return nil, err
+		}
+		return []any{textContent("The picture is frame 1 of an animation now (100 ms per frame). add_frame adds the next frames.")}, nil
+	case "add_frame":
+		frames, _, _, err := info()
+		if err != nil {
+			return nil, err
+		}
+		n := max(frames, 1)
+		after := n
+		if _, ok := args["after"]; ok {
+			if after, err = intArg(args, "after"); err != nil {
+				return nil, err
+			}
+		}
+		if after < 1 || after > n {
+			return nil, fmt.Errorf("there is no frame %d (the animation has %d)", after, n)
+		}
+		blank := args["blank"] == true
+		from := after
+		if _, ok := args["copy_of"]; ok {
+			if from, err = intArg(args, "copy_of"); err != nil {
+				return nil, err
+			}
+		}
+		if !blank && frames > 0 { // the copy is of the frame it follows (or the one asked for)
+			if _, err := h.window(map[string]any{"cmd": "gifframe", "frame": from}); err != nil {
+				return nil, err
+			}
+		}
+		if err := gif(map[string]any{"op": "add", "blank": blank, "after": after - 1}); err != nil {
+			return nil, err
+		}
+		what := fmt.Sprintf("a copy of frame %d", from)
+		if blank || frames == 0 && false {
+			what = "an empty frame"
+		}
+		return []any{textContent(fmt.Sprintf("Frame %d added (%s). The animation has %d frames; frame %d is the one you draw on next.", after+1, what, n+1, after+1))}, nil
+	case "duplicate_frame":
+		v, err := ints(args, "source", "target")
+		if err != nil {
+			return nil, err
+		}
+		if err := gif(map[string]any{"op": "duplicate", "source": v[0] - 1, "target": v[1] - 1}); err != nil {
+			return nil, err
+		}
+		return []any{textContent(fmt.Sprintf("Frame %d was copied: the copy is frame %d now, and the one you draw on next", v[0], v[1]))}, nil
+	case "delete_frame":
+		f, err := intArg(args, "frame")
+		if err != nil {
+			return nil, err
+		}
+		if err := gif(map[string]any{"op": "delete", "frame": f - 1}); err != nil {
+			return nil, err
+		}
+		return []any{textContent(fmt.Sprintf("Frame %d is gone", f))}, nil
+	case "move_frame":
+		v, err := ints(args, "from", "to")
+		if err != nil {
+			return nil, err
+		}
+		if err := gif(map[string]any{"op": "move", "from": v[0] - 1, "to": v[1] - 1}); err != nil {
+			return nil, err
+		}
+		return []any{textContent(fmt.Sprintf("Frame %d is frame %d now", v[0], v[1]))}, nil
+	case "set_frame_delay":
+		ms, err := intArg(args, "ms")
+		if err != nil {
+			return nil, err
+		}
+		f := 0
+		if _, ok := args["frame"]; ok {
+			if f, err = intArg(args, "frame"); err != nil {
+				return nil, err
+			}
+		}
+		if err := gif(map[string]any{"op": "delay", "frame": f - 1, "ms": ms}); err != nil {
+			return nil, err
+		}
+		return []any{textContent("Delay set")}, nil
+	}
+	return nil, fmt.Errorf("unknown tool %s", name)
+}
+
+// applyFrame lets every tool that works on the picture take a frame number (the first is 1): the frame is made the one the tools work on, without the user's player
+// being told to go anywhere. It is for an animation only.
+func (h *chatHub) applyFrame(name string, args map[string]any) error {
+	switch name {
+	case "add_frame", "duplicate_frame", "delete_frame", "move_frame", "set_frame_delay", "animation_info", "animation_start", "frames_sheet", "window_info", "history", "goto_step", "checkpoint", "goto_checkpoint":
+		return nil
+	}
+	v, ok := args["frame"]
+	if !ok {
+		return nil
+	}
+	n, err := intArg(args, "frame")
+	if err != nil {
+		return fmt.Errorf("\"frame\" is %v: give the number of the frame (the first is 1)", v)
+	}
+	_, err = h.window(map[string]any{"cmd": "gifframe", "frame": n})
+	return err
+}
+
+// withFrameParam adds the optional frame number to the tools that read or change pixels.
+func withFrameParam(tools []toolDef) []toolDef {
+	skip := map[string]bool{"window_info": true, "history": true, "goto_step": true, "checkpoint": true, "goto_checkpoint": true, "animation_start": true, "add_frame": true, "duplicate_frame": true, "delete_frame": true, "move_frame": true,
+		"set_frame_delay": true, "animation_info": true, "frames_sheet": true, "list_folder": true, "list_fonts": true, "open_image": true, "save_image": true, "new_image": true, "undo": true, "redo": true,
+		"discard_changes": true, "image_info": true, "diff_original": true, "show_area": true, "select_region": true, "copy": true, "paste": true, "save_selection": true, "print_selection": true}
+	for i := range tools {
+		if skip[tools[i].Name] {
+			continue
+		}
+		if props, ok := tools[i].InputSchema["properties"].(map[string]any); ok {
+			props["frame"] = prop("integer", "The frame of an animation to look at or change (the first is 1); without it, the frame that the user has shown. Only for an animation.")
+		}
+	}
+	return tools
 }

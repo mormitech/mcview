@@ -607,7 +607,7 @@ func TestToolNamesAreUnique(t *testing.T) {
 		}
 		seen[tl.Name] = true
 	}
-	for _, want := range []string{"apply_effect", "resize_image", "rotate_image", "flip_image", "place_image", "draw_polygon", "draw_callout", "clear_selection", "diff_original", "list_folder", "list_fonts", "goto_step", "checkpoint", "goto_checkpoint", "show_area", "image_info", "history", "discard_changes"} {
+	for _, want := range []string{"apply_effect", "resize_image", "rotate_image", "flip_image", "place_image", "draw_polygon", "draw_callout", "clear_selection", "diff_original", "list_folder", "list_fonts", "goto_step", "checkpoint", "goto_checkpoint", "show_area", "image_info", "history", "discard_changes", "animation_start", "add_frame", "duplicate_frame", "delete_frame", "move_frame", "set_frame_delay", "animation_info", "frames_sheet"} {
 		if !seen[want] {
 			t.Errorf("no tool %s", want)
 		}

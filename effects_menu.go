@@ -54,6 +54,11 @@ func imageMenu(app *App, m *menu.Menu) {
 	add("Rotate Left", "rotate-left")
 	add("Rotate by Angle…", "rotate-angle")
 	im.AddSeparator()
+	add("Start Animation", "anim-start") // the picture becomes frame 1 of an animation (the frame player)
+	add("Add Frame", "anim-add")         // a copy of the frame that is shown, after it
+	add("Delete Frame", "anim-delete")
+	add("Export Frames as PNG…", "anim-export")
+	im.AddSeparator()
 	add("Flip Horizontal", "flip-h")
 	add("Flip Vertical", "flip-v")
 }

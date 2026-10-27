@@ -105,3 +105,71 @@ func TestGifSaveAnimationAndFrame(t *testing.T) {
 		t.Fatal("the frame was not written")
 	}
 }
+
+func TestAnimationFromAPicture(t *testing.T) {
+	a := &App{}
+	img := image.NewNRGBA(image.Rect(0, 0, 8, 8))
+	img.SetNRGBA(1, 1, color.NRGBA{255, 0, 0, 255})
+	if err := a.setPixelsEmit(img, "", false); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.GifStart(0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.GifDuplicateFrame(0, 0, 1); err != nil { // a copy of frame 1 as frame 2
+		t.Fatal(err)
+	}
+	if _, err := a.GifAddFrame(0, true, -2); err != nil { // an empty one at the end
+		t.Fatal(err)
+	}
+	meta, _ := a.GifInfo()
+	if meta.Frames != 3 || meta.Cur != 2 || !meta.Edited {
+		t.Fatalf("%+v", meta)
+	}
+	if a.gifs.frames[1].NRGBAAt(1, 1).R != 255 || a.gifs.frames[2].NRGBAAt(1, 1).A != 0 {
+		t.Fatal("frame 2 is a copy, frame 3 is empty")
+	}
+	if _, err := a.GifMoveFrame(2, 0); err != nil {
+		t.Fatal(err)
+	}
+	if a.gifs.frames[0].NRGBAAt(1, 1).A != 0 || a.gifs.cur != 0 {
+		t.Fatal("the empty frame is first now")
+	}
+	if _, err := a.GifSetDelay(-1, 250); err != nil || a.gifs.delays[2] != 250 {
+		t.Fatalf("delay: %v %v", err, a.gifs.delays)
+	}
+	if _, err := a.GifDeleteFrame(0); err != nil || len(a.gifs.frames) != 2 {
+		t.Fatalf("delete: %v", err)
+	}
+	// every step has its frames: undo goes back through them
+	for n := len(a.gifs.frames); n < 5; n++ {
+		a.mu.Lock()
+		st := a.stateID
+		a.mu.Unlock()
+		if _, err := a.RestoreState(st - 1); err != nil {
+			t.Fatal(err)
+		}
+		break
+	}
+	if len(a.gifs.frames) != 3 {
+		t.Fatalf("undo of the delete brings the frame back: %d", len(a.gifs.frames))
+	}
+	dir := t.TempDir()
+	if _, err := a.ExportFrames(dir, "f"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "f-003.png")); err != nil {
+		t.Fatal("three frames are exported")
+	}
+	sheet, err := a.GifSheet(512)
+	if err != nil || sheet["frames"] != 3 {
+		t.Fatalf("sheet: %v %v", sheet, err)
+	}
+	var buf bytes.Buffer
+	if err := encodeGifAnimation(&buf, a.gifs.frames, a.gifs.delays); err != nil {
+		t.Fatal(err)
+	}
+	if g, err := gif.DecodeAll(&buf); err != nil || len(g.Image) != 3 {
+		t.Fatalf("the animation: %v", err)
+	}
+}

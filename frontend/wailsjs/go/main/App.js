@@ -94,8 +94,28 @@ export function ExitFullscreen() {
   return window['go']['main']['App']['ExitFullscreen']();
 }
 
+export function ExportFrames(arg1, arg2) {
+  return window['go']['main']['App']['ExportFrames'](arg1, arg2);
+}
+
+export function ExportFramesDialog() {
+  return window['go']['main']['App']['ExportFramesDialog']();
+}
+
 export function FloodFill(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FloodFill'](arg1, arg2, arg3, arg4, arg5);
+}
+
+export function GifAddFrame(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GifAddFrame'](arg1, arg2, arg3);
+}
+
+export function GifDeleteFrame(arg1) {
+  return window['go']['main']['App']['GifDeleteFrame'](arg1);
+}
+
+export function GifDuplicateFrame(arg1, arg2, arg3) {
+  return window['go']['main']['App']['GifDuplicateFrame'](arg1, arg2, arg3);
 }
 
 export function GifFrame(arg1) {
@@ -104,6 +124,22 @@ export function GifFrame(arg1) {
 
 export function GifInfo() {
   return window['go']['main']['App']['GifInfo']();
+}
+
+export function GifMoveFrame(arg1, arg2) {
+  return window['go']['main']['App']['GifMoveFrame'](arg1, arg2);
+}
+
+export function GifSetDelay(arg1, arg2) {
+  return window['go']['main']['App']['GifSetDelay'](arg1, arg2);
+}
+
+export function GifSheet(arg1) {
+  return window['go']['main']['App']['GifSheet'](arg1);
+}
+
+export function GifStart(arg1) {
+  return window['go']['main']['App']['GifStart'](arg1);
 }
 
 export function HasTransparency() {

@@ -100,6 +100,9 @@ func (a *App) setScan(img image.Image, file string) error {
 	}
 	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
 	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
+	a.mu.Lock()
+	a.gifs = nil // (a scan is a picture of its own)
+	a.mu.Unlock()
 	if err := a.setPixelsFull(n, file, true, false); err != nil {
 		return err
 	}

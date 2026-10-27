@@ -284,3 +284,6 @@ body.edit.gif-playing #tools { opacity:0; pointer-events:none; } body.edit.gif-p
 #gifbar #gif-play { background:var(--accent); color:var(--accent-text); } #gifbar #gif-play:hover { background:var(--accent); filter:brightness(1.1); }
 #gifbar #gif-play .i-play { display:none; fill:currentColor; } #gifbar.paused #gif-play .i-play { display:block; } #gifbar.paused #gif-play .i-pause { display:none; }
 #gifbar #gif-count { min-width:62px; text-align:center; font:600 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); }
+#gifbar #gif-add, #gifbar #gif-del { width:28px; height:28px; } #gifbar #gif-del:hover { color:var(--bad); }
+#gifbar #gif-speed { display:flex; align-items:center; gap:3px; margin-left:4px; font:600 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); }
+#gifbar #gif-ms { width:58px; padding:2px 4px; font:inherit; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:6px; }

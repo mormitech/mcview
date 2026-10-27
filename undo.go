@@ -16,8 +16,8 @@ type picState struct {
 	clip    image.Image
 	clipPNG []byte
 	workDir string
-	blank   bool           // a new blank picture that nothing was done to
-	gif     []*image.NRGBA // the frames of an animated GIF that is edited frame by frame (nil: as in the file)
+	blank   bool     // a new blank picture that nothing was done to
+	gif     *gifSnap // the frames of an animated GIF that is edited frame by frame (nil: as in the file)
 }
 
 // newStateLocked numbers the picture the window has now, App.mu held.
