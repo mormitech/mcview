@@ -21,7 +21,7 @@ button:hover { border-color:var(--accent); }
 #stage.checker { background:repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%) 0 0 / 16px 16px; }
 #stage { position:absolute; inset:0; overflow:hidden; touch-action:none; user-select:none; }
 
-#pic { position:absolute; left:0; top:0; transform-origin:50% 50%; max-width:none; image-rendering:auto; }
+#pic { position:absolute; left:0; top:0; transform-origin:50% 50%; max-width:none; image-rendering:auto; pointer-events:none; user-select:none; -webkit-user-drag:none; } /* (the stage takes all the mouse; macOS Live Text must not offer menus for text it reads in the picture) */
 #pic[hidden] { display:none; }
 #pic.turning { transition: transform .2s ease-out, width .2s ease-out, height .2s ease-out; }
 #sel { position:absolute; box-sizing:border-box; pointer-events:none; background:rgba(255,255,255,.24); transform:translateZ(0); } #sel[hidden] { display:none; } /* the selected part a little lighter; the border is #sel .ants */

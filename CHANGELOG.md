@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.43.1 – 2026-10-27
+
+### Fixed
+- On macOS a small dropdown with system actions (Add To Contacts, Look Up, Translate…) could appear over text that the system reads in the picture (Live Text); the picture no longer takes the pointer, so it does not.
+
 ## 0.43.0 – 2026-10-27
 
 ### Added
