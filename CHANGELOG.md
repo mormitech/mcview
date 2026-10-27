@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.49.4 – 2026-10-27
+
+### Added
+- Animated GIF: Shift+wheel stops the animation and steps through the frames (wheel up a frame back, wheel down a frame forward), and the up and down arrow keys do the same. At either end it goes round to the other end, so it never stops. Outside edit mode the first step brings the player up.
+
 ## 0.49.3 – 2026-10-27
 
 ### Fixed

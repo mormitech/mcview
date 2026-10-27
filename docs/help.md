@@ -193,6 +193,7 @@ Claude can use mcView's picture tools and web search and fetch, and nothing else
 | **+**, **-**, wheel | Zoom |
 | **Arrow keys**, **Backspace** | Next, previous picture |
 | **Space** | Play or pause an animated GIF |
+| **Up**, **Down**, **Shift+wheel** | An animated GIF: a frame back, a frame forward (round and round; the animation stops) |
 | **R**, **Shift+R** | Turn the view |
 | **F**, **Enter** | Full screen |
 | **S** | Save As |

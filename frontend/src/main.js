@@ -335,6 +335,21 @@ async function gifStep(d) {
   await gifShowFrame((gif.i + d + gif.meta.frames) % gif.meta.frames);
   await SetGifFrame(gif.i).catch(() => {});
 }
+// Shift+wheel (up: a frame back, down: a frame forward; the animation stops) and the up and down arrow keys step through the frames, round and round.
+let gifWheelAcc = 0;
+function gifWheel(ev) {
+  const d = Math.abs(ev.deltaY) >= Math.abs(ev.deltaX) ? ev.deltaY : ev.deltaX; // (Shift turns the wheel into a sideways one on a Mac)
+  if (!d) return;
+  if (Math.abs(d) >= 100) { gifWheelAcc = 0; gifStepAny(Math.sign(d)); return; } // a notch of a mouse wheel: one frame
+  gifWheelAcc += d; // a trackpad: a frame for every 40 pixels
+  while (Math.abs(gifWheelAcc) >= 40) { const s = Math.sign(gifWheelAcc); gifWheelAcc -= 40 * s; gifStepAny(s); }
+}
+let gifStepping = Promise.resolve();
+function gifStepAny(d) { // (also outside edit mode: the player comes up, paused)
+  if (!gif.meta || !pic.naturalWidth) return;
+  gifStepping = gifStepping.then(async () => { if (!gif.shown) await gifPresent(false, true); await gifStep(d); }); // (one after the other: the wheel comes in bursts)
+}
+
 function gifSpace() { // Space: play or pause an animated GIF (outside edit mode the first press brings the player, paused)
   if (!gif.meta || !pic.naturalWidth) return;
   if (!gif.shown) gifPresent(false, true); else gifSetPlaying(!gif.playing);
@@ -1612,6 +1627,7 @@ function panBy(dx, dy) {
 function onWheel(ev) {
   ev.preventDefault();
   if (!pic.naturalWidth) return;
+  if (ev.shiftKey && gif.meta) { gifWheel(ev); return; } // Shift+wheel steps through the frames of an animated GIF
   const r = $('stage').getBoundingClientRect(), now = performance.now();
   const zoom = () => zoomAt(Math.exp(-ev.deltaY * (ev.ctrlKey ? 0.01 : 0.0025)), ev.clientX - r.left, ev.clientY - r.top);
   if (ev.ctrlKey || !MAC) { zoom(); return; }
@@ -2113,6 +2129,7 @@ function startViewer() {
     if (!pic.naturalWidth) return;
     const b = stageSize();
     if (ev.key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
+    else if ((ev.key === 'ArrowUp' || ev.key === 'ArrowDown') && gif.meta) { ev.preventDefault(); gifStepAny(ev.key === 'ArrowDown' ? 1 : -1); } // an animated GIF: the frames
     else if (ev.key === 'ArrowRight') { ev.preventDefault(); step(1); }
     else if (ev.key === ' ') { ev.preventDefault(); gifSpace(); } // (Space does not go to the next picture: with an animated GIF it plays and pauses it)
     else if (ev.key === 'Backspace') { ev.preventDefault(); step(-1); }
