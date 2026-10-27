@@ -21,7 +21,7 @@
 mormiView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
 small editor in the way of Paint: select (a rectangle or free-hand), move, stretch and turn parts, draw, type, paste, apply effects, edit the frames of an animated GIF, save. Press **C** and you can also just tell Claude what to change in the picture. It is built the same way as
 [mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS frontend built with Vite.
-The manual is [docs/help.md](docs/help.md), also at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mormiView Help opens it).
+The manual is [docs/help.md](docs/help.md), also at [mormitech.com/mctools/mormiview/docs/](https://mormitech.com/mctools/mormiview/docs/) (Help → mormiView Help opens it).
 
 Below, **Ctrl** is **Cmd** on a Mac.
 

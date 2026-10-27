@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.2 – 2026-10-27
+
+### Changed
+
+- Help → mormiView Help opens the manual at its new address, mormitech.com/mctools/mormiview/docs/ (the old addresses still redirect).
+
 ## 0.51.1 – 2026-10-27
 
 ### Changed
