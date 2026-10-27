@@ -1074,7 +1074,7 @@ function updateHover(shift) {
   const hit = lastPointer && !view.drag ? edgeAt(lastPointer.x, lastPointer.y, true) : null;
   const was = JSON.stringify([view.hl, view.hlMode]);
   view.hl = hit;
-  view.hlMode = hit ? (shift || view.fl?.pasted ? 'content' : 'frame') : ''; // Shift: the selected part itself is moved or stretched; without it the frame
+  view.hlMode = hit ? (shift || view.fl ? 'content' : 'frame') : ''; // Shift: the selected part itself is moved or stretched; without it the frame
   const key = hit ? (hit.t ? 't' : hit.b ? 'b' : '') + (hit.l ? 'l' : hit.r ? 'r' : '') : '';
   $('stage').style.cursor = hit?.move || (view.hlMode === 'content' && key === 'tl') ? 'move' : key ? RESIZE_CURSORS[key] : '';
   if (was !== JSON.stringify([view.hl, view.hlMode])) renderSelection();
@@ -1089,7 +1089,7 @@ function clearSelection() {
 }
 
 // ---- Move and stretch the selected part, like Paint ----------------------------------------------------------
-// With Shift (or for a pasted picture), the edges of the selection stretch the part, and its inside (and its top left corner) moves it. The first time, the part is lifted: the
+// With Shift (or while the part floats: a pasted picture, or one that was lifted), the edges of the selection stretch the part, and its inside (and its top left corner) moves it. The first time, the part is lifted: the
 // place it came from is white, and the part is shown where it is dropped (#float, over the picture, which is not changed yet; #hole is the
 // white). It is worked out from the part as it was lifted, never from the result of the last drag, so stretching and going back loses
 // nothing. It stays like that, and can be dragged again, until the selection is let go (Esc, a click, a new selection, a picture that
@@ -1705,7 +1705,7 @@ function startViewer() {
     if (t === 'fill') { fillAt(ev); return; }
     if (t === 'pick') { pickColor(ev); return; }
     if (t === 'text') { startText(ev); return; }
-    if (view.sel && (ev.shiftKey || view.fl?.pasted)) { // Shift (in any mode), or a pasted picture: an edge of the selection stretches the selected part, its inside moves it (see above)
+    if (view.sel && (ev.shiftKey || view.fl)) { // a floating part (pasted, or lifted with Shift) moves and stretches with a plain drag; the picture itself only with Shift: an edge of the selection stretches the part, its inside moves it (see above)
       const edge = edgeAt(ev.clientX, ev.clientY, true);
       if (edge) { startTransform(ev, edge); return; }
     }

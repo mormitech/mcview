@@ -3,7 +3,7 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
-## 0.38.8 – 2026-10-27
+## 0.38.9 – 2026-10-27
 
 Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more tools for the chat's Claude, and a lot of polish.
 
@@ -15,7 +15,7 @@ Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more 
 - **Chat tools**: `apply_effect` (all the effects, and gradient, hue, gamma, levels, with strengths and a soft edge, on a box, polygon, mask or the user's selection), `clear_selection`, `resize_image`, `rotate_image` (any angle), `flip_image`, `place_image` (a picture from a file, scaled, see-through), `draw_polygon`, `draw_callout` (a speech bubble), rounded corners, opacity and shadows for shapes, `add_text` with alignment, wrapping, outline and shadow, `history` (the undo steps, by the user or Claude), `goto_step`, `checkpoint` and `goto_checkpoint`, `image_info` (file name without the folder, EXIF, how the colors are used, also for a part), `diff_original`, `list_folder`, `list_fonts`, `show_area`, and a JPEG quality for `save_image`.
 
 ### Changed
-- Dragging a selection no longer depends on edit mode: a plain drag of its inside or an edge moves or resizes just the frame, and **Shift** and drag moves or stretches the selected picture itself (the place it came from turns white). A pasted picture still moves without Shift.
+- Dragging a selection no longer depends on edit mode: a plain drag of its inside or an edge moves or resizes just the frame, and **Shift** and drag moves or stretches the selected picture itself (the place it came from turns white). A part that floats (a pasted picture, or one that was lifted with Shift) moves and stretches with a plain drag until it is applied.
 - A right click no longer drops the selection; only a drag with the right button draws a new polygon.
 - A copy to the clipboard no longer flashes the status bar: an orange clipboard appears at the end of the folder label for a moment, and the clipboard in the middle of the selection is orange too.
 - The status bar has two groups, the file on the left and the readout and buttons on the right; when the window is too narrow the right group goes to a second row of its own.
