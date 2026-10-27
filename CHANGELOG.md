@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.49.5 – 2026-10-27
+
+### Changed
+- An animated GIF that runs outside edit mode fades its player away in under a second; pausing, stepping (Space, arrows, Shift+wheel) brings it back.
+
 ## 0.49.4 – 2026-10-27
 
 ### Added

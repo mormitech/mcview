@@ -294,6 +294,7 @@ function offerReopen() {
 // The player shows the frames itself (the web view's own animation cannot be stopped or stepped). Paused (or stepped) on a frame, that frame is what the pixel tools
 // read and what an edit goes into: the animation stays, with that frame changed (undo and redo bring it back). Save As offers the whole animation or the frame.
 const gif = {meta: null, url: '', i: 0, playing: false, timer: 0, urls: new Map(), shown: false};
+function gifSyncFade() { $('gifbar').classList.toggle('fade', gif.playing && !editOn()); } // (running outside edit mode: the controls fade away; pausing or stepping brings them back)
 function gifStop() { clearTimeout(gif.timer); gif.timer = 0; gif.playing = false; document.body.classList.remove('gif-playing'); }
 function gifHide(restore = false) { // the player goes; with restore the picture is the file's own animation again (edit mode left), not when another picture has come
   gifStop();
@@ -324,7 +325,7 @@ function gifTick() {
 function gifSetPlaying(on) { // (the promise is for the pause: what is shown is then what the tools read)
   gifStop();
   gif.playing = on; document.body.classList.toggle('gif-playing', on); // (the tools are out of the way until a frame is chosen)
-  $('gifbar').classList.toggle('paused', !on);
+  $('gifbar').classList.toggle('paused', !on); gifSyncFade();
   $('gif-play').title = on ? 'Pause' : 'Play'; $('gif-play').setAttribute('aria-label', on ? 'Pause' : 'Play');
   if (on) { clearSelection(); polyClear(); gifTick(); return Promise.resolve(); } // (a selection belongs to one frame: playing lets it go)
   return SetGifFrame(gif.i).catch(() => {});
@@ -581,6 +582,7 @@ function setEdit(on) {
     view.ox = x0 - view.x; view.oy = y0 - view.y; draw(); startSpring();
   }
   updateHover(false);
+  gifSyncFade();
   if (on) gifOffer(); else if (!gif.meta?.edited) gifHide(true); // (an animated GIF: its frame player is for the edit mode, and for a GIF whose frames were changed)
 }
 
