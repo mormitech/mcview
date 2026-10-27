@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.11 – 2026-10-27
+
+### Added
+
+- macOS: the app holds a launcher, `Contents/Resources/bin/mormiview`, that the Homebrew cask links as the `mormiview` command, as other apps do (`code`, `subl`). It starts the app the way Finder does (so the system knows it), opens the pictures named after it, and gives the prompt back at once. Flags such as `--demo` are passed on.
+
 ## 0.51.10 – 2026-10-27
 
 ### Fixed

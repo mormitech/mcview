@@ -61,8 +61,8 @@ process.stdout.write(`cask "mormiview" do
     depends_on macos: :monterey
 
     app "mormiview.app"
-    # also a command, so mormiview (and mormiview picture.jpg) works in a terminal
-    binary "#{appdir}/mormiview.app/Contents/MacOS/mormiview"
+    # also a command, so mormiview picture.jpg works in a terminal (a launcher in the app, since 0.51.11; it starts the app the way Finder does)
+    binary "#{appdir}/mormiview.app/Contents/Resources/bin/mormiview"
 
     # The app is not notarized yet, so Gatekeeper would block its first launch; clear the quarantine flag it got
     # when it was downloaded. (A third-party tap may do this; the main homebrew-cask repository does not allow it.)
