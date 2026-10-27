@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.45.1 – 2026-10-27
+
+### Changed
+- Undo no longer goes back to the home screen: opening, scanning or pasting a picture from the home screen is not undone, so undoing a lot stops at the picture (going to the next or previous picture of the folder is still undone). Reopen last closed still brings back a closed picture.
+
 ## 0.45.0 – 2026-10-27
 
 ### Added

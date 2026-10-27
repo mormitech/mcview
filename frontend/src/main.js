@@ -1759,6 +1759,7 @@ function undoRedo(delta) {
   const now = performance.now();
   if (now - lastUndo < 120) return;
   lastUndo = now;
+  if (delta < 0 && view.state && history.list[history.at + delta]?.state === 0) { problem('Nothing more to undo (closing the picture is what Reopen last closed is for)', false, 2200); return; } // undo does not go back to the home screen: a picture that was opened, scanned or pasted there stays
   travel(history.at + delta);
 }
 const undo = () => undoRedo(-1), redo = () => undoRedo(1);
