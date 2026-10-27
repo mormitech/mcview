@@ -206,6 +206,10 @@ export function SaveWindow() {
   return window['go']['main']['App']['SaveWindow']();
 }
 
+export function ScanImage() {
+  return window['go']['main']['App']['ScanImage']();
+}
+
 export function SelectionPNG(arg1, arg2, arg3, arg4, arg5, arg6) {
   return window['go']['main']['App']['SelectionPNG'](arg1, arg2, arg3, arg4, arg5, arg6);
 }

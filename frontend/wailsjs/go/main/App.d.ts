@@ -104,6 +104,8 @@ export function SaveToPathQ(arg1:string,arg2:number,arg3:boolean,arg4:number):Pr
 
 export function SaveWindow():Promise<void>;
 
+export function ScanImage():Promise<void>;
+
 export function SelectionPNG(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number):Promise<string>;
 
 export function SetEditMode(arg1:boolean):Promise<void>;

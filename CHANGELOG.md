@@ -3,6 +3,15 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.39.0 – 2026-10-27
+
+### Added
+- Scan on the home screen: a picture from a scanner opens as a new, unsaved picture (Windows: the system scan dialog; Linux: SANE's `scanimage`; macOS opens Image Capture, which has no scan command to call).
+- Tooltips: everything with a hint shows it after one second in a small dark bubble instead of the system tooltip.
+
+### Changed
+- The chat's New button is an empty-document icon and the minimize button has a nicer arrow-to-edge icon.
+
 ## 0.38.10 – 2026-10-27
 
 Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more tools for the chat's Claude, and a lot of polish.

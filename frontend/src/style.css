@@ -187,7 +187,7 @@ body.chat-open #chat-toggle { opacity:0; transform:scale(.8); pointer-events:non
 #chat header { display:flex; align-items:center; gap:8px; padding:10px 12px; border-bottom:1px solid var(--line); }
 #chat header .sp { flex:1; } #chat header .who { color:var(--muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; } #chat header .who.warn { color:var(--bad); }
 #chat header button { padding:2px 9px; }
-#chat header #chat-close { width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; } #chat header #chat-close svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+#chat header #chat-new, #chat header #chat-close { width:26px; height:26px; padding:0; display:flex; align-items:center; justify-content:center; } #chat header #chat-new svg, #chat header #chat-close svg { width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 #chat section { flex:1; display:flex; flex-direction:column; min-height:0; } #chat section[hidden] { display:none; }
 #chat-setup { padding:24px 20px; gap:14px; } #chat-setup p { margin:0; line-height:1.45; white-space:pre-wrap; } #chat-actions { display:flex; gap:8px; flex-wrap:wrap; } #chat-url a { word-break:break-all; }
 #chat button.primary { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
@@ -236,3 +236,6 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 #poly.set .k, #poly.set .w { animation:ants .6s linear infinite; } #poly.set .w { animation-name:ants-w; }
 #poly .fillp { fill:rgba(255,255,255,.24); stroke:none; } 
 #tools .tool svg .dot { fill:currentColor; stroke:none; }
+
+#tip { position:fixed; z-index:1000; max-width:260px; padding:6px 10px; border-radius:8px; background:#1d2433; color:#f3f5fa; font:500 12px/1.4 system-ui, sans-serif; box-shadow:0 6px 20px rgba(0,0,0,.28); pointer-events:none; opacity:0; transform:translateY(3px); transition:opacity .12s, transform .12s; }
+#tip.on { opacity:1; transform:none; }

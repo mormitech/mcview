@@ -1,8 +1,9 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
+import {initTips} from './tooltip.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]));
@@ -1641,6 +1642,8 @@ function startViewer() {
   $('open').onclick = choose;
   $('open-clip').onclick = () => PasteNew().catch((e) => problem(errText(e)));
   $('new-pic').onclick = (ev) => createImage(ev.shiftKey);
+  $('scan-pic').onclick = () => ScanImage().catch((e) => problem(errText(e)));
+  initTips();
   $('discard-img').onclick = discardChanges;
   $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
   EventsOn('menu-effect', (name) => applyEffectMenu(name)); // Effects menu
