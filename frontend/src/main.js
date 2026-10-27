@@ -2276,6 +2276,11 @@ async function ctlRun(m) {
       if (m.sub) [...document.querySelectorAll('#ctx .has-sub')].find((b) => b.firstChild.textContent === m.sub)?.onmouseenter?.();
       await ctl.sleep(300); return {ok: true};
     }
+    case 'chat': { // the chat panel open (on: false shuts it), with an unsent draft {text} in its box
+      toggleChat(m.on !== false);
+      if (m.text !== undefined) { const t = $('chat-text'); t.value = m.text; t.dispatchEvent(new Event('input')); }
+      await ctl.sleep(m.wait ?? 3500); return {ok: true};
+    }
     case 'closemenu': closeSelectionMenu(); return {ok: true};
     case 'rotdlg': { // the Rotate by angle dialog, left open with the angle {angle} in it (close: true shuts it)
       if (m.close) { $('rd-cancel').click(); return {ok: true}; }
@@ -2348,7 +2353,7 @@ async function ctlRun(m) {
       txt = {x: m.x, y: m.y, color: m.color || paint.fg, opts: {align: m.align, boxW: m.box_w, outline: m.outline, outlineW: m.outline_width, shadow: m.shadow}}; $('textbox').value = m.value;
       await commitText(); return ctlState();
     }
-    case 'pixel': { if (pixelState === 'preparing') await preparePixels(); return {ok: true, pixel: await fetchPixel(m.x, m.y)}; }
+    case 'pixel': { if (pixelState === 'preparing') await preparePixels(); const p = await fetchPixel(m.x, m.y); if (m.show) showPixel(p); return {ok: true, pixel: p}; } // show: true puts it in the readout of the bar
     case 'cutsel': { // Cut: the selected part goes to the clipboard and is cleared
       await commitText(); if (!selectionRect()) throw new Error('nothing is selected in the window');
       await copySelection(); await clearSelectedPart(); await ctlSettle(); return ctlState();

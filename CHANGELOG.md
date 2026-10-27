@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.8 – 2026-10-27
+
+### Added
+
+- Control mode can open the chat panel with a draft in its box (`chat`) and show a pixel in the readout (`pixel` with `show`), for screenshots.
+
 ## 0.51.7 – 2026-10-27
 
 ### Added

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Makes the screenshots of the README and the manual with mormiView in demo mode (macOS; docs/control.md).
 
-    scripts/demo_screenshots.py SAMPLES_DIR [OUT_DIR] [APP]
+    scripts/demo_screenshots.py SAMPLES_DIR [OUT_DIR] [APP] [hero|palette]
 
 SAMPLES_DIR holds berries.jpg, city.jpg, coast.jpg, lake.jpg, frozen-lake.jpg (free pictures, no people in them) and bounce.gif (an animation of
 our own); keep it outside your home folder: the app is started with --demo, which refuses pictures from there and shows no recent pictures, account,
@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from mormiview_ctl import MormiView  # noqa: E402
 
 
-def main(samples, out="docs/screenshots", app="build/bin/mormiview.app"):
+def main(samples, out="docs/screenshots", app="build/bin/mormiview.app", only=""):
     mc = MormiView.start(app, os.path.join(samples, "coast.jpg"))
 
     def shot(name):
@@ -38,9 +38,41 @@ def main(samples, out="docs/screenshots", app="build/bin/mormiview.app"):
         mc.cmd("open", path=os.path.join(samples, name))
         mc.cmd("mode", mode=mode)
 
+    def palette_shot():
+        open_picture("coast.jpg")
+        mc.cmd("edit")
+        mc.cmd("color", fg="#FFF200")
+        mc.cmd("tool", name="ellipse")
+        mc.cmd("option", width=8, style="solid", fill="outline")
+        a, b = px(0.635, 0.52), px(0.715, 0.625)  # one ring round the people on the beach
+        mc.cmd("shape", kind="ellipse", x0=a[0], y0=a[1], x1=b[0], y1=b[1], color="#FFF200", width=8, style="solid", fill="outline")
+        mc.cmd("tool", name="select")
+        mc.cmd("palette", open="fg")
+        shot("06-palette")
+        mc.cmd("palette")
+
     mc.cmd("window", w=1500, h=960)
     mc.cmd("mode", mode=2)
     shot("01-view")
+
+    # the hero: edit mode, a slight zoom, a selection and the chat open (an unsent draft, nothing drawn), the pixel readout showing a color
+    mc.cmd("edit")
+    mc.cmd("zoom", scale=0.5, x=px(0.76, 0.535)[0], y=px(0.76, 0.535)[1])
+    a, b = px(0.63, 0.52), px(0.715, 0.625)  # the people on the beach
+    mc.cmd("select", x0=a[0], y0=a[1], x1=b[0], y1=b[1])
+    mc.cmd("chat", text="Remove the people from the beach")
+    mc.cmd("pixel", x=px(0.60, 0.62)[0], y=px(0.60, 0.62)[1], show=True)
+    shot("00-hero")
+    mc.cmd("chat", on=False, wait=600)
+    mc.cmd("polygon", pts=[])
+    mc.cmd("edit", on=False)
+    if only == "hero":
+        mc.quit()
+        return
+    if only == "palette":
+        palette_shot()
+        mc.quit()
+        return
 
     # the home screen, with the pictures opened so far under Recent
     for name in ("frozen-lake.jpg", "lake.jpg", "city.jpg", "berries.jpg", "coast.jpg"):
@@ -92,10 +124,8 @@ def main(samples, out="docs/screenshots", app="build/bin/mormiview.app"):
     mc.cmd("tool", name="rect")  # the ribbon of a shape tool stays on the screen
     shot("05-edit-draw")
 
-    # the colors
-    mc.cmd("palette", open="fg")
-    shot("06-palette")
-    mc.cmd("palette")
+    # the colors: a clean picture with one quiet mark on it
+    palette_shot()
 
     # effects on a part: a mosaic over a sign, and half of a picture in gray
     mc.answer("discard", "discard")
@@ -168,4 +198,4 @@ if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(__doc__)
         sys.exit(2)
-    main(*sys.argv[1:4])
+    main(*sys.argv[1:5])
