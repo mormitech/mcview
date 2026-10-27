@@ -29,6 +29,12 @@ button:hover { border-color:var(--accent); }
 #float { position:absolute; max-width:none; pointer-events:none; image-rendering:auto; } #float[hidden] { display:none; } #float.pixelated { image-rendering:pixelated; }
 #sel .ants { position:absolute; left:0; top:0; overflow:hidden; pointer-events:none; } /* (its size and the size of its rectangles are set by the page, in numbers: sizes worked out by the style left traces of the dashes behind) */ /* the border: black and dirty white dashes, 2px wide, one after the other */
 #sel .ants rect { fill:none; stroke-width:2; stroke-dasharray:6 6; animation:ants .6s linear infinite; } /* set: long dashes that move */
+/* a part that can be moved (it floats, or Shift is held): blue dashes, a light blue tint and a move sign in the corner */
+#sel.movable { background:rgba(47,109,246,.14); }
+#sel.movable .ants .k { stroke:#1648c4; } #sel.movable .ants .w { stroke:#9fc0ff; }
+#sel .movemark { display:none; position:absolute; left:4px; top:4px; width:22px; height:22px; pointer-events:none; filter:drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
+#sel .movemark circle { fill:#2f6df6; } #sel .movemark path { fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+#sel.movable:not(.tiny):not(.drawing) .movemark { display:block; }
 #sel.drawing .ants rect { stroke-dasharray:3 3; animation:none; } /* while the button is down: short dashes that stand still */
 #sel .ants .k { stroke:#000; } #sel .ants .w { stroke:#ececec; stroke-dashoffset:6; animation-name:ants-w; } #sel.drawing .ants .w { stroke-dashoffset:3; }
 @keyframes ants { to { stroke-dashoffset:-12; } } @keyframes ants-w { from { stroke-dashoffset:6; } to { stroke-dashoffset:-6; } }

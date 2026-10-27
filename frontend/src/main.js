@@ -1025,12 +1025,14 @@ function renderSelection() {
   el.classList.toggle('drawing', !!(view.selDrag || view.tdrag)); // while the button is down the dashes stand still; set, they move
   el.classList.toggle('copied', copiedKey === boxKey(box));
   el.classList.toggle('content', view.hlMode === 'content');
+  el.classList.toggle('movable', !!view.fl || document.body.classList.contains('shift')); // blue dashes and a move sign: a floating part moves with a plain drag, the picture under a selection with Shift
   const dr = selectionRect(); el.querySelector('.dims').textContent = dr ? `${dr.w} × ${dr.h}` : '';
   const {x0, x1, y0, y1} = box;
   for (const e of ['t', 'b', 'l', 'r']) el.querySelector(`.edge.${e}`).classList.toggle('on', !!view.hl?.[e]);
   el.style.left = `${view.x + view.ox + x0 * view.sx}px`; el.style.top = `${view.y + view.oy + y0 * view.sy}px`;
   const w = Math.max(3, Math.round((x1 - x0) * view.sx)), h = Math.max(3, Math.round((y1 - y0) * view.sy));
   el.style.width = `${w}px`; el.style.height = `${h}px`;
+  el.classList.toggle('tiny', w < 48 || h < 48); // (the move sign would cover all of it)
   const svg = el.querySelector('.ants'); // the dashes: a rectangle of numbers, so that nothing of an earlier size is left on the screen
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   for (const r of svg.querySelectorAll('rect')) { r.setAttribute('x', 1); r.setAttribute('y', 1); r.setAttribute('width', w - 2); r.setAttribute('height', h - 2); }
@@ -1673,8 +1675,8 @@ function startViewer() {
   $('stage').addEventListener('wheel', onWheel, {passive: false});
   $('stage').addEventListener('pointermove', (ev) => { lastPointer = {x: ev.clientX, y: ev.clientY}; readPixel(ev.clientX, ev.clientY); document.body.classList.toggle('shift', ev.shiftKey); if (!view.selDrag && !view.tdrag) updateHover(ev.shiftKey); });
   $('stage').addEventListener('pointerleave', () => { lastPointer = null; clearPixel(); updateHover(false); });
-  window.addEventListener('keyup', (ev) => { if (ev.key === 'Shift') { document.body.classList.remove('shift'); updateHover(false); } });
-  window.addEventListener('blur', () => { document.body.classList.remove('shift'); updateHover(false); });
+  window.addEventListener('keyup', (ev) => { if (ev.key === 'Shift') { document.body.classList.remove('shift'); updateHover(false); renderSelection(); } });
+  window.addEventListener('blur', () => { document.body.classList.remove('shift'); updateHover(false); renderSelection(); });
   $('stage').addEventListener('pointerdown', (ev) => {
     if (ev.target === $('textbox')) return; // (the text box is typed in)
     if (cancelDraw()) return; // a press while a drawing is on (the other button, where the system reports it as a press) drops it
@@ -1789,7 +1791,7 @@ function startViewer() {
     if (ev.key === 'Escape') ev.preventDefault(); // a handled key is not passed on to the system, which leaves full screen with it (see also DisableEscapeExitsFullscreen in main.go)
     if ((ev.target instanceof HTMLInputElement && ev.target.type !== 'range') || ev.target instanceof HTMLTextAreaElement || ev.target instanceof HTMLSelectElement) return; // typing in a field is not a command
     if (polyActive() && polyKey(ev)) { ev.preventDefault(); return; }
-    if (ev.key === 'Shift') { document.body.classList.add('shift'); updateHover(true); return; }
+    if (ev.key === 'Shift') { document.body.classList.add('shift'); updateHover(true); renderSelection(); return; }
     if ((ev.ctrlKey || ev.metaKey) && !ev.altKey && (ev.key === 'c' || ev.key === 'C' || ev.key === 'Insert')) {
       ev.preventDefault(); copySelection(); return; // Ctrl+C, Cmd+C and Ctrl+Insert
     }

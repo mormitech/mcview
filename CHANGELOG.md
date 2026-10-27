@@ -3,7 +3,7 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
-## 0.38.9 – 2026-10-27
+## 0.38.10 – 2026-10-27
 
 Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more tools for the chat's Claude, and a lot of polish.
 
@@ -22,6 +22,8 @@ Everything since 0.37.8, in one release: an Effects menu, an AI menu, many more 
 - In edit mode a picture bigger than the window can be moved so that its whole left and bottom edge is in the open (not under the tool rail and the status bar), and the modes 4, 5 and 6 (stretch, fit width, fit height) fill only the visible part of the window.
 - The chat button is shown in full screen when edit mode is on.
 - The chat's Claude can use the web search and fetch tools as well as the picture tools; files and the shell stay off.
+
+- A selection that can be moved is shown differently: blue dashes, a light blue tint and a small move sign in the corner, for a part that floats (it moves with a plain drag) and while Shift is held (the picture under the selection moves). The usual black and white dashes mean that only the frame moves.
 
 ### Fixed
 - Paste no longer depends on edit mode, and no longer always starts another new image: a small clipboard picture is laid over the picture as a part (a selection) that can be moved, without turning edit mode on, and one about as big as the picture (or bigger) is asked about (new image, paste, or cancel). An empty window takes the clipboard picture as its picture.
