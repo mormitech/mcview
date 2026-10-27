@@ -158,6 +158,10 @@ export function PreparePixels() {
   return window['go']['main']['App']['PreparePixels']();
 }
 
+export function PrintPNG(arg1) {
+  return window['go']['main']['App']['PrintPNG'](arg1);
+}
+
 export function ResizeCanvas(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['ResizeCanvas'](arg1, arg2, arg3, arg4, arg5);
 }
@@ -188,6 +192,10 @@ export function RotatePNG(arg1, arg2) {
 
 export function SaveAs(arg1) {
   return window['go']['main']['App']['SaveAs'](arg1);
+}
+
+export function SaveRegionTo(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['SaveRegionTo'](arg1, arg2, arg3, arg4);
 }
 
 export function SaveSelectionAs(arg1, arg2, arg3, arg4, arg5) {

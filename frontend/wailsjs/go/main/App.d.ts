@@ -80,6 +80,8 @@ export function PolygonPNG(arg1:number,arg2:string):Promise<string>;
 
 export function PreparePixels():Promise<string>;
 
+export function PrintPNG(arg1:string):Promise<string>;
+
 export function ResizeCanvas(arg1:number,arg2:number,arg3:number,arg4:string,arg5:string):Promise<main.ImageInfo>;
 
 export function RestoreFloat(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:number,arg11:boolean):Promise<main.ImageInfo>;
@@ -95,6 +97,8 @@ export function Reveal():Promise<void>;
 export function RotatePNG(arg1:string,arg2:number):Promise<string>;
 
 export function SaveAs(arg1:number):Promise<string>;
+
+export function SaveRegionTo(arg1:string,arg2:string,arg3:boolean,arg4:number):Promise<string>;
 
 export function SaveSelectionAs(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number):Promise<string>;
 

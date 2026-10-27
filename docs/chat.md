@@ -43,6 +43,7 @@ and nothing is written to a file until `save_image`. The tools change the pictur
 | `place_image` | lay a picture from a file over this one, scaled and see-through if wanted |
 | `draw_polygon`, `draw_callout` | a closed polygon (outline and/or fill), a speech bubble with a tail; `draw_rect` has rounded corners, and the shapes can be see-through and have a shadow |
 | `clear_selection` | fill the user's selection (or a box, polygon, mask) with the window's second color, like Delete in Paint |
+| `cut_selection`, `crop_to_selection`, `save_selection`, `print_selection` | the right-click menu of a selection, for Claude: cut it, crop the picture to it, save only it to a file, print it |
 | `diff_original` | what changed against the file: pixels, box, strength |
 | `list_folder`, `list_fonts` | the picture names in the folder (no path), the fonts for `add_text` (which also has align, wrapping, outline, shadow) |
 | `goto_step`, `checkpoint`, `goto_checkpoint` | jump in the history, and name a state to come back to |

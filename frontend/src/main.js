@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -505,6 +505,61 @@ async function clearSelectedPart() {
   if (!part.pts && part.x === undefined) return false;
   try { await applyEffect({op: 'fill', color: paint.bg, ...part}, 'cleared'); } catch (e) { problem(errText(e)); }
   return true;
+}
+
+// The right-click menu of a selection (a box or a polygon): Cut, Copy, Crop to, Save as, Print, Clear.
+function closeSelectionMenu() { const m = $('ctx'); if (m) m.remove(); }
+function showSelectionMenu(x, y) {
+  closeSelectionMenu();
+  const r = selectionRect();
+  if (!r) return;
+  const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
+  const items = [
+    ['Cut', async () => { await copySelection(); await clearSelectedPart(); }],
+    ['Copy', () => copySelection(), `${MAC ? '⌘' : 'Ctrl+'}C`],
+    ['Crop to selection', cropToSelection],
+    ['Save selection as…', saveAs],
+    ['Print…', printSelection],
+    null,
+    ['Clear', async () => { await clearSelectedPart(); }, '⌫'],
+  ];
+  const menu = document.createElement('div');
+  menu.id = 'ctx'; menu.setAttribute('role', 'menu');
+  for (const it of items) {
+    if (!it) { menu.appendChild(document.createElement('hr')); continue; }
+    const b = document.createElement('button');
+    b.setAttribute('role', 'menuitem');
+    b.innerHTML = `<span></span><kbd></kbd>`;
+    b.firstChild.textContent = it[0]; b.lastChild.textContent = it[2] || '';
+    b.onclick = run(it[1]);
+    menu.appendChild(b);
+  }
+  document.body.appendChild(menu);
+  const w = menu.offsetWidth, h = menu.offsetHeight;
+  menu.style.left = `${Math.max(4, Math.min(x, innerWidth - w - 4))}px`;
+  menu.style.top = `${Math.max(4, Math.min(y, innerHeight - h - 4))}px`;
+  const away = (ev) => { if (!ev.target.closest?.('#ctx')) { closeSelectionMenu(); cleanup(); } };
+  const key = (ev) => { if (ev.key === 'Escape') { ev.stopPropagation(); closeSelectionMenu(); cleanup(); } };
+  const cleanup = () => { window.removeEventListener('pointerdown', away, true); window.removeEventListener('keydown', key, true); window.removeEventListener('blur', closeSelectionMenu); };
+  window.addEventListener('pointerdown', away, true); window.addEventListener('keydown', key, true); window.addEventListener('blur', closeSelectionMenu);
+}
+
+async function cropToSelection() {
+  if (view.fl) await flushFloat();
+  const r = selectionRect();
+  if (!r) return;
+  const info = await CropPicture(view.rot, r.x, r.y, r.w, r.h);
+  clearSelection();
+  await showImage(info, {rot: 0});
+  commit('cropped');
+}
+
+async function printSelection() {
+  if (view.fl) await flushFloat();
+  const r = selectionRect();
+  if (!r) return;
+  const note = await PrintPNG(await cutPng(r));
+  if (note) problem(note, false);
 }
 
 async function polyCopy() {
@@ -1771,7 +1826,9 @@ function startViewer() {
     draw();
   });
   const endDrag = (ev) => {
+    const rh = rightHold;
     pointerDown = false; rightHold = null;
+    if (rh && ev.type === 'pointerup' && ev.button === 2 && Math.hypot(ev.clientX - rh.x, ev.clientY - rh.y) < 5) { showSelectionMenu(ev.clientX, ev.clientY); return; } // a right click on a selection (no drag): its menu
     if (poly.down) { polyUp(); return; }
     setTimeout(renderSelection, 0); // the button is up: the dashes move again
     if (shape) { const k = shape; shape = null; finishShape(k).then(() => updateHover(ev.shiftKey)); return; } // (see the pencil below)
@@ -1973,6 +2030,17 @@ async function ctlRun(m) {
       await commitText(); return ctlState();
     }
     case 'pixel': { if (pixelState === 'preparing') await preparePixels(); return {ok: true, pixel: await fetchPixel(m.x, m.y)}; }
+    case 'cutsel': { // Cut: the selected part goes to the clipboard and is cleared
+      await commitText(); if (!selectionRect()) throw new Error('nothing is selected in the window');
+      await copySelection(); await clearSelectedPart(); await ctlSettle(); return ctlState();
+    }
+    case 'cropsel': { await commitText(); if (!selectionRect()) throw new Error('nothing is selected in the window'); await cropToSelection(); await ctlSettle(); return ctlState(); }
+    case 'savesel': { // only the selected part is written to the file {path, overwrite, quality}
+      await commitText(); if (view.fl) await flushFloat();
+      const r = selectionRect(); if (!r) throw new Error('nothing is selected in the window');
+      return {ok: true, note: await SaveRegionTo(await cutPng(r), m.path, !!m.overwrite, m.quality || 0)};
+    }
+    case 'printsel': { await commitText(); if (view.fl) await flushFloat(); const r = selectionRect() || {x: 0, y: 0, w: dispW(), h: dispH()}; return {ok: true, note: await PrintPNG(await cutPng(r))}; }
     case 'saveto': { // save the picture to a full path without the dialog: {path, overwrite}
       await commitText(); if (view.fl) await flushFloat();
       const note = await SaveToPathQ(m.path, view.rot, !!m.overwrite, m.quality || 0); await ctlSettle(); return {ok: true, note};

@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.41.0 – 2026-10-27
+
+### Added
+- A right click on a selection (a box or a free-hand polygon) opens a menu: Cut, Copy, Crop to selection, Save selection as…, Print… and Clear. Print sends the selected part to the default printer. A right drag still draws a new polygon. The chat's Claude can do the same with the new tools `cut_selection`, `crop_to_selection`, `save_selection` and `print_selection` (it already had `copy` and `clear_selection`).
+
 ## 0.40.3 – 2026-10-27
 
 ### Changed

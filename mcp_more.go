@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 // More tools for the chat panel: effects and color adjustments, scaling and turning, laying in a picture from a file, the drawing extras, what changed
@@ -49,6 +50,11 @@ func moreTools() []toolDef {
 		{"clear_selection", "Clears (cuts out) a part of the picture: fills it with the window's second (background) color, the way Delete does in Paint. By default it is the part the user selected in the window (the polygon, else the box); or give a box (x, y, w, h), a polygon or a mask. color overrides the second color. One step of the history.", schema(nil, map[string]any{
 			"x": pX, "y": pY, "w": prop("integer", "width of the box in pixels"), "h": prop("integer", "height of the box in pixels"), "polygon": pPoly, "mask": pMask,
 			"color": prop("string", "Fill with this color instead of the window's second color (a name, #rrggbb or #rrggbbaa; transparent makes a hole)"), "feather": pFeather, "snapshot": pSnap})},
+		{"cut_selection", "Cuts what the user selected in the window (the polygon, else the box): copies it to the clipboard and clears it with the second color, like Cut in a menu. Fails when nothing is selected. One step of the history.", schema(nil, map[string]any{"snapshot": pSnap})},
+		{"crop_to_selection", "Crops the picture to what the user selected in the window (the box, or the box round the polygon). Fails when nothing is selected. One step of the history.", schema(nil, map[string]any{"snapshot": pSnap})},
+		{"save_selection", "Saves only what the user selected in the window, as a picture of its own, to a file (the type is the one the name ends with: png, jpg, gif, bmp, tif); the window keeps its picture. Fails when nothing is selected, and will not replace a file that exists unless overwrite is true.", schema([]string{"path"}, map[string]any{
+			"path": prop("string", "full path of the file"), "overwrite": prop("boolean", "replace the file if it exists"), "quality": prop("integer", "JPEG quality 1 to 100 (default 95)")})},
+		{"print_selection", "Prints what the user selected in the window (or the whole picture when nothing is selected) on the default printer. Only do this when the user asked for it: it uses paper.", schema(nil, map[string]any{})},
 		{"diff_original", "Compares the picture as it is now with the file on the disk: whether it changed, how many pixels, the box of the change and how strong it is on average. Use it to check that an edit touched only what you meant. Does not change the picture.", schema(nil, map[string]any{})},
 		{"list_folder", "Lists the pictures in the folder of the open file, by file name (not the path), and where the current one is among them. Does not change anything.", schema(nil, map[string]any{})},
 		{"list_fonts", "Lists font families that add_text can be asked for (the common ones, and the names of the font files found on this computer). Does not change anything.", schema(nil, map[string]any{})},
@@ -69,6 +75,26 @@ func (h *chatHub) moreCall(name string, args map[string]any) (content []any, han
 		content, err = h.clearTool(args)
 	case "resize_image", "rotate_image", "flip_image", "place_image":
 		content, err = h.transformTool(name, args)
+	case "cut_selection", "crop_to_selection", "save_selection", "print_selection":
+		cmd := map[string]any{"cmd": map[string]string{"cut_selection": "cutsel", "crop_to_selection": "cropsel", "save_selection": "savesel", "print_selection": "printsel"}[name]}
+		if name == "save_selection" {
+			path := str(args, "path")
+			if path == "" {
+				return nil, true, fmt.Errorf("\"path\" is missing")
+			}
+			if fi, e := os.Stat(path); e == nil && !fi.IsDir() && args["overwrite"] != true {
+				return nil, true, fmt.Errorf("%s exists: call again with overwrite=true to replace it, or choose another name", path)
+			}
+			cmd["path"], cmd["overwrite"], cmd["quality"] = path, args["overwrite"] == true, args["quality"]
+		}
+		var res map[string]any
+		if res, err = h.window(cmd); err == nil {
+			note, _ := res["note"].(string)
+			if note == "" {
+				note = "Done: " + name
+			}
+			content = []any{textContent(note)}
+		}
 	case "diff_original", "list_folder", "list_fonts":
 		cmd := map[string]string{"diff_original": "diff", "list_folder": "folder", "list_fonts": "fonts"}[name]
 		var res map[string]any

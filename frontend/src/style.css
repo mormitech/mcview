@@ -175,6 +175,12 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #newdlg button.primary { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
 #new-pic .s-cus { display:none; } body.shift #new-pic .s-def { display:none; } body.shift #new-pic .s-cus { display:inline; } /* Shift held: the card says it will ask for the settings */
 
+/* The right-click menu of a selection */
+#ctx { position:fixed; z-index:1100; min-width:200px; padding:5px; border-radius:10px; background:var(--panel); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,.28); display:flex; flex-direction:column; }
+#ctx button { display:flex; justify-content:space-between; gap:24px; align-items:center; border:0; background:transparent; padding:6px 10px; border-radius:6px; text-align:left; font:inherit; color:var(--text); }
+#ctx button:hover { background:var(--accent); color:var(--accent-text); } #ctx kbd { font:inherit; opacity:.6; }
+#ctx hr { border:0; border-top:1px solid var(--line); margin:4px 2px; }
+
 /* The chat panel */
 #chat-toggle { position:fixed; bottom:16px; right:16px; z-index:21; width:48px; height:48px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; background:var(--accent); color:var(--accent-text); border:0; box-shadow:0 4px 14px rgba(0,0,0,.3); }
 #chat-toggle svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linejoin:round; }
