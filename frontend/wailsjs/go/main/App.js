@@ -94,6 +94,14 @@ export function FloodFill(arg1, arg2, arg3, arg4, arg5) {
   return window['go']['main']['App']['FloodFill'](arg1, arg2, arg3, arg4, arg5);
 }
 
+export function GifFrame(arg1) {
+  return window['go']['main']['App']['GifFrame'](arg1);
+}
+
+export function GifInfo() {
+  return window['go']['main']['App']['GifInfo']();
+}
+
 export function HasTransparency() {
   return window['go']['main']['App']['HasTransparency']();
 }
@@ -228,6 +236,10 @@ export function SetEditMode(arg1) {
 
 export function SetFloat(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) {
   return window['go']['main']['App']['SetFloat'](arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+}
+
+export function SetGifFrame(arg1) {
+  return window['go']['main']['App']['SetGifFrame'](arg1);
 }
 
 export function SetMenuBar(arg1) {

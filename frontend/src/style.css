@@ -264,3 +264,15 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 @keyframes chatpulse { 0% { transform:scale(1); opacity:.7; } 100% { transform:scale(1.9); opacity:0; } }
 @keyframes chatbob { 0%, 100% { transform:translateY(0) rotate(0); } 25% { transform:translateY(-2px) rotate(-6deg); } 75% { transform:translateY(1px) rotate(6deg); } }
 @media (prefers-reduced-motion: reduce) { #chat-toggle.working::before, #chat-toggle.working::after, #chat-toggle.working svg { animation:none; } #chat-toggle.working { box-shadow:0 0 0 4px rgba(47,109,246,.35); } }
+
+/* The frame player of an animated GIF (edit mode); the tools are hidden (and off) while it plays: one draws on a frame, not on an animation */
+body.edit.gif-playing #tools { opacity:0; pointer-events:none; }
+
+#gifbar { position:fixed; left:50%; bottom:50px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:4px; padding:4px 10px 4px 4px; border-radius:999px; background:var(--bar); border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.2); }
+#gifbar[hidden], body:not(.edit) #gifbar { display:none; }
+#gifbar button { width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; border:0; background:transparent; color:var(--text); }
+#gifbar button:hover { background:rgba(127,127,127,.2); }
+#gifbar button svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+#gifbar #gif-play { background:var(--accent); color:var(--accent-text); } #gifbar #gif-play:hover { background:var(--accent); filter:brightness(1.1); }
+#gifbar #gif-play .i-play { display:none; fill:currentColor; } #gifbar.paused #gif-play .i-play { display:block; } #gifbar.paused #gif-play .i-pause { display:none; }
+#gifbar #gif-count { min-width:62px; text-align:center; font:600 12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); }

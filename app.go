@@ -55,6 +55,7 @@ type App struct {
 	spawned     int              // the windows this one started, so that each opens a little further down and right
 	cascade     int              // --cascade: how many steps of that this window was started at
 
+	gifs      *gifSet          // the frames of the animated GIF of the window (see gif.go)
 	rotc      *rotCache        // where a rotation started from, so that turning again does not turn the turned picture (see rotate.go)
 	states    map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
 	stateID   int              // the number of the one it is in; 0 is the empty window

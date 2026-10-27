@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.47.0 – 2026-10-27
+
+### Added
+- A frame player for animated GIFs: in edit mode a small bar at the bottom shows Pause/Play, one frame back, one frame forward, and the frame counter (for example 14 / 22). Paused (or stepped) on a frame, that frame is what the pixel readout reads and what an edit starts from; an edit makes the picture a still, and the player goes away until you undo back to the GIF. While the animation plays the tool rail is hidden (there is nothing to draw on); pausing or stepping brings it back. Outside edit mode the GIF plays by itself as before.
+
 ## 0.46.0 – 2026-10-27
 
 ### Added

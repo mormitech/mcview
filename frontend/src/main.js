@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -275,6 +275,64 @@ function offerReopen() {
   $('reopen-pic').hidden = $('empty').hidden || !(e && e.label === 'image closed' && p && p.state !== 0);
 }
 
+// ---- The frame player of an animated GIF (edit mode): play and pause, one frame back and forth, and the frame counter ------------------------------------------------
+// The player shows the frames itself (the web view's own animation cannot be stopped or stepped). Paused on a frame, that frame is what the pixel tools read and
+// what an edit starts from (the picture is a still then); an edit makes the picture a changed one, and the player goes away.
+const gif = {meta: null, url: '', i: 0, playing: false, timer: 0, urls: [], shown: false};
+function gifStop() { clearTimeout(gif.timer); gif.timer = 0; gif.playing = false; document.body.classList.remove('gif-playing'); }
+function gifHide() { // back to the file's own animation
+  gifStop();
+  $('gifbar').hidden = true;
+  if (gif.shown && gif.url && pic.src !== new URL(gif.url, location.href).href) { pic.src = gif.url; }
+  gif.shown = false;
+}
+async function gifFrameURL(i) { return gif.urls[i] || (gif.urls[i] = await GifFrame(i)); }
+async function gifShowFrame(i) {
+  const url = await gifFrameURL(i);
+  if (!gif.meta || !gif.shown) return;
+  gif.i = i; pic.src = url; $('gif-count').textContent = `${i + 1} / ${gif.meta.frames}`;
+}
+function gifTick() {
+  if (!gif.playing) return;
+  const i = gif.i;
+  gif.timer = setTimeout(async () => {
+    if (!gif.playing) return;
+    await gifShowFrame((gif.i + 1) % gif.meta.frames);
+    gifTick();
+  }, gif.meta.delays[i] || 100);
+}
+function gifSetPlaying(on) {
+  gifStop();
+  gif.playing = on; document.body.classList.toggle('gif-playing', on); // (the tools are out of the way until a frame is chosen)
+  $('gifbar').classList.toggle('paused', !on);
+  $('gif-play').title = on ? 'Pause' : 'Play'; $('gif-play').setAttribute('aria-label', on ? 'Pause' : 'Play');
+  if (on) gifTick(); else SetGifFrame(gif.i).catch(() => {}); // (what is shown is what the tools read)
+}
+async function gifStep(d) {
+  if (!gif.meta) return;
+  gifSetPlaying(false);
+  await gifShowFrame((gif.i + d + gif.meta.frames) % gif.meta.frames);
+  SetGifFrame(gif.i).catch(() => {});
+}
+async function gifOffer() { // the player is shown for an unchanged animated GIF, in edit mode
+  if (!gif.meta || !editOn() || !pic.naturalWidth) return;
+  gif.shown = true; gif.i = 0;
+  pic.onload = () => draw(); // (a frame is on the screen: only the drawing)
+  $('gifbar').hidden = false;
+  await gifShowFrame(0);
+  gifSetPlaying(true);
+}
+async function gifSetup(info) { // a picture was shown
+  gifHide(); gif.meta = null; gif.urls = [];
+  if (!info?.url || info.modified || !/\.gif$/i.test(info.name || '')) return;
+  try {
+    const meta = await GifInfo();
+    if (!meta.frames || meta.frames < 2 || view.state !== info.state) return;
+    gif.meta = meta; gif.url = info.url;
+    await gifOffer();
+  } catch {}
+}
+
 function showImage(info, opts = {}) {
   let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
   view.state = info?.state || 0;
@@ -284,6 +342,7 @@ function showImage(info, opts = {}) {
     stopBounce(); pic.onload = null; pic.removeAttribute('src'); cancelText();
     view.name = ''; view.modified = false; view.dir = ''; view.index = 0; view.count = 0; view.token++; view.sel = null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();
     polyClear(); pic.hidden = true; $('empty').hidden = false; $('stage').classList.remove('checker'); setStatus(''); renderSelection(); offerClipboard(); // (the squares belong to a picture with transparency)
+    gifHide(); gif.meta = null;
     if (editOn()) setEdit(false); // no image: no edit mode (closing it, deleting the last one, undo back to the empty window)
     done();
     return loaded;
@@ -311,6 +370,7 @@ function showImage(info, opts = {}) {
     if (!opts.keepView) $('stage').classList.remove('checker');
     pic.src = info.url;
   });
+  loaded.then(() => { if (token === view.token) gifSetup(info); });
   return loaded;
 }
 
@@ -473,6 +533,7 @@ function setEdit(on) {
     view.ox = x0 - view.x; view.oy = y0 - view.y; draw(); startSpring();
   }
   updateHover(false);
+  if (on) gifOffer(); else gifHide(); // (an animated GIF: its frame player is for the edit mode)
 }
 
 // ---- Tools of the edit bar: select (the default when edit mode starts), pencil, line, rectangle, text and the color picker ----------------------------------
@@ -1826,6 +1887,8 @@ function startViewer() {
   $('new-pic').onclick = (ev) => createImage(ev.shiftKey);
   $('scan-pic').onclick = () => ScanImage().catch((e) => problem(errText(e)));
   initTips();
+  $('gif-prev').onclick = () => gifStep(-1); $('gif-next').onclick = () => gifStep(1); $('gif-play').onclick = () => gifSetPlaying(!gif.playing);
+  $('stage').addEventListener('pointerdown', () => { if (gif.playing) gifSetPlaying(false); }, true); // (a tool is used on the frame that is shown)
   $('discard-img').onclick = discardChanges;
   $('close-img').onclick = closeImage; // back to the home screen (which ends edit mode)
   EventsOn('menu-effect', (name) => applyEffectMenu(name)); // Effects menu

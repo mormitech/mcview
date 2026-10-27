@@ -1,5 +1,19 @@
 export namespace main {
 	
+	export class GifMeta {
+	    frames: number;
+	    delays: number[];
+	
+	    static createFrom(source: any = {}) {
+	        return new GifMeta(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.frames = source["frames"];
+	        this.delays = source["delays"];
+	    }
+	}
 	export class ImageInfo {
 	    name: string;
 	    path: string;

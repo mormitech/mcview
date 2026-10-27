@@ -48,6 +48,10 @@ export function ExitFullscreen():Promise<void>;
 
 export function FloodFill(arg1:number,arg2:number,arg3:number,arg4:string,arg5:number):Promise<main.ImageInfo>;
 
+export function GifFrame(arg1:number):Promise<string>;
+
+export function GifInfo():Promise<main.GifMeta>;
+
 export function HasTransparency():Promise<boolean>;
 
 export function Image():Promise<main.ImageInfo>;
@@ -115,6 +119,8 @@ export function SelectionPNG(arg1:number,arg2:number,arg3:number,arg4:number,arg
 export function SetEditMode(arg1:boolean):Promise<void>;
 
 export function SetFloat(arg1:number,arg2:number,arg3:number,arg4:number,arg5:number,arg6:number,arg7:number,arg8:number,arg9:number,arg10:boolean):Promise<void>;
+
+export function SetGifFrame(arg1:number):Promise<void>;
 
 export function SetMenuBar(arg1:boolean):Promise<void>;
 
