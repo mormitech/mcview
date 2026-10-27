@@ -47,7 +47,7 @@ The keys **1** to **6** set how the picture sits in the window, as in IrfanView.
 
 ### Moving through a folder
 
-**Arrow keys**, **Space** (next) and **Backspace** (previous) go through the pictures of the folder in alphabetical order, round and round. The title of the window says the size, the place in the folder (`3 / 5`) and the zoom.
+**Arrow keys** (right: next) and **Backspace** (previous) go through the pictures of the folder in alphabetical order, round and round. The title of the window says the size, the place in the folder (`3 / 5`) and the zoom.
 
 ### Turning, full screen
 
@@ -191,7 +191,8 @@ Claude can use mcView's picture tools and web search and fetch, and nothing else
 | **C** | The chat panel |
 | **1** – **6** | Zoom modes |
 | **+**, **-**, wheel | Zoom |
-| **Arrow keys**, **Space**, **Backspace** | Next, previous picture |
+| **Arrow keys**, **Backspace** | Next, previous picture |
+| **Space** | Play or pause an animated GIF |
 | **R**, **Shift+R** | Turn the view |
 | **F**, **Enter** | Full screen |
 | **S** | Save As |

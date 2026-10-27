@@ -335,10 +335,14 @@ async function gifStep(d) {
   await gifShowFrame((gif.i + d + gif.meta.frames) % gif.meta.frames);
   await SetGifFrame(gif.i).catch(() => {});
 }
-async function gifPresent(play) { // the player is on: playing from the first frame, or paused where the tools are
+function gifSpace() { // Space: play or pause an animated GIF (outside edit mode the first press brings the player, paused)
+  if (!gif.meta || !pic.naturalWidth) return;
+  if (!gif.shown) gifPresent(false, true); else gifSetPlaying(!gif.playing);
+}
+async function gifPresent(play, force = false) { // the player is on: playing from the first frame, or paused where the tools are
   gif.shown = true;
   pic.onload = () => draw(); // (a frame is on the screen: only the drawing)
-  $('gifbar').hidden = false; $('gifbar').classList.toggle('edited', !!gif.meta.edited);
+  $('gifbar').hidden = false; $('gifbar').classList.toggle('edited', !!gif.meta.edited || force);
   if (play) { await gifShowFrame(0); gifSetPlaying(true); } else { await gifShowFrame(gif.meta.cur); await gifSetPlaying(false); }
 }
 function gifOffer() { // edit mode begins: an animated GIF plays in the player (one with changed frames waits on its frame)
@@ -2103,7 +2107,8 @@ function startViewer() {
     if (!pic.naturalWidth) return;
     const b = stageSize();
     if (ev.key === 'ArrowLeft') { ev.preventDefault(); step(-1); }
-    else if (ev.key === 'ArrowRight' || ev.key === ' ') { ev.preventDefault(); step(1); }
+    else if (ev.key === 'ArrowRight') { ev.preventDefault(); step(1); }
+    else if (ev.key === ' ') { ev.preventDefault(); gifSpace(); } // (Space does not go to the next picture: with an animated GIF it plays and pauses it)
     else if (ev.key === 'Backspace') { ev.preventDefault(); step(-1); }
     else if (MODES[ev.key]) { setMode(MODES[ev.key]); commit(); }
     else if (ev.key === 'r' || ev.key === 'R') {
