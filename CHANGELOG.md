@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.44.1 – 2026-10-27
+
+### Changed
+- Esc minimizes the chat window while you are in it (the cursor in its text field, or anything inside it focused).
+
 ## 0.44.0 – 2026-10-27
 
 ### Added

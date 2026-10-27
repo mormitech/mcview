@@ -183,6 +183,12 @@ export function initChat() {
   initResize();
   EventsOn('chat', onEvent);
   $('chat-toggle').onclick = () => toggleChat();
+  document.addEventListener('keydown', (ev) => { // Esc in the chat window minimizes it (and is not passed on: it would also step the picture's own Esc)
+    if (ev.key !== 'Escape' || !isOpen || ev.isComposing || !ev.target.closest?.('#chat')) return;
+    ev.preventDefault(); ev.stopPropagation();
+    document.activeElement?.blur();
+    toggleChat(false);
+  }, true);
   document.addEventListener('pointerdown', (ev) => { if (isOpen && !ev.target.closest('#chat, #chat-toggle')) toggleChat(false); }, true); // a click next to the panel minimizes it (and still does what it was for)
   $('chat-close').onclick = () => toggleChat(false);
   $('chat-new').onclick = () => { ChatReset(); $('chat-log').replaceChildren(); bubble = null; setBusy(false); add('hint', 'New conversation. Ask Claude to change this picture.'); };
