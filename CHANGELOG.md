@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.40.1 – 2026-10-27
+
+### Changed
+- Scan on macOS opens Image Capture and then opens the first new picture that turns up in Pictures, Desktop, Documents or Downloads (for up to ten minutes), so scan to one of those folders.
+
 ## 0.40.0 – 2026-10-27
 
 ### Changed
