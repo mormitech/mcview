@@ -348,6 +348,11 @@ async function gifPresent(play, force = false) { // the player is on: playing fr
 function gifOffer() { // edit mode begins: an animated GIF plays in the player (one with changed frames waits on its frame)
   if (gif.meta && !gif.shown && pic.naturalWidth) gifPresent(!gif.meta.edited);
 }
+function gifReset() { // another picture: nothing of the animation that was shown stays (frames, count, timer, player)
+  gifStop(); gif.urls.clear(); gif.meta = null; gif.url = ''; gif.i = 0;
+  gifHide();
+  $('gif-count').textContent = '';
+}
 async function gifSetup(info) { // a picture was shown
   gifStop();
   if (!info?.url || !/\.gif$/i.test(info.name || '')) { gifHide(); gif.meta = null; return; }
@@ -361,6 +366,7 @@ async function gifSetup(info) { // a picture was shown
 }
 
 function showImage(info, opts = {}) {
+  if (gif.meta && (info?.name !== view.name || info?.dir !== view.dir)) gifReset(); // (another picture: the player of the one before goes at once, not when the new one is known)
   let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
   view.state = info?.state || 0;
   view.fl = opts.fl || null; view.tdrag = null; if (!opts.keepView && !opts.fl) renderFloat(); // (the same picture with a change applied: what is lifted stays on the screen until the new one is there, so nothing flashes)

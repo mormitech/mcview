@@ -15,6 +15,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -26,7 +27,10 @@ import (
 
 const maxGifPixels = 25_000_000 // all frames together
 
+var gifSessions atomic.Int64 // numbers the sessions: the keys of the frames tell the pictures of one animation from those of another
+
 type gifSession struct {
+	id     int64          // (see gifSessions)
 	path   string         // the file, and the picture of the window as long as the window shows it
 	w, h   int            // every frame has this size: a change of the size (resize, crop, canvas) ends the session
 	orig   []*image.NRGBA // the frames of the file
@@ -85,7 +89,7 @@ func gifOpen(path string) (*gifSession, error) {
 		return nil, nil
 	}
 	canvas := image.NewNRGBA(image.Rect(0, 0, w, h))
-	s := &gifSession{path: path, w: w, h: h}
+	s := &gifSession{id: gifSessions.Add(1), path: path, w: w, h: h}
 	for i, fr := range g.Image {
 		var before *image.NRGBA
 		if i < len(g.Disposal) && g.Disposal[i] == gif.DisposalPrevious {
@@ -146,7 +150,7 @@ func (a *App) GifInfo() (GifMeta, error) {
 	defer a.mu.Unlock()
 	m := GifMeta{Frames: len(g.frames), Delays: g.delays, Cur: g.cur, Fresh: fresh}
 	for i, f := range g.frames {
-		m.Keys = append(m.Keys, fmt.Sprintf("%p", f))
+		m.Keys = append(m.Keys, fmt.Sprintf("%d:%p", g.id, f))
 		m.Edited = m.Edited || f != g.orig[i]
 	}
 	return m, nil

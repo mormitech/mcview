@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.49.3 – 2026-10-27
+
+### Fixed
+- Going to another animated GIF could show frames of the GIF before it: the player kept the pictures it had made for the old frames, and the new animation's frames could get the same keys. The player, the frames, the count and the timer of the old GIF are flushed at once when another picture is shown, and the keys are numbered per animation.
+
 ## 0.49.2 – 2026-10-27
 
 ### Changed
