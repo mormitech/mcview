@@ -59,7 +59,7 @@ button:hover { border-color:var(--accent); }
 body.full, body.full #viewer { background:#000; }
 body.full #empty h1 { color:#e6ecf5; } body.full #empty .muted { color:#9fb2cc; } body.full #empty .logo { filter:invert(1); } /* the home screen on the black of full screen, in either theme */
 #status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
-body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
+body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status, body.full.arrive #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
 #name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
 #folder { flex:0 1 auto; min-width:0; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 #clipflag { flex:1 0 0; display:flex; align-items:center; } /* takes the rest of the bar, and holds the clipboard right after the folder */

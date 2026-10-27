@@ -408,6 +408,14 @@ async function gifSetup(info) { // a picture was shown
   } catch { gifHide(); gif.meta = null; }
 }
 
+// In full screen the info bar is shown for two seconds when another picture arrives (opened, pasted, or stepped to), then it hides again.
+let arriveTimer = 0;
+function arriveBar() {
+  if (!document.body.classList.contains('full')) return;
+  document.body.classList.add('arrive');
+  clearTimeout(arriveTimer); arriveTimer = setTimeout(() => document.body.classList.remove('arrive'), 2000);
+}
+
 function showImage(info, opts = {}) {
   if (gif.meta && (info?.name !== view.name || info?.dir !== view.dir)) gifReset(); // (another picture: the player of the one before goes at once, not when the new one is known)
   let done; const loaded = new Promise((r) => { done = r; }); // resolved when the picture is on the screen
@@ -423,6 +431,7 @@ function showImage(info, opts = {}) {
     done();
     return loaded;
   }
+  if (!opts.keepView && (info.name !== view.name || info.dir !== view.dir)) arriveBar(); // (another picture)
   view.name = info.name; view.modified = !!info.modified; view.canAlpha = !!info.canAlpha; view.dir = info.dir; view.index = info.index; view.count = info.count; if (!opts.keepView) view.free = false; // (a picture that is the same, with something applied, keeps its zoom)
   stopBounce();
   if (!opts.keepView) polyClear(); view.token++; pixelState = ''; pixelCanvas = null; pixelPromise = null; view.sel = opts.sel ? rectSel(opts.sel) : null; view.selDrag = null; view.hl = null; $('stage').style.cursor = ''; clearPixel();

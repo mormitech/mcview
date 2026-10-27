@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.50.3 – 2026-10-27
+
+### Changed
+
+- In full screen, the info bar at the bottom shows for two seconds when another picture arrives (opened, pasted, or stepped to), then hides again.
+
 ## 0.50.2 – 2026-10-27
 
 ### Fixed
