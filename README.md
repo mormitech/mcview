@@ -56,7 +56,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Select and copy.** Drag to select a part (it snaps to whole pixels in the pixelated view). The moment you let go, the selection is **on the clipboard**,
   with a short highlight and its size written in the middle. With no selection, **Ctrl+C** copies the whole picture. **Esc** or a click takes the selection away.
   On Linux copying and pasting pictures needs `xclip` (X11) or `wl-clipboard` (Wayland).
-- **Paste as a new picture.** Outside edit mode, **Ctrl+V** makes the clipboard picture the picture of the window (undo brings the one before back). Open a new window
+- **Paste.** **Ctrl+V** lays a small clipboard picture over the picture as a part you can move; one about as big as the picture asks whether to make it a new image (undo brings the one before back). An empty window takes it as its picture. Open a new window
   (**Ctrl+N**) to keep both.
 - **Home screen.** A window with no picture offers three big buttons: **Open file…** (key **O**), **Open from clipboard** (**Ctrl+V**, shown when there is a picture on it) and **Create image** (**N**). **O** and **N** work with a picture open too; a picture with unsaved changes asks Save, Discard or Cancel first.
 

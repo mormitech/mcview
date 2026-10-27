@@ -195,7 +195,7 @@ Claude can use mcView's picture tools and web search and fetch, and nothing else
 | **S** | Save As |
 | **D** | Delete the file |
 | **Ctrl+C** | Copy the selection (or the whole picture) |
-| **Ctrl+V** | Paste (a new picture outside edit mode, a floating part in it) |
+| **Ctrl+V** | Paste: a small picture floats over the picture as a part you can move; one about as big as the picture asks whether to make it a new image |
 | **Ctrl+Z**, **Ctrl+Shift+Z** | Undo, redo |
 | **Delete** | Fill a polygon selection with the second color; take away a floating part |
 | **Esc** | Drop a selection or a drawing; let go of a selection; **Esc Esc** closes the picture |

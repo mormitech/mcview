@@ -1343,8 +1343,7 @@ function onWheel(ev) {
   if (isWheelNotch(ev) && now - lastTrackpad > 120) zoom(); else panBy(ev.deltaX, ev.deltaY);
 }
 
-// With edit mode off, paste makes the clipboard picture the picture of the window (undo brings the old one back), unless the window shows a clipboard picture
-// that is not saved: then it is as in edit mode, a small one is laid over it and a big one is asked about. The rest is for edit mode on.
+// Paste does not depend on edit mode: a small clipboard picture is laid over the picture, a big one is asked about (see below), a window without a picture takes it.
 // Ctrl+V (Cmd+V, Shift+Insert, Edit → Paste): the picture on the clipboard becomes the picture of the window. It has no file yet:
 // the title says [clipboard image], and S saves it.
 // Paste (Ctrl+V, Cmd+V, Edit → Paste): the picture on the clipboard is laid over the picture, near the top left corner of what is visible, as a part that
@@ -1354,13 +1353,10 @@ function onWheel(ev) {
 async function pasteImage() {
   try {
     if (view.fl) await flushFloat({clear: false});
-    const onClipPicture = !!pic.naturalWidth && view.name.startsWith('[clipboard image]'); // a picture that came from the clipboard and has no file yet
-    if (!document.body.classList.contains('edit') && !onClipPicture) { await PasteNew(); return; } // edit mode off: a whole new image (the 'image' event shows it and makes it a step)
     let px = 0, py = 0;
     if (pic.naturalWidth) { const r = $('stage').getBoundingClientRect(); [px, py] = pointInPicture(r.left + 12, r.top + 12); }
     const L = await PasteLayer(view.rot, Math.ceil(px), Math.ceil(py)); // (rounded up: the first pixel that is seen whole, 12 screen pixels in from the corner)
     if (!L.w) return;
-    if (!editOn()) setEdit(true); // (a small picture laid over a clipboard picture is a part that can be moved: that is edit mode)
     const f = {src: {x: 0, y: 0, w: L.w, h: L.h}, dest: {x: L.x, y: L.y, w: L.w, h: L.h}, url: `data:image/png;base64,${L.png}`, pasted: true, state: view.state, rot: view.rot};
     view.fl = f;
     $('float').onload = () => renderFloat();
