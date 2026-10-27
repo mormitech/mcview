@@ -290,18 +290,23 @@ function offerReopen() {
   $('reopen-pic').hidden = $('empty').hidden || !(e && e.label === 'image closed' && p && p.state !== 0);
 }
 
-// ---- The frame player of an animated GIF (edit mode): play and pause, one frame back and forth, and the frame counter ------------------------------------------------
-// The player shows the frames itself (the web view's own animation cannot be stopped or stepped). Paused on a frame, that frame is what the pixel tools read and
-// what an edit starts from (the picture is a still then); an edit makes the picture a changed one, and the player goes away.
-const gif = {meta: null, url: '', i: 0, playing: false, timer: 0, urls: [], shown: false};
+// ---- The GIF frame editor: the player (play and pause, one frame back and forth, the frame counter) and the tools on the frame that is shown --------------------------------
+// The player shows the frames itself (the web view's own animation cannot be stopped or stepped). Paused (or stepped) on a frame, that frame is what the pixel tools
+// read and what an edit goes into: the animation stays, with that frame changed (undo and redo bring it back). Save As offers the whole animation or the frame.
+const gif = {meta: null, url: '', i: 0, playing: false, timer: 0, urls: new Map(), shown: false};
 function gifStop() { clearTimeout(gif.timer); gif.timer = 0; gif.playing = false; document.body.classList.remove('gif-playing'); }
-function gifHide(restore = false) { // the player goes; with restore the picture is the file's own animation again (edit mode left), not when another picture has come (an edit)
+function gifHide(restore = false) { // the player goes; with restore the picture is the file's own animation again (edit mode left), not when another picture has come
   gifStop();
   $('gifbar').hidden = true;
   if (restore && gif.shown && gif.url && pic.src !== new URL(gif.url, location.href).href) { pic.src = gif.url; }
   gif.shown = false;
 }
-async function gifFrameURL(i) { return gif.urls[i] || (gif.urls[i] = await GifFrame(i)); }
+async function gifFrameURL(i) { // (a frame that was changed has a new key, so what was made for the old one is not shown again)
+  const k = gif.meta.keys[i];
+  let u = gif.urls.get(k);
+  if (!u) { u = await GifFrame(i); if (gif.urls.size > 300) gif.urls.clear(); gif.urls.set(k, u); }
+  return u;
+}
 async function gifShowFrame(i) {
   const url = await gifFrameURL(i);
   if (!gif.meta || !gif.shown) return;
@@ -316,36 +321,39 @@ function gifTick() {
     gifTick();
   }, gif.meta.delays[i] || 100);
 }
-function gifSetPlaying(on) {
+function gifSetPlaying(on) { // (the promise is for the pause: what is shown is then what the tools read)
   gifStop();
   gif.playing = on; document.body.classList.toggle('gif-playing', on); // (the tools are out of the way until a frame is chosen)
   $('gifbar').classList.toggle('paused', !on);
   $('gif-play').title = on ? 'Pause' : 'Play'; $('gif-play').setAttribute('aria-label', on ? 'Pause' : 'Play');
-  if (on) gifTick(); else SetGifFrame(gif.i).catch(() => {}); // (what is shown is what the tools read)
+  if (on) { gifTick(); return Promise.resolve(); }
+  return SetGifFrame(gif.i).catch(() => {});
 }
 async function gifStep(d) {
   if (!gif.meta) return;
-  gifSetPlaying(false);
+  await gifSetPlaying(false);
   await gifShowFrame((gif.i + d + gif.meta.frames) % gif.meta.frames);
-  SetGifFrame(gif.i).catch(() => {});
+  await SetGifFrame(gif.i).catch(() => {});
 }
-async function gifOffer() { // the player is shown for an unchanged animated GIF, in edit mode
-  if (!gif.meta || !editOn() || !pic.naturalWidth) return;
-  gif.shown = true; gif.i = 0;
+async function gifPresent(play) { // the player is on: playing from the first frame, or paused where the tools are
+  gif.shown = true;
   pic.onload = () => draw(); // (a frame is on the screen: only the drawing)
-  $('gifbar').hidden = false;
-  await gifShowFrame(0);
-  gifSetPlaying(true);
+  $('gifbar').hidden = false; $('gifbar').classList.toggle('edited', !!gif.meta.edited);
+  if (play) { await gifShowFrame(0); gifSetPlaying(true); } else { await gifShowFrame(gif.meta.cur); await gifSetPlaying(false); }
+}
+function gifOffer() { // edit mode begins: an animated GIF plays in the player (one with changed frames waits on its frame)
+  if (gif.meta && !gif.shown && pic.naturalWidth) gifPresent(!gif.meta.edited);
 }
 async function gifSetup(info) { // a picture was shown
-  gifHide(); gif.meta = null; gif.urls = [];
-  if (!info?.url || info.modified || !/\.gif$/i.test(info.name || '')) return;
+  gifStop();
+  if (!info?.url || !/\.gif$/i.test(info.name || '')) { gifHide(); gif.meta = null; return; }
   try {
     const meta = await GifInfo();
-    if (!meta.frames || meta.frames < 2 || view.state !== info.state) return;
+    if (view.state !== info.state) return; // (another picture was asked for meanwhile)
+    if (!meta.frames || meta.frames < 2) { gifHide(); gif.meta = null; return; }
     gif.meta = meta; gif.url = info.url;
-    await gifOffer();
-  } catch {}
+    if (editOn() || meta.edited) await gifPresent(meta.fresh || (!gif.shown && !meta.edited)); else gifHide();
+  } catch { gifHide(); gif.meta = null; }
 }
 
 function showImage(info, opts = {}) {
@@ -548,7 +556,7 @@ function setEdit(on) {
     view.ox = x0 - view.x; view.oy = y0 - view.y; draw(); startSpring();
   }
   updateHover(false);
-  if (on) gifOffer(); else gifHide(true); // (an animated GIF: its frame player is for the edit mode)
+  if (on) gifOffer(); else if (!gif.meta?.edited) gifHide(true); // (an animated GIF: its frame player is for the edit mode, and for a GIF whose frames were changed)
 }
 
 // ---- Tools of the edit bar: select (the default when edit mode starts), pencil, line, rectangle, text and the color picker ----------------------------------
@@ -1713,6 +1721,7 @@ async function deleteImage() {
 
 async function saveAs() {
   await commitText(); // a text that is being typed is part of what is saved
+  if (gif.playing) await gifSetPlaying(false); // an animation is stopped on a frame: Save As then offers the animation or the frame
   try {
     if (view.fl) await flushFloat(); // what was lifted is part of what is saved
     const r = selectionRect(); // with a selection only that part is saved, as a picture of its own; the window keeps its picture

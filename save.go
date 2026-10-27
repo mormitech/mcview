@@ -53,6 +53,23 @@ func (a *App) saveAsDialog(rot int, ask bool) (string, error) {
 	}
 	name := cur.Name
 	stamp := false
+	if g := a.gifSaving(); g != nil { // an animation: the whole of it, or the frame that is shown
+		a.mu.Lock()
+		frame, count := g.cur, len(g.frames)
+		a.mu.Unlock()
+		mode := a.askGifSave(frame, count)
+		if mode == gifSaveCancel {
+			return "", nil
+		}
+		a.mu.Lock()
+		a.gifMode = mode
+		a.mu.Unlock()
+		defer func() { a.mu.Lock(); a.gifMode = 0; a.mu.Unlock() }()
+		if mode == gifSaveFrame {
+			ask = false // a new file: nothing to overwrite
+			name = fmt.Sprintf("%s-frame-%d.png", strings.TrimSuffix(cur.Name, filepath.Ext(cur.Name)), frame+1)
+		}
+	}
 	_, writable := saveFormats[strings.ToLower(filepath.Ext(cur.Path))]
 	if ask && cur.Path != "" && writable && (cur.Modified || (rot%4+4)%4 != 0) {
 		switch a.askOverwrite(cur.Name) {
@@ -165,6 +182,27 @@ func (a *App) saveTo(target string, rot int) (string, error) {
 // writePicture writes the picture to f in the given format. A file that is of that type already is copied as it is, which keeps
 // everything in it (EXIF, profiles, animation); anything else is decoded and written again, turned the way it is shown.
 func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) error {
+	if g := a.gifSaving(); g != nil { // an animation: all of it as a GIF, else the frame that is shown (the file itself is not copied then)
+		a.mu.Lock()
+		mode, frames, delays, shown := a.gifMode, g.frames, g.delays, g.frames[g.cur]
+		a.mu.Unlock()
+		if mode == 0 { // not asked (a tool saves): a GIF is the whole animation, any other type the frame that is shown
+			mode = gifSaveFrame
+			if format == "gif" {
+				mode = gifSaveAll
+			}
+		}
+		if mode == gifSaveAll && format == "gif" {
+			return encodeGifAnimation(f, frames, delays)
+		}
+		a.mu.Lock()
+		q := a.saveQuality
+		a.mu.Unlock()
+		if q == 0 {
+			q = 95
+		}
+		return encodePictureQ(f, turnImage(shown, rot), format, q)
+	}
 	if cur.Path != "" && !cur.Modified && rot == 0 && saveFormats[strings.ToLower(filepath.Ext(cur.Path))] == format {
 		src, err := os.Open(cur.Path)
 		if err != nil {

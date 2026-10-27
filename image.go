@@ -125,6 +125,7 @@ func (a *App) setImage(path string) error {
 	a.imgSeq++
 	a.pix = pixelCache{} // the decoded picture of the one before is not needed any more
 	a.fl = nil
+	a.gifs = nil // (the file is opened afresh: its animation is as it is on the disk)
 	a.newStateLocked()
 	a.mu.Unlock()
 	addRecent(abs)

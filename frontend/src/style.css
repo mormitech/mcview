@@ -276,7 +276,7 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 body.edit.gif-playing #tools { opacity:0; pointer-events:none; } body.edit.gif-playing #status { left:0; } /* (no rail: the bar reaches the left edge) */
 
 #gifbar { position:fixed; left:50%; bottom:50px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:4px; padding:4px 10px 4px 4px; border-radius:999px; background:var(--bar); border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.2); }
-#gifbar[hidden], body:not(.edit) #gifbar { display:none; }
+#gifbar[hidden], body:not(.edit) #gifbar:not(.edited) { display:none; }
 #gifbar button { width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; border:0; background:transparent; color:var(--text); }
 #gifbar button:hover { background:rgba(127,127,127,.2); }
 #gifbar button svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }

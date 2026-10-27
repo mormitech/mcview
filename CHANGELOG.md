@@ -3,6 +3,16 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.49.0 – 2026-10-27
+
+### Added
+- A GIF frame editor. An animated GIF in edit mode plays in the frame player (Pause/Play, one frame back, one frame forward, the frame counter). Paused or stepped on a frame, every tool draws on that frame, and the animation stays: the other frames are untouched, the player stays after the edit, and undo and redo bring the frame back. A GIF whose frames were changed also shows the player outside edit mode.
+- Save As (also the S key) of an animation, stopped on a frame, asks whether to save the whole animation (a GIF with all frames and their delays) or only the frame that is shown (as PNG, by default named after the frame number). Saving to another type than GIF saves the frame that is shown.
+- A change of the picture's size (resize, crop, canvas) ends the frame editing: the picture is a still then.
+
+### Fixed
+- The player no longer disappears after drawing on a frame.
+
 ## 0.48.2 – 2026-10-27
 
 ### Fixed

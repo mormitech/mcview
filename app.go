@@ -55,13 +55,15 @@ type App struct {
 	spawned     int              // the windows this one started, so that each opens a little further down and right
 	cascade     int              // --cascade: how many steps of that this window was started at
 
-	recentSub *menu.Menu // File → Open Recent
-	recentSig string
-	gifs      *gifSet          // the frames of the animated GIF of the window (see gif.go)
-	rotc      *rotCache        // where a rotation started from, so that turning again does not turn the turned picture (see rotate.go)
-	states    map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
-	stateID   int              // the number of the one it is in; 0 is the empty window
-	nextState int
+	recentSub  *menu.Menu // File → Open Recent
+	recentSig  string
+	gifs       *gifSession   // the animated GIF of the window that is edited frame by frame (see gif.go)
+	gifMode    gifSaveChoice // what Save As saves of an animation (set while it runs)
+	confirmGif func(frame, count int) gifSaveChoice
+	rotc       *rotCache        // where a rotation started from, so that turning again does not turn the turned picture (see rotate.go)
+	states     map[int]picState // every picture state this window has had, by number, for undo (see undo.go)
+	stateID    int              // the number of the one it is in; 0 is the empty window
+	nextState  int
 
 	openWindow       func(path string) error                 // starts a window for a picture; spawn, except in the tests
 	confirmDiscard   func(name, action string) discardChoice // asks before unsaved changes are thrown away; the system's alert, except in the tests (see discard.go)

@@ -127,6 +127,7 @@ func (a *App) setPixelsFull(img *image.NRGBA, file string, emit, blank bool) err
 	a.pix = pixelCache{seq: a.imgSeq, img: img, orient: 1} // it is decoded already: the readout and Ctrl+C read from it
 	a.workDirLocked()
 	a.fl = nil
+	a.gifNoteEditLocked(img, file)
 	a.newStateLocked()
 	a.mu.Unlock()
 	if a.ctx != nil {

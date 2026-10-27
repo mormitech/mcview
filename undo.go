@@ -16,7 +16,8 @@ type picState struct {
 	clip    image.Image
 	clipPNG []byte
 	workDir string
-	blank   bool // a new blank picture that nothing was done to
+	blank   bool           // a new blank picture that nothing was done to
+	gif     []*image.NRGBA // the frames of an animated GIF that is edited frame by frame (nil: as in the file)
 }
 
 // newStateLocked numbers the picture the window has now, App.mu held.
@@ -24,7 +25,7 @@ func (a *App) newStateLocked() {
 	a.statesLocked()
 	a.nextState++
 	a.stateID = a.nextState
-	a.states[a.stateID] = picState{image: a.image, clip: a.clip, clipPNG: a.clipPNG, workDir: a.workDir, blank: a.blank}
+	a.states[a.stateID] = picState{image: a.image, clip: a.clip, clipPNG: a.clipPNG, workDir: a.workDir, blank: a.blank, gif: a.gifSnapshotLocked()}
 }
 
 func (a *App) statesLocked() map[int]picState {
@@ -54,6 +55,7 @@ func (a *App) restoreState(n int, after func() error) (ImageInfo, error) {
 	} else {
 		a.pix = pixelCache{}
 	}
+	a.restoreGifLocked(st)
 	a.mu.Unlock()
 	if after != nil {
 		if err := after(); err != nil {

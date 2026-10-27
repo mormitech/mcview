@@ -3,6 +3,10 @@ export namespace main {
 	export class GifMeta {
 	    frames: number;
 	    delays: number[];
+	    keys: string[];
+	    cur: number;
+	    fresh: boolean;
+	    edited: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new GifMeta(source);
@@ -12,6 +16,10 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.frames = source["frames"];
 	        this.delays = source["delays"];
+	        this.keys = source["keys"];
+	        this.cur = source["cur"];
+	        this.fresh = source["fresh"];
+	        this.edited = source["edited"];
 	    }
 	}
 	export class ImageInfo {
