@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.4 – 2026-10-27
+
+### Added
+
+- A **Clear** button next to Recent on the home screen empties the list of recent pictures (the files stay).
+
 ## 0.51.3 – 2026-10-27
 
 ### Changed

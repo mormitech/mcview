@@ -1,5 +1,5 @@
 import './style.css';
-import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent, GifStart, GifAddFrame, GifDuplicateFrame, GifDeleteFrame, GifMoveFrame, GifSetDelay, ExportFramesDialog} from '../wailsjs/go/main/App';
+import {Effect, Transform, SaveToPathQ, Version, Mode, PolygonPNG, DiscardChanges, PaintPixels, NewBlankColor, SaveToPath, Image, ChooseImage, Step, Trace, Reveal, ToggleFullscreen, ExitFullscreen, IsFullscreen, CloseWindow, PreparePixels, PixelAt, SelectionPNG, RotatePNG, SetTurn, SetFloat, ClearFloat, BakeFloat, HasTransparency, RestoreState, RestoreFloat, KeepStates, CopyImageNative, PasteLayer, PasteNew, DrawStroke, DrawShape, Retouch, ResizeCanvas, CropPicture, DrawLayer, FloodFill, DeleteImage, DiscardOK, ConfirmQuit, ControlReply, ClipboardHasImage, NewBlank, SaveSelectionAs, SetEditMode, SetTitleInfo, SetPasted, MovePasted, RestoreLayer, SaveAs, SaveWindow, SetMenuBar, NewWindow, ScanImage, PrintPNG, SaveRegionTo, GifInfo, GifFrame, SetGifFrame, Recent, OpenRecent, ClearRecent, GifStart, GifAddFrame, GifDuplicateFrame, GifDeleteFrame, GifMoveFrame, GifSetDelay, ExportFramesDialog} from '../wailsjs/go/main/App';
 import {BrowserOpenURL, EventsOn} from '../wailsjs/runtime/runtime';
 import logo from './assets/mormitech-mark.svg';
 import {initChat, toggleChat} from './chat.js';
@@ -278,6 +278,8 @@ function offerRecent() { // the pictures opened last, on the home screen
     $('recent').hidden = !list?.length;
   }).catch(() => {});
 }
+
+$('recent-clear').onclick = () => ClearRecent().then(offerRecent).catch(() => {});
 
 function offerClipboard() {
   offerRecent();
