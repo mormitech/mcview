@@ -1,0 +1,20 @@
+#!/bin/sh
+# The `mormiview` command of macOS: mormiview [picture ...]. The Homebrew cask links this script into the path, and not the program itself: started by
+# the program's own path through a link, the system does not know the app (the Open dialog collapsed). Here macOS starts the app as it does from
+# Finder, and the prompt comes back at once. Flags (--demo, --control ...) go to the app as they are.
+src=$0
+while [ -L "$src" ]; do # follow the links of the command to this file, to find the app that holds it
+  dir=$(cd "$(dirname "$src")" && pwd)
+  src=$(readlink "$src")
+  case $src in /*) ;; *) src=$dir/$src ;; esac
+done
+app=$(cd "$(dirname "$src")/../../.." && pwd) # mormiview.app/Contents/Resources/bin/mormiview
+case "$1" in
+  -*) set -- -n -a "$app" --args "$@" ;;
+  *) set -- -a "$app" "$@" ;;
+esac
+if [ -n "$MORMIVIEW_LAUNCH_DRYRUN" ]; then # (for the test: says what it would do)
+  echo open "$@"
+  exit 0
+fi
+exec open "$@"

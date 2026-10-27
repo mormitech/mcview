@@ -57,6 +57,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           mkdir dist
+          # the `mormiview` command: a launcher in the app (the Homebrew cask links to it), see packaging/macos
+          mkdir -p build/bin/mormiview.app/Contents/Resources/bin
+          cp packaging/macos/mormiview build/bin/mormiview.app/Contents/Resources/bin/mormiview
+          chmod +x build/bin/mormiview.app/Contents/Resources/bin/mormiview
           # ad-hoc signature, so the bundle is at least internally consistent; it is not notarized
           codesign --force --deep -s - build/bin/mormiview.app
           # the picture types in Info.plist are what makes Open With offer the app

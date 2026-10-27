@@ -2,7 +2,10 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -65,5 +68,48 @@ func TestResolvedPathFollowsLinks(t *testing.T) {
 	}
 	if got, changed := resolvedPath(want); changed || got != want {
 		t.Errorf("resolvedPath(real) = %q, %v; want it unchanged", got, changed)
+	}
+}
+
+// The macOS launcher finds the app through the links of the command, and starts it with open (see packaging/macos).
+func TestMacLauncher(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("a shell script")
+	}
+	dir := t.TempDir()
+	bin := filepath.Join(dir, "mormiview.app", "Contents", "Resources", "bin")
+	if err := os.MkdirAll(bin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	script, err := os.ReadFile("packaging/macos/mormiview")
+	if err != nil {
+		t.Fatal(err)
+	}
+	real := filepath.Join(bin, "mormiview")
+	if err := os.WriteFile(real, script, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(dir, "mormiview")
+	if err := os.Symlink(real, link); err != nil {
+		t.Skip("no symbolic links here")
+	}
+	app := filepath.Join(dir, "mormiview.app")
+	for _, c := range []struct {
+		args []string
+		want string
+	}{
+		{nil, "open -a " + app},
+		{[]string{"a.jpg", "b.png"}, "open -a " + app + " a.jpg b.png"},
+		{[]string{"--demo", "a.jpg"}, "open -n -a " + app + " --args --demo a.jpg"},
+	} {
+		cmd := exec.Command(link, c.args...)
+		cmd.Env = append(os.Environ(), "MORMIVIEW_LAUNCH_DRYRUN=1")
+		out, err := cmd.Output()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := strings.TrimSpace(string(out)); got != c.want {
+			t.Errorf("launcher %v said %q, want %q", c.args, got, c.want)
+		}
 	}
 }
