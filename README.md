@@ -2,7 +2,7 @@
 
 <p align="center">
   <b>A picture viewer, with a small Paint-like editor, for macOS, Windows and Linux.</b><br>
-  Early preview: it is offered in Open with… for your pictures, edit mode (key <b>E</b>) draws, types and pastes on them, and a built-in chat (key <b>C</b>) lets Claude change them for you.
+  Early preview: it is offered in Open with… for your pictures, shows animated GIFs frame by frame, edit mode (key <b>E</b>) draws, types, turns, applies effects and pastes on them (a GIF frame too), and a built-in chat (key <b>C</b>) lets Claude change them for you.
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 ## What it does
 
 mormiView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
-small editor in the way of Paint: select (a rectangle or free-hand), move and stretch parts, draw, type, paste, save. Press **C** and you can also just tell Claude what to change in the picture. It is built the same way as
+small editor in the way of Paint: select (a rectangle or free-hand), move, stretch and turn parts, draw, type, paste, apply effects, edit the frames of an animated GIF, save. Press **C** and you can also just tell Claude what to change in the picture. It is built the same way as
 [mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS frontend built with Vite.
 The manual is [docs/help.md](docs/help.md), also at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mormiView Help opens it).
 
@@ -44,11 +44,12 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
   **1** original size (100%, however small or big), **2** fit the window with a margin (85%; small pictures stay 100%), **3** fit every picture to
   the window borders, keeping its proportions, **4** stretch every picture to the window borders, **5** zoom until the side edges touch the window (the top and bottom may go over), **6** zoom until the top and bottom edges touch it (the sides may go over). **+** and **-** zoom, a mouse wheel zooms, dragging
   moves the picture (a double click never changes the zoom); on a Mac two fingers on the trackpad move the picture and a pinch zooms. Pull a big picture past its edge and it gives a little, then eases back.
+- **Animated GIFs.** A GIF with several frames plays, with a small player at the bottom: pause or play, a frame back, a frame forward, and the frame counter (`14 / 22`). Outside edit mode the player fades away while the animation runs. **Space** plays and pauses; **Shift+wheel** and the **Up** and **Down** arrows stop the animation and step through the frames, round and round.
 - **Arrow keys** (Backspace for previous; Space plays and pauses an animated GIF) go through the pictures of the folder in alphabetical order, and go round. The title of the window
   says the size, the place in the folder (`3 / 5`) and the zoom.
 - **Rotate the view.** **R** turns the picture a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file is not changed until you save.
 - **Full screen.** **F** or **Enter** toggles it (Esc does not leave it: two Escs close the picture). There is no title or bar then: the bar (size, place, zoom, color readout) comes up
-  when the pointer is at the bottom edge, or while there is a selection.
+  when the pointer is at the bottom edge, or while there is a selection, and for two seconds when another picture arrives (opened, pasted or stepped to).
 - **Pixel view and color readout.** In edit mode the picture is shown pixelated (every pixel a sharp square) and the bar shows the pixel under the pointer: its x and
   y, R G B (A) with meters, and the hex color in a pill. The numbers are the ones in the file (mormiView decodes it itself, with no color conversion), except for AVIF, SVG and ICO,
   where they are read from what the web view drew and the bar says so.
@@ -58,7 +59,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
   On Linux copying and pasting pictures needs `xclip` (X11) or `wl-clipboard` (Wayland).
 - **Paste.** **Ctrl+V** lays a small clipboard picture over the picture as a part you can move; one about as big as the picture asks whether to make it a new image (undo brings the one before back). An empty window takes it as its picture. Open a new window
   (**Ctrl+N**) to keep both.
-- **Home screen.** A window with no picture offers three big buttons: **Open file…** (key **O**), **Open from clipboard** (**Ctrl+V**, shown when there is a picture on it) and **Create image** (**N**). **O** and **N** work with a picture open too; a picture with unsaved changes asks Save, Discard or Cancel first.
+- **Home screen.** A window with no picture offers big buttons: **Open file…** (key **O**), **Open from clipboard** (**Ctrl+V**, shown when there is a picture on it), **Create image** (**N**) and **Scan** (a picture from a scanner opens as a new, unsaved picture), **Reopen last closed** (the picture comes back with its changes and undo history), and the five pictures opened last. **File → Open Recent** has the last ten. **O** and **N** work with a picture open too; a picture with unsaved changes asks Save, Discard or Cancel first.
 
 ### Editing (edit mode)
 
@@ -77,13 +78,16 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Text**: click, type, click elsewhere to put it in (**Ctrl+Enter** also does, **Esc** drops it). Font, size, bold and italic are in the ribbon.
 - **Pick**: click takes the color under the pointer as the first color (right click: the second), then the tool you had comes back.
 - **Colors**: the two wells at the bottom of the rail are the first and second color; click one for the palette (or *Edit colors…* for the system's picker).
+- **Image and Effects menus.** **Image** turns and flips the whole picture: Rotate Right/Left (a quarter turn, like **R**), **Rotate by Angle…** (any angle, smooth, with a slider; the corners make the picture bigger or are cut off), Flip Horizontal/Vertical. **Effects** work on the selected part (a rectangle or a polygon), or on the whole picture: Blur, Pixelize, Emboss, Explosion, Censor, Sharpen, Grayscale, Negative, Sepia, brightness, contrast, color, warmth, Auto Levels and Fill. With a part selected, **R** and Rotate by Angle… turn only that part; turning the same part (or the whole picture) again and again starts from the original pixels, so it does not get blurrier.
+- **Right-click menu.** On a selection: Cut, Copy, Crop to selection, Save selection as…, Print…, Clear, Rotate and Effects (the three effects used last are on top). On the picture with no selection: Copy, Select all, Save as…, Print…, Rotate by angle… and Effects.
+- **Animated GIFs in edit mode.** Pause the animation (or step to a frame) and every tool draws on that frame; the other frames are untouched. **Image → Start Animation** makes any picture frame 1 of a new animation, **Add Frame**, **Delete Frame** and the player's speed field (milliseconds per frame) build it, and **Export Frames as PNG…** writes every frame as a numbered file. **S** on an animation asks whether to save the whole GIF (all frames and their delays) or just the frame that is shown.
 - **Undo and redo.** **Ctrl+Z** / **Ctrl+Shift+Z** (Ctrl+Y). Every change of the picture, the mode (1–6), the pixelated view, the turn and the arrow keys can be undone; zooming, moving and the selection are not steps.
 - **Discard Changes** (File menu, or the round-arrow button in the edit bar) takes the picture back to what it was when it came into the window; undo brings the changes back.
 - Nothing is written to the file until you save. A picture with changes has a ● after its name.
 
 ### Chat with Claude
 
-**C** (or the speech bubble at the bottom right) opens a floating chat window over the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mormiView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and web search and fetch, and nothing else (no files, no shell), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
+**C** (or the speech bubble at the bottom right) opens a floating chat window over the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, turn, apply effects, make pixel art or an animated GIF (frame by frame, and you play and save it), or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mormiView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and web search and fetch, and nothing else (no files, no shell), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
 
 ### Saving, closing, deleting
 
@@ -100,6 +104,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **One window, three systems.** The same code builds for macOS, Windows and Linux; the window is cut down to 90% of the screen at start and its place is remembered.
 - **An About window and a Help menu.** *mormiView → About mormiView* on macOS, *Help → About mormiView* on Windows and Linux; *Help → mormiView Help* opens the manual.
 - **Follows your system.** Light or dark mode.
+- **Tooltips.** Everything with a hint shows it after a second in a small bubble.
 - **Tests and CI.** Builds, vets and tests on macOS, Windows and Linux, and packages the app on a release tag.
 
 ## Install

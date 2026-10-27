@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.1 – 2026-10-27
+
+### Changed
+
+- The README and the manual describe the newer features: animated GIFs (player, frame editing, making and saving animations), Image and Effects menus, fine rotation, the right-click menu, Scan, recent pictures and Reopen last closed, tooltips.
+
 ## 0.51.0 – 2026-10-27
 
 ### Changed
