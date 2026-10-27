@@ -10,7 +10,7 @@ import (
 
 var (
 	pEffects = []string{"blur", "pixelize", "emboss", "explosion", "grayscale", "negative", "sepia", "censor", "fill", "gradient",
-		"brightness", "contrast", "saturation", "hue", "temperature", "gamma", "levels", "auto_levels", "sharpen"}
+		"brightness", "contrast", "saturation", "hue", "temperature", "gamma", "levels", "auto_levels", "sharpen", "rotate"}
 	pFeather = prop("integer", "Pixels over which the edge of the part fades into the rest (0 = hard edge)")
 	pShadow  = map[string]any{"type": "object", "description": "A soft shadow under the shape: {dx, dy, blur, color} (default 3, 3, 4, black)", "properties": map[string]any{
 		"dx": map[string]any{"type": "integer"}, "dy": map[string]any{"type": "integer"}, "blur": map[string]any{"type": "integer"}, "color": map[string]any{"type": "string"}}}

@@ -179,6 +179,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #ctx { position:fixed; z-index:1100; min-width:200px; padding:5px; border-radius:10px; background:var(--panel); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,.28); display:flex; flex-direction:column; }
 #ctx button { display:flex; justify-content:space-between; gap:24px; align-items:center; border:0; background:transparent; padding:6px 10px; border-radius:6px; text-align:left; font:inherit; color:var(--text); }
 #ctx button:hover { background:var(--accent); color:var(--accent-text); } #ctx kbd { font:inherit; opacity:.6; }
+#ctx button.has-sub { position:relative; } #ctx .sub { display:none; position:absolute; min-width:210px; padding:5px; border-radius:10px; background:var(--panel); border:1px solid var(--line); box-shadow:0 10px 30px rgba(0,0,0,.28); flex-direction:column; }
 #ctx hr { border:0; border-top:1px solid var(--line); margin:4px 2px; }
 
 /* The chat panel */
@@ -253,7 +254,7 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 /* each card has its own subtle color */
 #open { --ic:#d98a0b; } #open-clip { --ic:#8a5cf0; } #new-pic { --ic:#2f6df6; } #reopen-pic { --ic:#1fa37a; } #scan-pic { --ic:#e0507a; }
 
-#rotdlg input[type=range] { flex:1; }
+#rotdlg input[type=range] { flex:1; } #rotdlg .row[hidden] { display:none; }
 
 /* Claude is working and the chat is minimized: the button pulses and its bubble bobs */
 #chat-toggle.working::before, #chat-toggle.working::after { content:''; position:absolute; inset:0; border-radius:50%; border:2px solid var(--accent); opacity:0; animation:chatpulse 1.6s ease-out infinite; pointer-events:none; }

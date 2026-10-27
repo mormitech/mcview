@@ -324,6 +324,12 @@ function problem(text, bad = true, ms = 4000) {
 }
 
 // The Effects menu: the effect works on the part that is selected (the polygon, else the box), or on all of the picture when nothing is.
+// A selected part that is turned again (and again) is turned from the pixels it had before the first turn, so that it does not get blurrier: Go keeps those while this
+// session lasts, which is until the selection is let go or the picture is changed by something else (the state is not the one the turn made).
+let rotSession = null;
+const EFFECT_LABELS = [['Blur', 'blur'], ['Pixelize', 'pixelize'], ['Emboss', 'emboss'], ['Explosion', 'explosion'], ['Censor', 'censor'], ['Sharpen', 'sharpen'], null,
+  ['Grayscale', 'grayscale'], ['Negative', 'negative'], ['Sepia', 'sepia'], null, ['Brighter', 'brightness+'], ['Darker', 'brightness-'], ['More contrast', 'contrast+'], ['Less contrast', 'contrast-'],
+  ['More color', 'saturation+'], ['Less color', 'saturation-'], ['Warmer', 'warmer'], ['Cooler', 'cooler'], ['Auto levels', 'auto-levels'], null, ['Fill with foreground color', 'fill-fg']];
 const EFFECT_MENU = {
   blur: {op: 'blur', radius: 6}, pixelize: {op: 'pixelize', size: 12}, emboss: {op: 'emboss'}, explosion: {op: 'explosion'}, censor: {op: 'censor'},
   grayscale: {op: 'grayscale'}, negative: {op: 'negative'}, sepia: {op: 'sepia'}, sharpen: {op: 'sharpen'}, 'auto-levels': {op: 'auto_levels'},
@@ -345,6 +351,16 @@ async function applyEffect(spec, label) {
   if (keep && made !== prev) { made.sel = {...keep}; if (prev) prev.undoSel = {...keep}; }
   return info;
 }
+// Turns the selected part by angle degrees (a quarter turn is stretched to fill the frame again, another angle is blown up so that no corner is empty).
+async function rotatePart(angle) {
+  const part = effectPart(), key = JSON.stringify(part);
+  const again = !!rotSession && rotSession.key === key && rotSession.state === view.state;
+  try {
+    await applyEffect({op: 'rotate', angle, again, ...part}, `rotated the part ${angle}°`);
+    rotSession = {key, state: view.state};
+  } catch (e) { problem(errText(e)); }
+}
+
 async function applyEffectMenu(name) {
   const base = EFFECT_MENU[name];
   if (!base || !view.state || !pic.naturalWidth) return;
@@ -354,8 +370,10 @@ async function applyEffectMenu(name) {
 }
 
 // Rotate by angle (Effects menu, and the right-click menu of the whole picture): any angle, smooth; the corners either make the picture bigger or are cut off.
-function askRotation() {
+function askRotation(part) {
   const dlg = $('rotdlg'), form = $('rotdlg-form'), A = $('rd-a'), R = $('rd-r'), C = $('rd-c'), B = $('rd-bg'), err = $('rd-err');
+  for (const row of [C, B]) row.closest('.row').hidden = !!part; // (a turned part always fills its frame: no corners to choose)
+  $('rotdlg-title').textContent = part ? 'Rotate the selected part' : 'Rotate by angle';
   A.value = '0'; R.value = '0'; err.hidden = true; dlg.hidden = false; A.focus(); A.select();
   return new Promise((resolve) => {
     const close = (v) => { dlg.hidden = true; form.onsubmit = null; dlg.onkeydown = null; $('rd-cancel').onclick = null; dlg.onmousedown = null; A.oninput = null; R.oninput = null; resolve(v); };
@@ -376,8 +394,10 @@ function askRotation() {
 async function rotateByAngle() {
   if (!pic.naturalWidth) return;
   await commitText();
-  const o = await askRotation();
+  const part = !view.fl && !!selectionRect();
+  const o = await askRotation(part);
   if (!o) return;
+  if (part) { await rotatePart(o.angle); return; }
   const bg = {auto: '', transparent: '#00000000', white: '#FFFFFFFF', second: paint.bg.length === 7 ? paint.bg + 'FF' : paint.bg}[o.bg];
   try {
     if (view.fl) await flushFloat({clear: true});
@@ -394,6 +414,7 @@ async function imageMenuAction(name) {
   if (name === 'rotate-angle') { rotateByAngle(); return; }
   await commitText();
   try {
+    if ((name === 'rotate-right' || name === 'rotate-left') && !view.fl && selectionRect()) { await rotatePart(name === 'rotate-right' ? 90 : -90); return; } // (a selected part is turned)
     if (view.fl) await flushFloat({clear: true}); // what is lifted is applied first
     if (name === 'rotate-right' || name === 'rotate-left') { rotate(name === 'rotate-right' ? 1 : -1); commit(); return; }
     const info = await Transform(view.rot, JSON.stringify({op: 'flip', horizontal: name === 'flip-h', vertical: name === 'flip-v'}));
@@ -471,6 +492,7 @@ const poly = {pts: [], closed: false, down: false, raw: [], button: 0};
 const polyActive = () => tool() === 'poly' || poly.closed || poly.down; // (a polygon that is set answers to its keys also when it was drawn with the right button)
 
 function polyClear() {
+  rotSession = null;
   if (!poly.pts.length && !poly.closed && !poly.down) return;
   poly.pts = []; poly.closed = false; poly.down = false; poly.raw = [];
   renderPoly();
@@ -570,12 +592,18 @@ function showSelectionMenu(x, y) {
   const part = selectionRect(), r = part || {x: 0, y: 0, w: dispW(), h: dispH()}; // (no selection: the menu of the whole picture)
   if (!pic.naturalWidth) return;
   const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
+  const effectItems = () => EFFECT_LABELS.map((e) => e && [e[0], () => applyEffectMenu(e[1])]); // (on the selection, or on all of the picture)
   const items = part ? [
     ['Cut', async () => { await copySelection(); await clearSelectedPart(); }],
     ['Copy', () => copySelection(), `${MAC ? '⌘' : 'Ctrl+'}C`],
     ['Crop to selection', cropToSelection],
     ['Save selection as…', saveAs],
     ['Print…', printSelection],
+    null,
+    ['Effects', null, '', effectItems()],
+    ['Rotate right', () => rotatePart(90), 'R'],
+    ['Rotate left', () => rotatePart(-90), '⇧R'],
+    ['Rotate by angle…', rotateByAngle],
     null,
     ['Clear', async () => { await clearSelectedPart(); }, '⌫'],
   ] : [
@@ -584,19 +612,36 @@ function showSelectionMenu(x, y) {
     ['Save as…', saveAs],
     ['Print…', printSelection],
     null,
+    ['Effects', null, '', effectItems()],
+    ['Rotate right', () => imageMenuAction('rotate-right'), 'R'],
+    ['Rotate left', () => imageMenuAction('rotate-left'), '⇧R'],
     ['Rotate by angle…', rotateByAngle],
   ];
   const menu = document.createElement('div');
   menu.id = 'ctx'; menu.setAttribute('role', 'menu');
-  for (const it of items) {
-    if (!it) { menu.appendChild(document.createElement('hr')); continue; }
-    const b = document.createElement('button');
-    b.setAttribute('role', 'menuitem');
-    b.innerHTML = `<span></span><kbd></kbd>`;
-    b.firstChild.textContent = it[0]; b.lastChild.textContent = it[2] || '';
-    b.onclick = run(it[1]);
-    menu.appendChild(b);
-  }
+  const fill = (box, list) => {
+    for (const it of list) {
+      if (!it) { box.appendChild(document.createElement('hr')); continue; }
+      const b = document.createElement('button');
+      b.setAttribute('role', 'menuitem');
+      b.innerHTML = `<span></span><kbd></kbd>`;
+      b.firstChild.textContent = it[0]; b.lastChild.textContent = it[2] || '';
+      if (it[3]) { // a submenu, open while the pointer is over it
+        b.classList.add('has-sub'); b.lastChild.textContent = '▸';
+        const sm = document.createElement('div'); sm.className = 'sub'; fill(sm, it[3]); b.appendChild(sm);
+        b.onmouseenter = () => {
+          sm.style.display = 'flex'; sm.style.top = '-6px'; sm.style.left = '100%'; sm.style.right = 'auto';
+          const r = sm.getBoundingClientRect();
+          if (r.right > innerWidth - 4) { sm.style.left = 'auto'; sm.style.right = '100%'; }
+          if (r.bottom > innerHeight - 4) sm.style.top = `${-6 - (r.bottom - innerHeight + 4)}px`;
+        };
+        b.onmouseleave = () => { sm.style.display = 'none'; };
+        b.onclick = (ev) => ev.stopPropagation();
+      } else b.onclick = run(it[1]);
+      box.appendChild(b);
+    }
+  };
+  fill(menu, items);
   document.body.appendChild(menu);
   const w = menu.offsetWidth, h = menu.offsetHeight;
   menu.style.left = `${Math.max(4, Math.min(x, innerWidth - w - 4))}px`;
@@ -1202,6 +1247,7 @@ function updateHover(shift) {
 }
 
 function clearSelection() {
+  rotSession = null;
   stopSelectionFlash();
   if (view.fl) { flushFloat({clear: true}); return; } // a lifted part is applied: the selection is let go
   if (!view.sel) return;
@@ -1719,6 +1765,7 @@ const undo = () => undoRedo(-1), redo = () => undoRedo(1);
 
 // Drag to select (with Shift on an edge of the frame, the frame is moved without touching the picture).
 function beginSelection(clientX, clientY) {
+  rotSession = null; // (a new frame: turning starts afresh)
   stopSelectionFlash();
   polyClear(); // (a new frame replaces a polygon)
   const edge = edgeAt(clientX, clientY, true); // without Shift the frame alone is moved and resized, in any mode
@@ -1957,7 +2004,8 @@ function startViewer() {
     else if (MODES[ev.key]) { setMode(MODES[ev.key]); commit(); }
     else if (ev.key === 'r' || ev.key === 'R') {
       const dir = ev.shiftKey ? -1 : 1;
-      if (view.fl) flushFloat({clear: true}).then(() => { rotate(dir); commit(); }); // what is lifted is applied before the picture is turned
+      if (!view.fl && selectionRect()) rotatePart(90 * dir); // a selected part is turned, not the picture
+      else if (view.fl) flushFloat({clear: true}).then(() => { rotate(dir); commit(); }); // what is lifted is applied before the picture is turned
       else { rotate(dir); commit(); }
     }
     else if (ev.key === 's' || ev.key === 'S') saveAs();

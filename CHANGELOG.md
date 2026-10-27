@@ -3,6 +3,13 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.45.0 – 2026-10-27
+
+### Added
+- The right-click menu (of a selection, and of the whole picture) has an Effects submenu: an effect works on the selection, or on all of the picture when nothing is selected.
+- A selected part can be turned: **R** and **Shift+R** (a quarter turn each way), Image → Rotate Right/Left, Rotate by Angle… (with any angle) and the right-click menu turn only the selected part (a box or a polygon) when there is a selection. A quarter turn is stretched to fill the frame again; any other angle is blown up just enough that the turned part reaches every edge. Turning the same part again and again starts from its pixels before the first turn, so it does not get blurrier (until the selection is let go). The whole picture is turned as before.
+- The chat's `apply_effect` has a `rotate` effect (a part, and angle).
+
 ## 0.44.1 – 2026-10-27
 
 ### Changed

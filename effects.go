@@ -22,11 +22,12 @@ type effectSpec struct {
 	Pts     [][2]int `json:"pts"`
 	Mask    string   `json:"mask"`
 	Feather int      `json:"feather"` // pixels over which the edge of the part fades
+	Again   bool     `json:"again"`   // rotate: this turn goes on from the last one of the same part (the page says so while the selection is kept)
 	// the strength and the rest; each effect says which ones it reads
 	Radius  float64  `json:"radius"` // blur, sharpen: pixels
 	Size    int      `json:"size"`   // pixelize, censor: the side of a block in pixels
 	Amount  *float64 `json:"amount"` // the strength: -100 to 100 for the adjustments, 0 to 100 for explosion and emboss, 0 to 500 for sharpen
-	Angle   float64  `json:"angle"`  // emboss: where the light comes from; hue: the turn; gradient: the direction (0 is left to right), all in degrees
+	Angle   float64  `json:"angle"`  // emboss: where the light comes from; hue: the turn; gradient: the direction (0 is left to right); rotate: the turn of the part, clockwise; all in degrees
 	CX      *float64 `json:"cx"`     // explosion: the middle of the burst (the middle of the part by default)
 	CY      *float64 `json:"cy"`
 	Color   string   `json:"color"`   // fill, gradient (the start), censor with a bar: #rrggbb or #rrggbbaa
@@ -40,7 +41,7 @@ type effectSpec struct {
 }
 
 var effectOps = []string{"blur", "pixelize", "emboss", "explosion", "grayscale", "negative", "sepia", "censor", "fill", "gradient",
-	"brightness", "contrast", "saturation", "hue", "temperature", "gamma", "levels", "auto_levels", "sharpen"}
+	"brightness", "contrast", "saturation", "hue", "temperature", "gamma", "levels", "auto_levels", "sharpen", "rotate"}
 
 func (sp effectSpec) amount(def float64) float64 {
 	if sp.Amount == nil {
@@ -89,12 +90,24 @@ func (a *App) Effect(rot int, spec string) (ImageInfo, error) {
 	if err != nil {
 		return ImageInfo{}, err
 	}
+	var orig *image.NRGBA
+	var total float64
+	var key string
+	if sp.Op == "rotate" { // turning again starts from the picture as it was before the first turn: nothing is turned twice (see rotate.go)
+		key = fmt.Sprintf("part %v", [...]any{sh.r, sp.Pts, sp.Mask != ""})
+		orig, total = a.rotationBase(base, key, sp.Angle, sp.Again)
+		base = cloneNRGBA(orig)
+		sp.Angle = total
+	}
 	note, err := applyEffect(base, sh, sp)
 	if err != nil {
 		return ImageInfo{}, err
 	}
 	if err := a.setPixelsEmit(base, a.current().Path, false); err != nil {
 		return ImageInfo{}, err
+	}
+	if orig != nil {
+		a.keepRotation(orig, key, total)
 	}
 	info := a.Image()
 	info.Note = note
@@ -321,6 +334,8 @@ func runEffect(img *image.NRGBA, box image.Rectangle, sp effectSpec) error {
 			size = max(8, min(box.Dx(), box.Dy())/6)
 		}
 		mosaic(img, box, min(size, 400))
+	case "rotate":
+		rotatePart(img, box, sp.Angle)
 	case "emboss":
 		emboss(img, sp.Angle, sp.amount(100)/100)
 	case "explosion":
