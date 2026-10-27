@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"image"
+	"image/draw"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // scanCommand is the program that asks a scanner for a picture and leaves it as a PNG file at path (nil when the system has no such thing).
@@ -32,6 +35,7 @@ func (a *App) ScanImage() error {
 	if runtime.GOOS == "darwin" { // Image Capture saves the scan as a file: mcView opens the first new picture that turns up in the usual places
 		home, _ := os.UserHomeDir()
 		since := time.Now()
+		wasOpen := exec.Command("pgrep", "-x", "Image Capture").Run() == nil
 		if err := exec.Command("open", "-a", "Image Capture").Run(); err != nil {
 			return errors.New("Image Capture could not be opened")
 		}
@@ -40,7 +44,20 @@ func (a *App) ScanImage() error {
 			dirs[i] = filepath.Join(home, dirs[i])
 		}
 		if path := waitForScan(dirs, since, 10*time.Minute, time.Second); path != "" {
-			return a.setImage(path)
+			if !wasOpen { // the scan app was started for this: it goes away, and mcView has the focus again
+				_ = exec.Command("osascript", "-e", `tell application "Image Capture" to quit`).Run()
+			}
+			if a.ctx != nil {
+				wruntime.WindowShow(a.ctx)
+			}
+			if f, err := os.Open(path); err == nil {
+				img, _, derr := image.Decode(f)
+				f.Close()
+				if derr == nil {
+					return a.setScan(img, path)
+				}
+			}
+			return a.setImage(path) // (a type that is not decoded here)
 		}
 		return nil
 	}
@@ -71,7 +88,25 @@ func (a *App) ScanImage() error {
 	if err != nil {
 		return errors.New("nothing was scanned")
 	}
-	return a.setClip(img)
+	return a.setScan(img, "")
+}
+
+// setScan makes a scanned picture the picture of the window and counts it as a change that is not saved: a scan took time and a scanner, so closing it asks first
+// (file is the file the scan was saved as, or "" for one that is only in memory).
+func (a *App) setScan(img image.Image, file string) error {
+	b := img.Bounds()
+	if b.Dx() < 1 || b.Dy() < 1 || b.Dx()*b.Dy() > maxPixels {
+		return errors.New("the scanned picture is too small or too big")
+	}
+	n := image.NewNRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
+	draw.Draw(n, n.Bounds(), img, b.Min, draw.Src)
+	if err := a.setPixelsFull(n, file, true, false); err != nil {
+		return err
+	}
+	a.mu.Lock()
+	a.origImg = n // (Discard changes goes back to the scan)
+	a.mu.Unlock()
+	return nil
 }
 
 var scanExts = map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".tif": true, ".tiff": true, ".heic": true}

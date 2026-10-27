@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.41.1 – 2026-10-27
+
+### Changed
+- A scanned picture counts as an unsaved change (the modified mark shows, and closing it asks), because a scan takes time and a scanner; the pictures from the file, the clipboard and Create image are still closed without a question.
+- On macOS, Image Capture is quit when the scan has arrived (if mcView started it), and mcView gets the focus back.
+
 ## 0.41.0 – 2026-10-27
 
 ### Added
