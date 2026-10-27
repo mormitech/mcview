@@ -87,6 +87,8 @@ func TestControlPort(t *testing.T) {
 		{[]string{"--control=9"}, "", "9", true},
 		{[]string{"--control", "--theme", "dark"}, "", "0", true},
 		{nil, "7000", "7000", true},
+		{[]string{"--demo"}, "", "0", true},
+		{[]string{"--mock", "--control", "5000"}, "", "5000", true},
 	} {
 		if port, ok := controlPort(tc.args, tc.env); port != tc.port || ok != tc.ok {
 			t.Errorf("controlPort(%v, %q) = %q, %v", tc.args, tc.env, port, ok)

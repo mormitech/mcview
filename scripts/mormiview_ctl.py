@@ -43,7 +43,7 @@ class MormiView:
         app = os.path.abspath(app)  # (`open -a` needs the whole path)
         if os.path.exists(file):
             os.remove(file)
-        args = ["--control", "0"] + ([picture] if picture else [])
+        args = ["--demo"] + ([picture] if picture else [])
         env = dict(os.environ, MORMIVIEW_CONTROL_FILE=file)
         if app.endswith(".app"):
             subprocess.run(["open", "-n", "--env", "MORMIVIEW_CONTROL_FILE=" + file, "-a", app, "--args"] + args, check=True)

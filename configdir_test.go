@@ -33,3 +33,15 @@ func TestConfigDirMovesTheOldFolder(t *testing.T) {
 		t.Errorf("the old folder is still there")
 	}
 }
+
+func TestDemoUsesAFreshFolder(t *testing.T) {
+	defer func() { demoDir = "" }()
+	startDemo([]string{"--demo"})
+	if demoDir == "" || configDir() != demoDir {
+		t.Fatalf("demo folder %q, config folder %q", demoDir, configDir())
+	}
+	if entries, _ := os.ReadDir(demoDir); len(entries) != 0 {
+		t.Errorf("the demo folder is not empty")
+	}
+	os.RemoveAll(demoDir)
+}

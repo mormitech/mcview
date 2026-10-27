@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.5 – 2026-10-27
+
+### Added
+
+- `--demo` (also `--mock`): control mode on a free port, with a new empty settings folder, so that screenshots show no recent pictures or window state of the person making them. The demo scripts use it.
+
 ## 0.51.4 – 2026-10-27
 
 ### Added

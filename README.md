@@ -166,7 +166,7 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mormiview picture.jpg`). `--theme dark` (or `light`)
 forces the look instead of the system's.
 
-**Control mode.** `mormiview --control 0 picture.jpg` lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom,
+**Control mode.** `mormiview --control 0 picture.jpg` (or `--demo`, which also starts with empty settings) lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom,
 the answers of the dialogs) over a local, token-protected connection: for demo screenshots and scripted tests. See [docs/control.md](docs/control.md);
 `scripts/demo_screenshots.py` makes the screenshots of the manual that way.
 

@@ -7,6 +7,9 @@ screenshots, for the manual in pictures, for scripted tests. It is off unless yo
 mormiview --control 0 picture.jpg          # 0 takes a free port; or MORMIVIEW_CONTROL=0 in the environment
 ```
 
+`--demo` (or `--mock`) is control mode on a free port that also starts with settings of its own: a new empty folder in the temporary folder, so the
+recent pictures, the window place and the AI settings of the person who makes the screenshots do not show in them and are not changed. `scripts/demo_screenshots.py` starts the app this way.
+
 On start the app writes `mormiview-control.json` (in the temporary folder, or where `MORMIVIEW_CONTROL_FILE` says; readable by you only):
 
 ```json
