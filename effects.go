@@ -94,7 +94,7 @@ func (a *App) Effect(rot int, spec string) (ImageInfo, error) {
 	var total float64
 	var key string
 	if sp.Op == "rotate" { // turning again starts from the picture as it was before the first turn: nothing is turned twice (see rotate.go)
-		key = fmt.Sprintf("part %v", [...]any{sh.r, sp.Pts, sp.Mask != ""})
+		key = fmt.Sprintf("part %d %v", rot, [...]any{sh.r, sp.Pts, sp.Mask != ""})
 		orig, total = a.rotationBase(base, key, sp.Angle, sp.Again)
 		base = cloneNRGBA(orig)
 		sp.Angle = total

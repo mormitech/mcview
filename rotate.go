@@ -9,9 +9,9 @@ import (
 	"golang.org/x/image/math/f64"
 )
 
-// A rotation cache for a selected part: turning it again right after a turn (while the selection is kept) starts from the picture as it was before the first
-// turn and turns it by the angles added up, so the pixels are resampled once, however many times it is turned (and a turn back is exact). The whole picture
-// has no such cache: it changes its size, and what is turned is always the picture as it is.
+// A rotation cache: turning the picture (or a selected part) again right after a turn, with nothing else done to the picture in between (any other change makes a
+// new state), starts from the picture as it was before the first turn and turns it by the angles added up, so the pixels are resampled once, however many times
+// it is turned (and a turn back is exact). For a part the page also says (again) whether the selection was kept.
 type rotCache struct {
 	after int          // the state that the last turn made: the cache is good only while that is the picture
 	orig  *image.NRGBA // the picture before the first turn

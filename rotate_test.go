@@ -51,3 +51,25 @@ func TestRotationBaseContinues(t *testing.T) {
 		t.Fatalf("another part: %v", tot)
 	}
 }
+
+func TestWholeRotationsAreMadeFromTheFirstPicture(t *testing.T) {
+	a := &App{}
+	img := image.NewNRGBA(image.Rect(0, 0, 40, 20))
+	for i := range img.Pix {
+		img.Pix[i] = 200
+	}
+	a.mu.Lock()
+	a.newStateLocked()
+	a.mu.Unlock()
+	orig, total := a.rotationBase(img, "whole", 10, true)
+	a.keepRotation(orig, "whole", total)
+	if o, tot := a.rotationBase(img, "whole", -10, true); tot != 0 || o != orig {
+		t.Fatalf("a turn back must give the first picture again: %v", tot)
+	}
+	a.mu.Lock()
+	a.newStateLocked() // something else changed the picture
+	a.mu.Unlock()
+	if _, tot := a.rotationBase(img, "whole", 5, true); tot != 5 {
+		t.Fatalf("the cache must not outlive a change: %v", tot)
+	}
+}

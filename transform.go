@@ -56,12 +56,22 @@ func (a *App) Transform(rot int, spec string) (ImageInfo, error) {
 		return ImageInfo{}, fmt.Errorf("there is no picture in this window")
 	}
 	file := a.current().Path
-	var out *image.NRGBA
+	var out, orig *image.NRGBA
+	var rotKey string
 	switch sp.Op {
 	case "resize":
 		out, err = resizePicture(base, sp)
 	case "rotate":
-		out, err = rotatePicture(base, sp, canAlpha(file))
+		// consecutive turns (nothing else changed the picture in between) are all made from the picture as it was before the first one, by the angles added up
+		rotKey = fmt.Sprintf("whole %d %v %q", rot, sp.Crop, sp.Bg)
+		var total float64
+		orig, total = a.rotationBase(base, rotKey, sp.Angle, true)
+		sp.Angle = total
+		if math.Mod(total, 360) == 0 {
+			out = cloneNRGBA(orig)
+		} else {
+			out, err = rotatePicture(orig, sp, canAlpha(file))
+		}
 	case "flip":
 		out, err = flipPicture(base, sp)
 	case "place":
@@ -74,6 +84,9 @@ func (a *App) Transform(rot int, spec string) (ImageInfo, error) {
 	}
 	if err := a.setPixelsEmit(out, file, false); err != nil {
 		return ImageInfo{}, err
+	}
+	if orig != nil {
+		a.keepRotation(orig, rotKey, sp.Angle)
 	}
 	return a.Image(), nil
 }
