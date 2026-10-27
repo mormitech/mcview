@@ -27,11 +27,11 @@ func (a *App) PrintPNG(b64 string) (string, error) {
 	if err != nil || len(data) == 0 {
 		return "", errors.New("nothing to print")
 	}
-	dir, err := os.MkdirTemp("", "mcview-print")
+	dir, err := os.MkdirTemp("", "mormiview-print")
 	if err != nil {
 		return "", err
 	}
-	path := filepath.Join(dir, "mcview.png")
+	path := filepath.Join(dir, "mormiview.png")
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		os.RemoveAll(dir)
 		return "", err

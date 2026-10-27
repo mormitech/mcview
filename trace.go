@@ -7,12 +7,12 @@ import (
 	"time"
 )
 
-// With MCVIEW_TRACE=<file> in the environment mcView appends a line with the time (epoch milliseconds) to that file at each
+// With MORMIVIEW_TRACE=<file> in the environment mormiView appends a line with the time (epoch milliseconds) to that file at each
 // step of starting and showing a picture, from both Go and the UI. It is how a slow start is tracked down; without the variable
 // it costs nothing.
 var (
 	traceMu   sync.Mutex
-	tracePath = os.Getenv("MCVIEW_TRACE")
+	tracePath = os.Getenv("MORMIVIEW_TRACE")
 )
 
 func trace(format string, args ...any) {

@@ -27,11 +27,11 @@ func TestChatEvents(t *testing.T) {
 		t.Errorf("delta = %v", delta)
 	}
 	eq(kinds(`{"type":"stream_event","event":{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"hm"}}}`))
-	asst := chatEvents([]byte(`{"type":"assistant","message":{"content":[{"type":"text","text":"Drawing."},{"type":"tool_use","id":"t1","name":"mcp__mcview__draw_rect","input":{"x":1,"y":2,"w":30,"h":40}}]}}`))
+	asst := chatEvents([]byte(`{"type":"assistant","message":{"content":[{"type":"text","text":"Drawing."},{"type":"tool_use","id":"t1","name":"mcp__mormiview__draw_rect","input":{"x":1,"y":2,"w":30,"h":40}}]}}`))
 	if len(asst) != 2 || asst[0]["kind"] != "text" || asst[1]["kind"] != "tool" || asst[1]["name"] != "draw_rect" || asst[1]["input"] != `{"x":1,"y":2,"w":30,"h":40}` {
 		t.Errorf("assistant = %v", asst)
 	}
-	long := chatEvents([]byte(`{"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__mcview__set_pixels","input":{"pixels":"` + strings.Repeat("x", 500) + `"}}]}}`))
+	long := chatEvents([]byte(`{"type":"assistant","message":{"content":[{"type":"tool_use","name":"mcp__mormiview__set_pixels","input":{"pixels":"` + strings.Repeat("x", 500) + `"}}]}}`))
 	if s := long[0]["input"].(string); len([]rune(s)) > 170 || !strings.HasSuffix(s, "…") {
 		t.Errorf("a long input is cut: %d runes", len([]rune(s)))
 	}
@@ -48,7 +48,7 @@ func TestChatEvents(t *testing.T) {
 
 func TestChatArgs(t *testing.T) {
 	a := strings.Join(chatArgs("", "/tmp/c.json", true), "\x00")
-	for _, want := range []string{"-p", "stream-json", "--strict-mcp-config", "/tmp/c.json", "mcp__mcview", "call undo once", "note exactly which area"} {
+	for _, want := range []string{"-p", "stream-json", "--strict-mcp-config", "/tmp/c.json", "mcp__mormiview", "call undo once", "note exactly which area"} {
 		if !strings.Contains(a, want) {
 			t.Errorf("the arguments lack %q: %q", want, a)
 		}
@@ -72,7 +72,7 @@ func TestChatArgsWebOff(t *testing.T) {
 	if strings.Contains(a, "Web") {
 		t.Errorf("no web tools when the AI menu has them off: %q", a)
 	}
-	if !strings.Contains(a, "mcp__mcview") {
+	if !strings.Contains(a, "mcp__mormiview") {
 		t.Errorf("the picture tools stay: %q", a)
 	}
 }

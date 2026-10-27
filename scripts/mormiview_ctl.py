@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
-"""Talk to an mcView that was started in control mode (see docs/control.md).
+"""Talk to an mormiView that was started in control mode (see docs/control.md).
 
 As a library:
-    from mcview_ctl import McView
-    mc = McView.start("build/bin/mcview.app", "/tmp/Pictures/coast.jpg")
+    from mormiview_ctl import MormiView
+    mc = MormiView.start("build/bin/mormiview.app", "/tmp/Pictures/coast.jpg")
     mc.cmd("edit")
     mc.shot("edit.png")
     mc.quit()
 
 From the shell (the app has to be running with --control):
-    scripts/mcview_ctl.py '{"cmd": "state"}'
-    scripts/mcview_ctl.py edit           # the same as {"cmd": "edit"}
-    scripts/mcview_ctl.py --batch commands.json
+    scripts/mormiview_ctl.py '{"cmd": "state"}'
+    scripts/mormiview_ctl.py edit           # the same as {"cmd": "edit"}
+    scripts/mormiview_ctl.py --batch commands.json
 """
 import json
 import os
@@ -22,15 +22,15 @@ import time
 import urllib.request
 
 
-class McViewError(Exception):
+class MormiViewError(Exception):
     pass
 
 
 def control_file():
-    return os.environ.get("MCVIEW_CONTROL_FILE") or os.path.join(tempfile.gettempdir(), "mcview-control.json")
+    return os.environ.get("MORMIVIEW_CONTROL_FILE") or os.path.join(tempfile.gettempdir(), "mormiview-control.json")
 
 
-class McView:
+class MormiView:
     def __init__(self, file=None):
         with open(file or control_file()) as f:
             info = json.load(f)
@@ -44,9 +44,9 @@ class McView:
         if os.path.exists(file):
             os.remove(file)
         args = ["--control", "0"] + ([picture] if picture else [])
-        env = dict(os.environ, MCVIEW_CONTROL_FILE=file)
+        env = dict(os.environ, MORMIVIEW_CONTROL_FILE=file)
         if app.endswith(".app"):
-            subprocess.run(["open", "-n", "--env", "MCVIEW_CONTROL_FILE=" + file, "-a", app, "--args"] + args, check=True)
+            subprocess.run(["open", "-n", "--env", "MORMIVIEW_CONTROL_FILE=" + file, "-a", app, "--args"] + args, check=True)
         else:
             subprocess.Popen([app] + args, env=env)
         end = time.time() + timeout
@@ -55,9 +55,9 @@ class McView:
                 mc = cls(file)
                 mc.info()
                 return mc
-            except (OSError, KeyError, ValueError, McViewError):
+            except (OSError, KeyError, ValueError, MormiViewError):
                 time.sleep(0.3)
-        raise McViewError("mcView did not answer in %d seconds" % timeout)
+        raise MormiViewError("mormiView did not answer in %d seconds" % timeout)
 
     def _post(self, path, body):
         req = urllib.request.Request(self.url + path, json.dumps(body).encode(), {"Authorization": "Bearer " + self.token})
@@ -70,17 +70,17 @@ class McView:
             return json.load(r)
 
     def cmd(self, _name, /, **args):
-        """One command; returns the answer, or raises McViewError with what the app said."""
+        """One command; returns the answer, or raises MormiViewError with what the app said."""
         res = self._post("/cmd", dict(args, cmd=_name))
         if res.get("error"):
-            raise McViewError("%s: %s" % (_name, res["error"]))
+            raise MormiViewError("%s: %s" % (_name, res["error"]))
         return res
 
     def batch(self, commands):
         res = self._post("/batch", commands)
         for r in res:
             if isinstance(r, dict) and r.get("error"):
-                raise McViewError(r["error"])
+                raise MormiViewError(r["error"])
         return res
 
     def answer(self, kind, *values):
@@ -96,7 +96,7 @@ class McView:
         time.sleep(delay)
         wid = self.info().get("windowId", 0)
         if not wid:
-            raise McViewError("the window number is only known on macOS")
+            raise MormiViewError("the window number is only known on macOS")
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
         subprocess.run(["screencapture", "-x", "-l", str(wid), path], check=True)
 
@@ -113,7 +113,7 @@ def main(argv):
     if len(argv) < 2:
         print(__doc__)
         return 2
-    mc = McView()
+    mc = MormiView()
     if argv[1] == "--batch":
         with open(argv[2]) as f:
             print(json.dumps(mc.batch(json.load(f)), indent=1))
@@ -134,6 +134,6 @@ def main(argv):
 if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv))
-    except McViewError as e:
-        print("mcview:", e, file=sys.stderr)
+    except MormiViewError as e:
+        print("mormiview:", e, file=sys.stderr)
         sys.exit(1)

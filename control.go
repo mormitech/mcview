@@ -16,13 +16,13 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// Control mode: mcView started with `--control PORT` (or MCVIEW_CONTROL=PORT; 0 takes a free port) listens on 127.0.0.1 for commands from
+// Control mode: mormiView started with `--control PORT` (or MORMIVIEW_CONTROL=PORT; 0 takes a free port) listens on 127.0.0.1 for commands from
 // another program, so that every feature can be triggered from outside: demo screenshots, scripted tests, a manual in pictures. Nothing
 // of it exists without the flag. The commands are JSON (see docs/control.md): the ones about the window and the dialogs are done here,
 // the rest go to the page, which does them with the very code the mouse and the keys use (see "Control mode" in main.js).
 //
-// Every request needs the token that is written, with the address, to the control file (MCVIEW_CONTROL_FILE, default
-// mcview-control.json in the temporary folder, readable by the user only). Requests with an Origin header or another Host are refused,
+// Every request needs the token that is written, with the address, to the control file (MORMIVIEW_CONTROL_FILE, default
+// mormiview-control.json in the temporary folder, readable by the user only). Requests with an Origin header or another Host are refused,
 // so that a web page cannot reach it.
 //
 // The dialogs of the system cannot be clicked from outside, so in this mode they are answered from a queue the script fills (the
@@ -42,7 +42,7 @@ type control struct {
 	srv     *http.Server
 }
 
-// controlPort is the port from --control or MCVIEW_CONTROL; the second result is false when control mode is not asked for.
+// controlPort is the port from --control or MORMIVIEW_CONTROL; the second result is false when control mode is not asked for.
 func controlPort(args []string, env string) (string, bool) {
 	for i, a := range args {
 		if a == "--control" || a == "-control" {
@@ -125,9 +125,9 @@ func (a *App) startControl(port string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	file := os.Getenv("MCVIEW_CONTROL_FILE")
+	file := os.Getenv("MORMIVIEW_CONTROL_FILE")
 	if file == "" {
-		file = filepath.Join(os.TempDir(), "mcview-control.json")
+		file = filepath.Join(os.TempDir(), "mormiview-control.json")
 	}
 	info, _ := json.Marshal(map[string]any{"url": "http://" + c.addr, "token": c.token, "pid": os.Getpid()})
 	if err := os.WriteFile(file, info, 0o600); err != nil {

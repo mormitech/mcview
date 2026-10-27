@@ -120,10 +120,10 @@ func TestSelectionOfTypeGoCannotDecode(t *testing.T) {
 	}
 }
 
-// Puts a picture on the real clipboard of the machine, so it only runs when asked: MCVIEW_TEST_CLIPBOARD=1 go test -run Clipboard
+// Puts a picture on the real clipboard of the machine, so it only runs when asked: MORMIVIEW_TEST_CLIPBOARD=1 go test -run Clipboard
 func TestCopyImageNative(t *testing.T) {
-	if os.Getenv("MCVIEW_TEST_CLIPBOARD") == "" {
-		t.Skip("set MCVIEW_TEST_CLIPBOARD=1 to run: it overwrites the clipboard")
+	if os.Getenv("MORMIVIEW_TEST_CLIPBOARD") == "" {
+		t.Skip("set MORMIVIEW_TEST_CLIPBOARD=1 to run: it overwrites the clipboard")
 	}
 	if runtime.GOOS != "darwin" {
 		t.Skip("the check below reads the clipboard the macOS way")

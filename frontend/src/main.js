@@ -16,7 +16,7 @@ const errText = (e) => {
 // The program started with --about shows this. Links open in the system's browser.
 
 const COFFEE = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM16.5 11h1.5a2.5 2.5 0 0 1 0 5h-1.8M8 3.5c-.9 1 .9 1.8 0 2.8M12 3.5c-.9 1 .9 1.8 0 2.8"/></svg>';
-const REPO = 'https://github.com/mormitech/mcview';
+const REPO = 'https://github.com/mormitech/mormiview';
 
 async function showAbout() {
   document.body.classList.add('about-mode');
@@ -25,14 +25,14 @@ async function showAbout() {
   });
   $('about').hidden = false;
   $('about').innerHTML = `<img class="logo" src="${logo}" alt="" width="132">
-    <h1>mcView</h1>
+    <h1>mormiView</h1>
     <p class="muted">Version ${esc(await Version())}</p>
     <p>A picture viewer for macOS, Windows and Linux. Open a picture from your file manager (Open with…) or with File → Open.</p>
     <p class="muted">Free and open source, MIT license. No accounts, no ads, no telemetry.</p>
     <p class="links"><a href="${REPO}">Website and source code</a><a href="${REPO}/issues">Report a problem</a><a href="${REPO}/blob/main/LICENSE">License</a><a class="coffee" href="https://mormitech.com/support-us/">${COFFEE}Buy me a coffee</a></p>`;
 }
 
-window.addEventListener('error', (e) => Trace(`error: ${e.message} at ${e.lineno}:${e.colno}`)); // (with MCVIEW_TRACE set, a failure of the page shows in the trace)
+window.addEventListener('error', (e) => Trace(`error: ${e.message} at ${e.lineno}:${e.colno}`)); // (with MORMIVIEW_TRACE set, a failure of the page shows in the trace)
 window.addEventListener('unhandledrejection', (e) => Trace(`rejection: ${e.reason}`));
 document.addEventListener('click', (ev) => {
   const a = ev.target.closest('a[href^="http"]');
@@ -598,7 +598,7 @@ async function choose() {
 // the bottom bar shows the color of the pixel under the pointer. The numbers come from Go, which decodes the file a second time
 // (the web view converts colors for the screen, so what it shows is not the number in the file); for types Go cannot decode they are
 // read from what the web view drew, and the bar says so. The pixelated view stays when the next picture is shown, but not the next
-// time mcView starts.
+// time mormiView starts.
 
 let pixelState = '';   // '' not asked, 'preparing', 'go' or 'browser' (where the numbers come from), 'none' (cannot be read)
 let pixelCanvas = null;
@@ -642,7 +642,7 @@ function setTool(t) {
   updateHover(false);
 }
 
-// ---- Polygon select: draw round the part freely; when the button is let go, the end is joined to the start and mcView turns the line into a polygon ------------
+// ---- Polygon select: draw round the part freely; when the button is let go, the end is joined to the start and mormiView turns the line into a polygon ------------
 // What is drawn is a free-hand line (every move of the pointer), but what is kept is the polygon that follows it: the line is simplified (Ramer-Douglas-Peucker, with a
 // tolerance of about a screen pixel and a quarter, so the polygon stays within a pixel or so of what was drawn) to a few corners, in picture pixels. Once it is set:
 // Delete or Backspace fills it with the second color (a step of the history), Ctrl+C copies what is inside it (the rest transparent), Esc lets it go. The AI of the
@@ -1842,7 +1842,7 @@ function onResize() {
 
 // ---- Undo and redo ---------------------------------------------------------------------------------------
 // Every change of what the window shows is a step that can be undone with Ctrl+Z (Cmd+Z) and done again with Ctrl+Shift+Z (Cmd+Shift+Z,
-// Ctrl+Y): another picture (Open, the arrow keys, paste, save to another folder, a file opened with mcView), the mode (1 to 6, F), the
+// Ctrl+Y): another picture (Open, the arrow keys, paste, save to another folder, a file opened with mormiView), the mode (1 to 6, F), the
 // pixelated view (Tab) and the turn (R). Not steps: how far it is zoomed, where it is moved, the selection.
 // The history is a list of whole states, {picture, mode, pixelated, turn}, and an undo shows the one before. The picture is a number
 // that Go knows (ImageInfo.state; 0 is no picture at all), because a picture pasted from the clipboard exists only there.
@@ -1971,7 +1971,7 @@ function startViewer() {
     if (cancelDraw()) ev.preventDefault();
   });
   const cmd = navigator.platform.startsWith('Mac') ? '⌘' : 'Ctrl+';
-  $('hint').textContent = 'Open a picture, paste one from the clipboard, or start a blank one. You can also open pictures with mcView from your file manager.';
+  $('hint').textContent = 'Open a picture, paste one from the clipboard, or start a blank one. You can also open pictures with mormiView from your file manager.';
   $('k-clip').textContent = `${cmd}V`; $('k-reopen').textContent = `${cmd}Z`;
   $('reopen-pic').onclick = () => undo();
   $('open').onclick = choose;
@@ -2200,7 +2200,7 @@ async function revealWhenHidden() {
 }
 
 // ---- Control mode ------------------------------------------------------------------------------------------
-// With `mcview --control PORT` another program can give commands (see control.go and docs/control.md). The ones that are not about the window or the
+// With `mormiview --control PORT` another program can give commands (see control.go and docs/control.md). The ones that are not about the window or the
 // dialogs come here as an event. They are done with the code of the mouse and the keys: the pointer commands send the same pointer events a mouse
 // would, so every tool, every handle and every shortcut works as it does for a person. Picture positions are pixels of the picture, as the picture is
 // shown: {x, y} names the pixel, and the pointer goes to its middle.

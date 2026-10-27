@@ -38,10 +38,10 @@ func version() string {
 	return p.Info.ProductVersion
 }
 
-// windowFlags reads --about (show the About window instead of the viewer: mode is "about", "" for the viewer), --theme, --cascade, and the file to open (`mcview picture.jpg`, which is also how Windows and Linux hand over a
+// windowFlags reads --about (show the About window instead of the viewer: mode is "about", "" for the viewer), --theme, --cascade, and the file to open (`mormiview picture.jpg`, which is also how Windows and Linux hand over a
 // double-clicked file). The app starts itself with --about, because Wails v2 has one window per process.
 func windowFlags(args []string) (mode, theme, file string, cascade int) {
-	fs := flag.NewFlagSet("mcview", flag.ContinueOnError)
+	fs := flag.NewFlagSet("mormiview", flag.ContinueOnError)
 	fs.SetOutput(io.Discard)
 	var about bool
 	fs.BoolVar(&about, "about", false, "show the About window")
@@ -58,16 +58,16 @@ func windowFlags(args []string) (mode, theme, file string, cascade int) {
 func main() {
 	trace("main")
 	app := NewApp()
-	title, width, height := "mcView v"+version(), 1024, 640
+	title, width, height := "mormiView v"+version(), 1024, 640
 	mode, theme, file, cascade := windowFlags(os.Args[1:])
 	about := mode != "" // (a window of its own, not a viewer)
 	switch {
 	case mode == "about":
-		app.mode, title, width, height = "about", "About mcView", 440, 520
+		app.mode, title, width, height = "about", "About mormiView", 440, 520
 	case file != "":
 		app.child = true
 		if err := app.setImage(file); err != nil {
-			fmt.Fprintln(os.Stderr, "mcview:", err)
+			fmt.Fprintln(os.Stderr, "mormiview:", err)
 		}
 	}
 	if !about {
@@ -142,12 +142,12 @@ func windowsTheme(theme string) windows.Theme {
 	return windows.SystemDefault
 }
 
-// macOptions: OnFileOpen is how macOS hands over the files opened with the app. MCVIEW_NO_FILEOPEN is for tracking down slow
+// macOptions: OnFileOpen is how macOS hands over the files opened with the app. MORMIVIEW_NO_FILEOPEN is for tracking down slow
 // starts: it leaves the handler out.
 func macOptions(theme string, app *App) *mac.Options {
 	// Esc does not leave full screen (F and Enter do): it is for two Escs, which close the picture
 	o := &mac.Options{Appearance: macAppearance(theme), DisableEscapeExitsFullscreen: true}
-	if os.Getenv("MCVIEW_NO_FILEOPEN") == "" {
+	if os.Getenv("MORMIVIEW_NO_FILEOPEN") == "" {
 		o.OnFileOpen = app.onFileOpen
 	}
 	return o

@@ -1,9 +1,9 @@
 [Desktop Entry]
 Type=Application
-Name=mcView
+Name=mormiView
 Comment=Picture viewer
-Exec=mcview %f
-Icon=mcview
+Exec=mormiview %f
+Icon=mormiview
 Terminal=false
 Categories=Graphics;Viewer;
 MimeType=image/jpeg;image/png;image/gif;image/bmp;image/x-ms-bmp;image/webp;image/x-icon;image/vnd.microsoft.icon;image/svg+xml;image/avif;image/tiff;

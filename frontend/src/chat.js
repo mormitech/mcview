@@ -79,7 +79,7 @@ function render(problem = '') {
   } else if (signingIn) {
     showSetup('Waiting for the sign-in in your browser…', [['Cancel', () => { ChatStop(); signingIn = false; loginUrl = ''; render(); }]], loginUrl);
   } else if (!info.loggedIn) {
-    showSetup(`${problem ? problem + '\n\n' : ''}Sign in to Claude to chat here. This opens your browser; mcView never sees your password. Claude Code keeps the sign-in.`, [['Sign in with Claude', login, true], ['Check again', refresh]]);
+    showSetup(`${problem ? problem + '\n\n' : ''}Sign in to Claude to chat here. This opens your browser; mormiView never sees your password. Claude Code keeps the sign-in.`, [['Sign in with Claude', login, true], ['Check again', refresh]]);
   } else {
     $('chat-setup').hidden = true; $('chat-main').hidden = false;
     const who = [info.email, info.plan].filter(Boolean).join(' · ');

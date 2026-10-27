@@ -99,11 +99,11 @@ func (a *App) startup(ctx context.Context) {
 	// alone did not).
 	a.reveal()
 	a.titleWindow()
-	if port, ok := controlPort(os.Args[1:], os.Getenv("MCVIEW_CONTROL")); ok && a.mode == "" {
+	if port, ok := controlPort(os.Args[1:], os.Getenv("MORMIVIEW_CONTROL")); ok && a.mode == "" {
 		if addr, err := a.startControl(port); err != nil {
-			fmt.Fprintln(os.Stderr, "mcview: control mode:", err)
+			fmt.Fprintln(os.Stderr, "mormiview: control mode:", err)
 		} else {
-			fmt.Fprintln(os.Stderr, "mcview: control mode on", addr)
+			fmt.Fprintln(os.Stderr, "mormiview: control mode on", addr)
 		}
 	}
 }
@@ -187,9 +187,9 @@ func (a *App) titleWindow() {
 		if cur.Modified {
 			name += modifiedMark
 		}
-		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mcView v"+version()+a.editMark())
+		wruntime.WindowSetTitle(a.ctx, name+a.sizeMark()+" – mormiView v"+version()+a.editMark())
 	} else { // undo can take the window back to empty
-		wruntime.WindowSetTitle(a.ctx, "mcView v"+version()+a.editMark())
+		wruntime.WindowSetTitle(a.ctx, "mormiView v"+version()+a.editMark())
 	}
 }
 

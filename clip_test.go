@@ -117,8 +117,8 @@ func TestPicturesDir(t *testing.T) {
 
 // Reads the real clipboard of the machine, so it only runs when asked (see TestCopyImageNative).
 func TestPasteFromSystemClipboard(t *testing.T) {
-	if os.Getenv("MCVIEW_TEST_CLIPBOARD") == "" {
-		t.Skip("set MCVIEW_TEST_CLIPBOARD=1 to run: it overwrites the clipboard")
+	if os.Getenv("MORMIVIEW_TEST_CLIPBOARD") == "" {
+		t.Skip("set MORMIVIEW_TEST_CLIPBOARD=1 to run: it overwrites the clipboard")
 	}
 	src := NewApp()
 	src.setImage(gridPNG(t))
@@ -168,7 +168,7 @@ func TestSaveTo(t *testing.T) {
 				t.Errorf("%s: pixel 3,2 = %v, want 120 140 9", c.name, got)
 			}
 		}
-		if left, _ := filepath.Glob(filepath.Join(dir, ".mcview-save-*")); len(left) != 0 {
+		if left, _ := filepath.Glob(filepath.Join(dir, ".mormiview-save-*")); len(left) != 0 {
 			t.Errorf("%s: temporary files left: %v", c.name, left)
 		}
 	}

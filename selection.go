@@ -85,7 +85,7 @@ func (a *App) CopyImageNative(pngBase64 string) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.CreateTemp("", "mcview-*.png")
+	f, err := os.CreateTemp("", "mormiview-*.png")
 	if err != nil {
 		return err
 	}

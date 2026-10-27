@@ -29,7 +29,7 @@ import (
 //
 // The tools work in pixels of the picture as it is shown, like control mode.
 
-const mcpServerName = "mcview"
+const mcpServerName = "mormiview"
 
 // ---- The snapshot -------------------------------------------------------------------------------------------
 
@@ -208,7 +208,7 @@ func (h *chatHub) guard(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 		if h.token == "" || r.Header.Get("Authorization") != "Bearer "+h.token {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="mcview"`)
+			w.Header().Set("WWW-Authenticate", `Bearer realm="mormiview"`)
 			http.Error(w, "token missing or wrong", http.StatusUnauthorized)
 			return
 		}
@@ -250,7 +250,7 @@ type rpcRequest struct {
 
 var mcpVersions = []string{"2025-06-18", "2025-03-26", "2024-11-05"}
 
-const mcpInstructions = `mcView is a picture viewer and editor, and you work on the picture of the window the user is looking at. All positions are pixels of the picture as it is shown: x to the right, y down, 0,0 is the top left pixel. Look first (get_image gives the whole picture pixel for pixel, and a small one also as text; for a big photo, snapshot scales it down and can show a part), then draw, then look again to check. To make pixel art: new_image, then set_pixels with a grid and a palette. Every drawing is one step of the window's undo history. To remove something from a photo, work as a retoucher in rounds: draw a polygon around it (snapshot with outline and zoom shows it before anything changes), cover it with clone_region from a clean place that looks like what belongs there (feather the edge), look again, hide seams with blend_edges (poisson for different brightness, color_match for a color cast, smooth for a hard line), use fill_region for small leftovers, and check each round with snapshot. The pictures are changed in memory only until save_image is called.`
+const mcpInstructions = `mormiView is a picture viewer and editor, and you work on the picture of the window the user is looking at. All positions are pixels of the picture as it is shown: x to the right, y down, 0,0 is the top left pixel. Look first (get_image gives the whole picture pixel for pixel, and a small one also as text; for a big photo, snapshot scales it down and can show a part), then draw, then look again to check. To make pixel art: new_image, then set_pixels with a grid and a palette. Every drawing is one step of the window's undo history. To remove something from a photo, work as a retoucher in rounds: draw a polygon around it (snapshot with outline and zoom shows it before anything changes), cover it with clone_region from a clean place that looks like what belongs there (feather the edge), look again, hide seams with blend_edges (poisson for different brightness, color_match for a color cast, smooth for a hard line), use fill_region for small leftovers, and check each round with snapshot. The pictures are changed in memory only until save_image is called.`
 
 func (h *chatHub) serveMCP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -334,7 +334,7 @@ func (h *chatHub) dispatch(q rpcRequest) map[string]any {
 		return rpcResult(q.ID, map[string]any{
 			"protocolVersion": ver,
 			"capabilities":    map[string]any{"tools": map[string]any{"listChanged": false}},
-			"serverInfo":      map[string]any{"name": mcpServerName, "title": "mcView", "version": version()},
+			"serverInfo":      map[string]any{"name": mcpServerName, "title": "mormiView", "version": version()},
 			"instructions":    mcpInstructions,
 		})
 	case "ping":

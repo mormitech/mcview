@@ -1,7 +1,7 @@
-# mcView Help
+# mormiView Help
 
-mcView is a picture viewer that gets out of your way, with a small Paint-like editor and a chat with Claude built in. This page is the manual.
-In the app, **Help → mcView Help** opens it. Below, **Ctrl** is **Cmd** on a Mac.
+mormiView is a picture viewer that gets out of your way, with a small Paint-like editor and a chat with Claude built in. This page is the manual.
+In the app, **Help → mormiView Help** opens it. Below, **Ctrl** is **Cmd** on a Mac.
 
 - [Quick start](#quick-start)
 - [Looking at pictures](#looking-at-pictures)
@@ -28,7 +28,7 @@ A window with no picture offers three big buttons: **Open file…** (**O**), **O
 
 ## Looking at pictures
 
-mcView shows JPEG, PNG, GIF, BMP, WebP, ICO, SVG, AVIF and TIFF.
+mormiView shows JPEG, PNG, GIF, BMP, WebP, ICO, SVG, AVIF and TIFF.
 
 ### Zoom
 
@@ -98,7 +98,7 @@ The **AI** menu has **Web search and fetch**, which says whether Claude may use 
 
 ### Create image
 
-**N** (or **File → Create Image**) makes a new white 1280 × 720 picture and starts edit mode. **Hold Shift** and click the *Create image* button (or press **Shift+N**) to choose the **width, height and background** (white, transparent or a color) first. mcView remembers your last choice.
+**N** (or **File → Create Image**) makes a new white 1280 × 720 picture and starts edit mode. **Hold Shift** and click the *Create image* button (or press **Shift+N**) to choose the **width, height and background** (white, transparent or a color) first. mormiView remembers your last choice.
 
 A new image, and a picture pasted from the clipboard, count as unchanged until you do something to them: you can close them with **Esc Esc** and nothing asks.
 
@@ -114,7 +114,7 @@ With the **Select** tool, drag. The moment you let go, the selection is **on the
 
 ### Free-hand (polygon)
 
-With the **Polygon select** tool (the second one), **draw round the part you want**, any shape, as you would with a pencil. The dashed line follows the mouse. When you let go, mcView joins the end to the start and turns your line into a **polygon** with a few corners, within about a pixel of what you drew.
+With the **Polygon select** tool (the second one), **draw round the part you want**, any shape, as you would with a pencil. The dashed line follows the mouse. When you let go, mormiView joins the end to the start and turns your line into a **polygon** with a few corners, within about a pixel of what you drew.
 
 You can also **hold the right mouse button** and draw, with the Select tool or the Polygon select tool, without changing tools.
 
@@ -134,12 +134,12 @@ The polygon is also what Claude works on when you write *"remove the selected pa
 
 ## Chat with Claude
 
-Press **C**, or click the speech bubble at the bottom right of the picture, to open the chat: a floating window grows out of it, almost as tall as the window, and it shrinks back into the bubble when you minimize it. Drag its left edge to change the width. Ask for what you want in your own words; Claude looks at the picture and changes it with mcView's tools. Every change is a step you can undo.
+Press **C**, or click the speech bubble at the bottom right of the picture, to open the chat: a floating window grows out of it, almost as tall as the window, and it shrinks back into the bubble when you minimize it. Drag its left edge to change the width. Ask for what you want in your own words; Claude looks at the picture and changes it with mormiView's tools. Every change is a step you can undo.
 
 ### What you need
 
 - **Claude Code**, installed once ([claude.com/product/claude-code](https://claude.com/product/claude-code)).
-- A **Claude account**. If you are not signed in, the panel shows **Sign in with Claude**; it opens your browser. mcView never sees your password or the sign-in.
+- A **Claude account**. If you are not signed in, the panel shows **Sign in with Claude**; it opens your browser. mormiView never sees your password or the sign-in.
 
 The chat uses **your Claude subscription**. No API key is needed, and no terminal has to be open.
 
@@ -166,9 +166,9 @@ Claude is good at taking small things out of a photo: letters, labels, spots, sc
 
 ### Your pictures and your privacy
 
-mcView has no accounts, ads or telemetry. The chat is the one place where a picture leaves the computer, and only when **you** ask: Claude looks at the picture (screenshots of it) through your own Claude Code, so **what you chat about is sent to Anthropic**, under your Claude account's terms. Nothing is sent when the panel is closed.
+mormiView has no accounts, ads or telemetry. The chat is the one place where a picture leaves the computer, and only when **you** ask: Claude looks at the picture (screenshots of it) through your own Claude Code, so **what you chat about is sent to Anthropic**, under your Claude account's terms. Nothing is sent when the panel is closed.
 
-Claude can use mcView's picture tools and web search and fetch, and nothing else: no files, no shell. The **AI** menu turns the web off. It reaches the picture through a private connection inside the window that no other program can use.
+Claude can use mormiView's picture tools and web search and fetch, and nothing else: no files, no shell. The **AI** menu turns the web off. It reaches the picture through a private connection inside the window that no other program can use.
 
 ---
 
@@ -210,12 +210,12 @@ Claude can use mcView's picture tools and web search and fetch, and nothing else
 
 ## When something does not work
 
-- **The chat says Claude Code is not installed.** Install it, then press *Check again*. mcView looks in the usual places and in your login shell's path.
+- **The chat says Claude Code is not installed.** Install it, then press *Check again*. mormiView looks in the usual places and in your login shell's path.
 - **The sign-in does not finish.** Finish it in the browser tab; if no tab opened, the address is shown in the panel. *Cancel* starts again.
 - **The chat says it is signed in with an API key** (the account line is red). Chats are then billed by use. Sign in with *Claude* to use your subscription.
 - **Copying and pasting pictures does nothing on Linux.** Install `xclip` (X11) or `wl-clipboard` (Wayland).
-- **macOS says the app is from an unidentified developer.** mcView is not code-signed yet: right-click it → **Open** the first time.
-- **A picture does not open.** mcView opens the types listed above; AVIF and WebP need a web view that has them.
-- **Something else.** Report it at [github.com/mormitech/mcview/issues](https://github.com/mormitech/mcview/issues) with the version number from the title bar.
+- **macOS says the app is from an unidentified developer.** mormiView is not code-signed yet: right-click it → **Open** the first time.
+- **A picture does not open.** mormiView opens the types listed above; AVIF and WebP need a web view that has them.
+- **Something else.** Report it at [github.com/mormitech/mormiview/issues](https://github.com/mormitech/mormiview/issues) with the version number from the title bar.
 
-mcView is free and open source (MIT). Made by [Mormitech](https://mormitech.com).
+mormiView is free and open source (MIT). Made by [Mormitech](https://mormitech.com).

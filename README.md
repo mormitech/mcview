@@ -1,4 +1,4 @@
-<h1 align="center">mcView</h1>
+<h1 align="center">mormiView</h1>
 
 <p align="center">
   <b>A picture viewer, with a small Paint-like editor, for macOS, Windows and Linux.</b><br>
@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mormitech/mcview/actions/workflows/build.yml"><img alt="build" src="https://github.com/mormitech/mcview/actions/workflows/build.yml/badge.svg"></a>
+  <a href="https://github.com/mormitech/mormiview/actions/workflows/build.yml"><img alt="build" src="https://github.com/mormitech/mormiview/actions/workflows/build.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
   <img alt="platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey.svg">
   <img alt="status" src="https://img.shields.io/badge/status-early%20preview-orange.svg">
@@ -14,14 +14,14 @@
 
 ---
 
-<p align="center"><img src="docs/screenshots/05-edit-draw.webp" width="780" alt="mcView in edit mode: a picture marked up with the pencil, ellipse, rectangle, line and text tools; the options ribbon is above the bottom bar"></p>
+<p align="center"><img src="docs/screenshots/05-edit-draw.webp" width="780" alt="mormiView in edit mode: a picture marked up with the pencil, ellipse, rectangle, line and text tools; the options ribbon is above the bottom bar"></p>
 
 ## What it does
 
-mcView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
+mormiView shows a picture quickly and stays out of the way, like [IrfanView](https://www.irfanview.com). Press **E** and the same window becomes a
 small editor in the way of Paint: select (a rectangle or free-hand), move and stretch parts, draw, type, paste, save. Press **C** and you can also just tell Claude what to change in the picture. It is built the same way as
 [mcPrint](https://github.com/mormitech/mcprint): Go and [Wails](https://wails.io) v2 for the window, a vanilla JS frontend built with Vite.
-The manual is [docs/help.md](docs/help.md), also at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mcView Help opens it).
+The manual is [docs/help.md](docs/help.md), also at [mormitech.com/tools/mcview/docs](https://mormitech.com/tools/mcview/docs) (Help → mormiView Help opens it).
 
 Below, **Ctrl** is **Cmd** on a Mac.
 
@@ -34,12 +34,12 @@ Below, **Ctrl** is **Cmd** on a Mac.
 | <img src="docs/screenshots/06-zoom-pixels.webp" alt="800% zoom with the pixel readout"><br>**Zoom to investigate.** At 800% every pixel is a square, and the bar shows the pixel under the pointer: x and y, R G B and the hex color. | <img src="docs/screenshots/07-zoom-draw.webp" alt="Drawing a thin line at 400% zoom"><br>**Zoom to draw exactly.** A 2 pixel pencil at 400% puts every pixel where you want it. |
 | <img src="docs/screenshots/08-palette.webp" alt="The color palette sliding up above the bottom bar"><br>**Colors.** Click a color well and the palette slides up; Edit colors… opens the system's picker. | <img src="docs/screenshots/09-selection.webp" alt="A selection with its dashed border and the clipboard mark in the middle"><br>**Selections** are on the clipboard the moment you let go, with a short highlight and their size. |
 
-The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. The screenshots are made by [`scripts/demo_screenshots.py`](scripts/demo_screenshots.py) with mcView's [control mode](docs/control.md).
+The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. The screenshots are made by [`scripts/demo_screenshots.py`](scripts/demo_screenshots.py) with mormiView's [control mode](docs/control.md).
 
 ### Viewing
 
 - **Shows pictures.** JPEG, PNG, GIF, BMP, WebP, ICO, SVG, AVIF and TIFF (AVIF and WebP need a web view that has them; TIFF is
-  decoded by mcView itself, so it also works on Windows and Linux).
+  decoded by mormiView itself, so it also works on Windows and Linux).
 - **Zoom modes** on the keys **1** to **4**, as in IrfanView; the mode stays when you go to another picture and until you quit (a new window starts in **2**):
   **1** original size (100%, however small or big), **2** fit the window with a margin (85%; small pictures stay 100%), **3** fit every picture to
   the window borders, keeping its proportions, **4** stretch every picture to the window borders, **5** zoom until the side edges touch the window (the top and bottom may go over), **6** zoom until the top and bottom edges touch it (the sides may go over). **+** and **-** zoom, a mouse wheel zooms, dragging
@@ -50,7 +50,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Full screen.** **F** or **Enter** toggles it (Esc does not leave it: two Escs close the picture). There is no title or bar then: the bar (size, place, zoom, color readout) comes up
   when the pointer is at the bottom edge, or while there is a selection.
 - **Pixel view and color readout.** In edit mode the picture is shown pixelated (every pixel a sharp square) and the bar shows the pixel under the pointer: its x and
-  y, R G B (A) with meters, and the hex color in a pill. The numbers are the ones in the file (mcView decodes it itself, with no color conversion), except for AVIF, SVG and ICO,
+  y, R G B (A) with meters, and the hex color in a pill. The numbers are the ones in the file (mormiView decodes it itself, with no color conversion), except for AVIF, SVG and ICO,
   where they are read from what the web view drew and the bar says so.
 - **Transparency.** A picture with transparent parts has chequered squares behind it.
 - **Select and copy.** Drag to select a part (it snaps to whole pixels in the pixelated view). The moment you let go, the selection is **on the clipboard**,
@@ -68,7 +68,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 - **Select** (default): drag an edge or the inside of the selection to move or resize just the frame; hold **Shift** and drag to stretch or move the selected part itself; the place it came from turns white
   (transparent in a picture that can have it). **Shift** and drag moves just the frame. **Ctrl+V** lays the clipboard picture over this one as a floating part you can drag and stretch
   (Delete, Backspace or Esc take it away; a click beside it lays it down).
-- **Polygon select**: draw round any shape free-hand; when you let go, the end joins the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Holding the **right mouse button** does the same with the Select tool. **Delete** fills it with the second color, **Ctrl+C** copies what is inside it, **Esc** lets it go (Esc or a right click drops a selection that is still being drawn, the rectangle too).
+- **Polygon select**: draw round any shape free-hand; when you let go, the end joins the start and mormiView turns the line into a polygon (a few corners, within about a pixel of what you drew). Holding the **right mouse button** does the same with the Select tool. **Delete** fills it with the second color, **Ctrl+C** copies what is inside it, **Esc** lets it go (Esc or a right click drops a selection that is still being drawn, the rectangle too).
 - **Pencil**: drag to draw; left button the first color, right button the second. The ribbon above the bottom bar sets the width.
 - **Line** and **Rectangle**: drag them out; **Shift** makes a line at a multiple of 45° and a square. The ribbon sets the width, a solid, dashed or dotted style and, for the rectangle,
   outline, outline with fill, or fill. **Esc** or the other mouse button drops one that is being dragged.
@@ -83,7 +83,7 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 
 ### Chat with Claude
 
-**C** (or the speech bubble at the bottom right) opens a floating chat window over the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mcView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and web search and fetch, and nothing else (no files, no shell), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
+**C** (or the speech bubble at the bottom right) opens a floating chat window over the picture. It runs the [Claude Code](https://claude.com/product/claude-code) that is installed on your computer, with your Claude subscription (no API key; the panel offers **Sign in with Claude**, which opens the browser). Ask for what you want: draw, remove a label or a stain, crop, make pixel art, or *"remove the selected part"* after you selected something. Claude looks at the picture and changes it with mormiView's tools, piece by piece, and every change can be undone. Claude gets the picture tools and web search and fetch, and nothing else (no files, no shell), and the chat is the one place where a picture leaves your computer, only when you ask. See [docs/help.md](docs/help.md#chat-with-claude) and, for how it works, [docs/chat.md](docs/chat.md).
 
 ### Saving, closing, deleting
 
@@ -96,37 +96,37 @@ The sample picture is a free (CC0) photo from Unsplash, via Wikimedia Commons. T
 
 ### Everywhere
 
-- **Open with… offers mcView.** [See below](#open-with). No code signing needed.
+- **Open with… offers mormiView.** [See below](#open-with). No code signing needed.
 - **One window, three systems.** The same code builds for macOS, Windows and Linux; the window is cut down to 90% of the screen at start and its place is remembered.
-- **An About window and a Help menu.** *mcView → About mcView* on macOS, *Help → About mcView* on Windows and Linux; *Help → mcView Help* opens the manual.
+- **An About window and a Help menu.** *mormiView → About mormiView* on macOS, *Help → About mormiView* on Windows and Linux; *Help → mormiView Help* opens the manual.
 - **Follows your system.** Light or dark mode.
 - **Tests and CI.** Builds, vets and tests on macOS, Windows and Linux, and packages the app on a release tag.
 
 ## Install
 
-Download the package for your system from the [releases](https://github.com/mormitech/mcview/releases):
+Download the package for your system from the [releases](https://github.com/mormitech/mormiview/releases):
 
 | | Package |
 |---|---|
-| **macOS** (Apple silicon) | `mcview-<version>-macos-arm64.dmg` (open it and drag mcView to Applications), or the `.zip` with the app |
-| **Windows** (x64) | `mcview-setup-<version>-windows-x64.exe` (per user, no admin rights), or the `.zip` |
-| **Linux** (x64) | `mcview-<version>-linux-amd64.deb` (Debian, Ubuntu: `sudo apt install ./mcview-….deb`), `mcview-<version>-linux-x86_64.rpm` (Fedora, openSUSE: `sudo dnf install ./mcview-….rpm`), or the `.tar.gz` with `install.sh` |
+| **macOS** (Apple silicon) | `mormiview-<version>-macos-arm64.dmg` (open it and drag mormiView to Applications), or the `.zip` with the app |
+| **Windows** (x64) | `mormiview-setup-<version>-windows-x64.exe` (per user, no admin rights), or the `.zip` |
+| **Linux** (x64) | `mormiview-<version>-linux-amd64.deb` (Debian, Ubuntu: `sudo apt install ./mormiview-….deb`), `mormiview-<version>-linux-x86_64.rpm` (Fedora, openSUSE: `sudo dnf install ./mormiview-….rpm`), or the `.tar.gz` with `install.sh` |
 
 The app is not code-signed or notarized yet, so macOS asks you to confirm the first start (right-click → Open). Or build it yourself (below).
 
 <a id="open-with"></a>
 ## Open with…
 
-mcView is offered for the picture types above. It does not take them over from your current viewer: you choose it.
+mormiView is offered for the picture types above. It does not take them over from your current viewer: you choose it.
 
 | | How |
 |---|---|
-| **macOS** | Right-click a picture → **Open With** → mcView. To make it the default for a type: **Get Info** → **Open with** → mcView → **Change All…**. The app must be in Applications (or have been opened once) for macOS to know it. |
-| **Windows** | Right-click a picture → **Open with** → mcView (the first time **Choose another app**). To make it the default: **Settings → Apps → Default apps → mcView**. The installer adds this per user, without admin rights. |
-| **Linux** | The .deb and .rpm do this by themselves. From the tar.gz, run `./install.sh` (`./install.sh --remove` undoes it). Then right-click a picture → **Open With** → mcView. |
+| **macOS** | Right-click a picture → **Open With** → mormiView. To make it the default for a type: **Get Info** → **Open with** → mormiView → **Change All…**. The app must be in Applications (or have been opened once) for macOS to know it. |
+| **Windows** | Right-click a picture → **Open with** → mormiView (the first time **Choose another app**). To make it the default: **Settings → Apps → Default apps → mormiView**. The installer adds this per user, without admin rights. |
+| **Linux** | The .deb and .rpm do this by themselves. From the tar.gz, run `./install.sh` (`./install.sh --remove` undoes it). Then right-click a picture → **Open With** → mormiView. |
 
 The list of types is written in four places, because each system wants it in its own form: `image.go`, `wails.json` (macOS Info.plist),
-`packaging/windows/installer.iss` and `packaging/linux/mcview.desktop`. A test keeps them equal.
+`packaging/windows/installer.iss` and `packaging/linux/mormiview.desktop`. A test keeps them equal.
 
 ## Develop
 
@@ -158,18 +158,18 @@ On Linux also `libgtk-3-dev libwebkit2gtk-4.1-dev`, and build with `-tags webkit
 | `packaging/linux` | the desktop entry and `install.sh` (the .deb and .rpm are made by the workflow with fpm) |
 | `.github/workflows/build.yml` | builds, tests and packages on macOS, Windows and Linux; publishes the release on a tag |
 
-The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mcview picture.jpg`). `--theme dark` (or `light`)
+The window has one process per window (Wails v2): the About window is the same program started with `--about` (or with a picture: `mormiview picture.jpg`). `--theme dark` (or `light`)
 forces the look instead of the system's.
 
-**Control mode.** `mcview --control 0 picture.jpg` lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom,
+**Control mode.** `mormiview --control 0 picture.jpg` lets another program drive every feature (menus, tools, shapes, fills, selections and text in picture pixels, zoom,
 the answers of the dialogs) over a local, token-protected connection: for demo screenshots and scripted tests. See [docs/control.md](docs/control.md);
 `scripts/demo_screenshots.py` makes the screenshots of the manual that way.
 
 **Chat panel.** The speech bubble at the bottom right of a picture window (or the key **C**) opens a chat with Claude about the picture, and Claude can change it with picture tools: snapshots, drawing, fills, selecting, clone and healing patches, masks, resizing and cropping. It runs the Claude Code on the computer with the user's subscription (no API key), signs in through the browser, and reaches the picture through a private tool server that exists only for this window. See [docs/chat.md](docs/chat.md).
 
-**Effects.** The Effects menu applies blur, pixelize, emboss, explosion, censor, sharpen, grayscale, negative, sepia and brightness, contrast, color and warmth adjustments to the selected part (a box or a free-hand polygon) or to the whole picture; the chat's Claude can apply them too, with settings. **Polygon select.** In edit mode the second tool of the rail selects freely: draw round the part with the mouse, and when you let go the end is joined to the start and mcView turns the line into a polygon (a few corners, within about a pixel of what you drew). Delete fills it with the second color, Ctrl+C copies what is inside it, Esc lets it go. **File → Discard Changes** (also a button in the edit bar) takes the picture back to its original, and undo brings the changes back.
+**Effects.** The Effects menu applies blur, pixelize, emboss, explosion, censor, sharpen, grayscale, negative, sepia and brightness, contrast, color and warmth adjustments to the selected part (a box or a free-hand polygon) or to the whole picture; the chat's Claude can apply them too, with settings. **Polygon select.** In edit mode the second tool of the rail selects freely: draw round the part with the mouse, and when you let go the end is joined to the start and mormiView turns the line into a polygon (a few corners, within about a pixel of what you drew). Delete fills it with the second color, Ctrl+C copies what is inside it, Esc lets it go. **File → Discard Changes** (also a button in the edit bar) takes the picture back to its original, and undo brings the changes back.
 
-**Slow start?** Start the app with `MCVIEW_TRACE=/tmp/mcview-trace.txt` (macOS: `open --env MCVIEW_TRACE=/tmp/t.txt -a mcview.app picture.jpg`): each step of the
+**Slow start?** Start the app with `MORMIVIEW_TRACE=/tmp/mormiview-trace.txt` (macOS: `open --env MORMIVIEW_TRACE=/tmp/t.txt -a mormiview.app picture.jpg`): each step of the
 start, in Go and in the UI, is written to that file with a time in milliseconds.
 
 **Versioning.** The version lives in one place, `wails.json` (`info.productVersion`). It feeds the macOS Info.plist, the Windows file
