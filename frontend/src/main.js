@@ -57,7 +57,7 @@ const view = {tool: 'select', name: '', dir: '', index: 0, count: 0, mode: 'larg
 const CHECKER = 'repeating-conic-gradient(#cdd7ec 0 25%, #fff 0 50%)'; // the squares of a picture with transparent parts, a bluish one and a white one
 let problemTimer = 0;
 let pointerDown = false;
-let rightHold = null; // the right button is down over a selection: only a drag draws a new polygon, a click leaves the selection alone
+let rightHold = null; // the right button is down with a lasso tool: only a drag draws a new polygon, a click leaves the selection alone and opens the menu
 
 // R turns the picture clockwise by a quarter, Shift+R counterclockwise: only the view (the file is not touched). view.rot is the number
 // of quarter turns, 0 to 3; view.angle counts them without wrapping, so that the animation always turns the short way. Everything below
@@ -346,11 +346,47 @@ async function applyEffect(spec, label) {
   return info;
 }
 async function applyEffectMenu(name) {
+  if (name === 'rotate-angle') { rotateByAngle(); return; }
   const base = EFFECT_MENU[name];
   if (!base || !view.state || !pic.naturalWidth) return;
   const spec = {...base, ...effectPart()};
   if (name === 'fill-fg') spec.color = paint.fg; else if (name === 'clear') spec.color = paint.bg;
   try { await applyEffect(spec); } catch (e) { problem(errText(e)); }
+}
+
+// Rotate by angle (Effects menu, and the right-click menu of the whole picture): any angle, smooth; the corners either make the picture bigger or are cut off.
+function askRotation() {
+  const dlg = $('rotdlg'), form = $('rotdlg-form'), A = $('rd-a'), R = $('rd-r'), C = $('rd-c'), B = $('rd-bg'), err = $('rd-err');
+  A.value = '0'; R.value = '0'; err.hidden = true; dlg.hidden = false; A.focus(); A.select();
+  return new Promise((resolve) => {
+    const close = (v) => { dlg.hidden = true; form.onsubmit = null; dlg.onkeydown = null; $('rd-cancel').onclick = null; dlg.onmousedown = null; A.oninput = null; R.oninput = null; resolve(v); };
+    A.oninput = () => { R.value = A.value; };
+    R.oninput = () => { A.value = R.value; };
+    form.onsubmit = (ev) => {
+      ev.preventDefault();
+      const angle = +A.value;
+      if (!Number.isFinite(angle) || Math.abs(angle) > 360 || angle % 360 === 0) { err.textContent = 'Give an angle between -360 and 360, other than 0.'; err.hidden = false; return; }
+      close({angle, crop: C.value === 'crop', bg: B.value});
+    };
+    $('rd-cancel').onclick = () => close(null);
+    dlg.onmousedown = (ev) => { if (ev.target === dlg) close(null); };
+    dlg.onkeydown = (ev) => { if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); close(null); } };
+  });
+}
+
+async function rotateByAngle() {
+  if (!pic.naturalWidth) return;
+  await commitText();
+  const o = await askRotation();
+  if (!o) return;
+  const bg = {auto: '', transparent: '#00000000', white: '#FFFFFFFF', second: paint.bg.length === 7 ? paint.bg + 'FF' : paint.bg}[o.bg];
+  try {
+    if (view.fl) await flushFloat({clear: true});
+    const info = await Transform(view.rot, JSON.stringify({op: 'rotate', angle: o.angle, crop: o.crop, bg}));
+    clearSelection();
+    await showImage(info, {rot: 0});
+    commit(`rotated ${o.angle}°`);
+  } catch (e) { problem(errText(e)); }
 }
 
 // Left and right arrow: the previous and the next picture of the folder, in alphabetical order.
@@ -517,10 +553,10 @@ async function clearSelectedPart() {
 function closeSelectionMenu() { const m = $('ctx'); if (m) m.remove(); }
 function showSelectionMenu(x, y) {
   closeSelectionMenu();
-  const r = selectionRect();
-  if (!r) return;
+  const part = selectionRect(), r = part || {x: 0, y: 0, w: dispW(), h: dispH()}; // (no selection: the menu of the whole picture)
+  if (!pic.naturalWidth) return;
   const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
-  const items = [
+  const items = part ? [
     ['Cut', async () => { await copySelection(); await clearSelectedPart(); }],
     ['Copy', () => copySelection(), `${MAC ? '⌘' : 'Ctrl+'}C`],
     ['Crop to selection', cropToSelection],
@@ -528,6 +564,13 @@ function showSelectionMenu(x, y) {
     ['Print…', printSelection],
     null,
     ['Clear', async () => { await clearSelectedPart(); }, '⌫'],
+  ] : [
+    ['Copy', () => copySelection(), `${MAC ? '⌘' : 'Ctrl+'}C`],
+    ['Select all', async () => { view.sel = {x0: 0, y0: 0, x1: dispW(), y1: dispH()}; view.selDrag = null; draw(); }, `${MAC ? '⌘' : 'Ctrl+'}A`],
+    ['Save as…', saveAs],
+    ['Print…', printSelection],
+    null,
+    ['Rotate by angle…', rotateByAngle],
   ];
   const menu = document.createElement('div');
   menu.id = 'ctx'; menu.setAttribute('role', 'menu');
@@ -1756,7 +1799,7 @@ function startViewer() {
     }
     pointerDown = true;
     const t = tool();
-    if (ev.button === 2 && RIGHT_LASSO.includes(t) && (view.sel || poly.closed || view.fl)) { // a selection is there: the polygon starts only when the pointer moves
+    if (ev.button === 2 && RIGHT_LASSO.includes(t)) { // the polygon starts only when the pointer moves; a click is the menu (of the selection, or of the whole picture)
       rightHold = {x: ev.clientX, y: ev.clientY, ev: {clientX: ev.clientX, clientY: ev.clientY, button: 2}};
       return;
     }
@@ -1854,7 +1897,7 @@ function startViewer() {
   $('stage').addEventListener('pointerup', endDrag);
   $('stage').addEventListener('pointercancel', endDrag);
   window.addEventListener('keydown', (ev) => {
-    if (!$('newdlg').hidden) return; // (the Create image dialog has its own keys)
+    if (!$('newdlg').hidden || !$('rotdlg').hidden) return; // (the dialogs have their own keys)
     if (ev.key === 'Escape') ev.preventDefault(); // a handled key is not passed on to the system, which leaves full screen with it (see also DisableEscapeExitsFullscreen in main.go)
     if ((ev.target instanceof HTMLInputElement && ev.target.type !== 'range') || ev.target instanceof HTMLTextAreaElement || ev.target instanceof HTMLSelectElement) return; // typing in a field is not a command
     if (polyActive() && polyKey(ev)) { ev.preventDefault(); return; }

@@ -160,19 +160,19 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 @media (prefers-reduced-motion: reduce) { #chat, #chat.open, #chat-toggle { transition:none; } }
 
 /* Create image with chosen parameters (Shift-click on Create image) */
-#newdlg { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); }
-#newdlg[hidden] { display:none; }
-#newdlg .box { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px 16px; width:340px; box-shadow:0 12px 40px rgba(0,0,0,.35); }
-#newdlg h2 { margin:0 0 14px; font-size:16px; }
-#newdlg .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
-#newdlg .row label { width:84px; color:var(--muted); font-size:13px; }
-#newdlg input[type=number], #newdlg select { font:inherit; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
-#newdlg input[type=number] { width:96px; } #newdlg select { flex:1; }
-#newdlg input[type=color] { width:36px; height:30px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer; } #newdlg input[type=color][hidden] { display:none; }
-#newdlg .unit { color:var(--muted); font-size:12px; }
-#newdlg .err { color:var(--bad); font-size:12px; margin:0 0 8px; } #newdlg .err[hidden] { display:none; }
-#newdlg .btns { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
-#newdlg button.primary { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
+:is(#newdlg, #rotdlg) { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.35); }
+:is(#newdlg, #rotdlg)[hidden] { display:none; }
+:is(#newdlg, #rotdlg) .box { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px 22px 16px; width:340px; box-shadow:0 12px 40px rgba(0,0,0,.35); }
+:is(#newdlg, #rotdlg) h2 { margin:0 0 14px; font-size:16px; }
+:is(#newdlg, #rotdlg) .row { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+:is(#newdlg, #rotdlg) .row label { width:84px; color:var(--muted); font-size:13px; }
+:is(#newdlg, #rotdlg) input[type=number], :is(#newdlg, #rotdlg) select { font:inherit; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:5px 8px; }
+:is(#newdlg, #rotdlg) input[type=number] { width:96px; } :is(#newdlg, #rotdlg) select { flex:1; }
+:is(#newdlg, #rotdlg) input[type=color] { width:36px; height:30px; padding:0; border:1px solid var(--line); border-radius:6px; background:none; cursor:pointer; } :is(#newdlg, #rotdlg) input[type=color][hidden] { display:none; }
+:is(#newdlg, #rotdlg) .unit { color:var(--muted); font-size:12px; }
+:is(#newdlg, #rotdlg) .err { color:var(--bad); font-size:12px; margin:0 0 8px; } :is(#newdlg, #rotdlg) .err[hidden] { display:none; }
+:is(#newdlg, #rotdlg) .btns { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
+:is(#newdlg, #rotdlg) button.primary { background:var(--accent); color:var(--accent-text); border-color:var(--accent); }
 #new-pic .s-cus { display:none; } body.shift #new-pic .s-def { display:none; } body.shift #new-pic .s-cus { display:inline; } /* Shift held: the card says it will ask for the settings */
 
 /* The right-click menu of a selection */
@@ -252,3 +252,5 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 
 /* each card has its own subtle color */
 #open { --ic:#d98a0b; } #open-clip { --ic:#8a5cf0; } #new-pic { --ic:#2f6df6; } #reopen-pic { --ic:#1fa37a; } #scan-pic { --ic:#e0507a; }
+
+#rotdlg input[type=range] { flex:1; }

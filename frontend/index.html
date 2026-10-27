@@ -71,6 +71,17 @@
         <div class="btns"><button type="button" id="nd-cancel">Cancel</button><button type="submit" id="nd-ok" class="primary">Create</button></div>
     </form>
 </div>
+<div id="rotdlg" hidden role="dialog" aria-modal="true" aria-labelledby="rotdlg-title">
+    <form class="box" id="rotdlg-form" autocomplete="off">
+        <h2 id="rotdlg-title">Rotate by angle</h2>
+        <div class="row"><label for="rd-a">Angle</label><input type="number" id="rd-a" min="-360" max="360" step="0.1" value="0"><span class="unit">° clockwise</span></div>
+        <div class="row"><input type="range" id="rd-r" min="-45" max="45" step="0.1" value="0" aria-label="Angle"></div>
+        <div class="row"><label for="rd-c">Corners</label><select id="rd-c"><option value="grow">Make the picture bigger</option><option value="crop">Keep the size, cut the corners</option></select></div>
+        <div class="row"><label for="rd-bg">Empty parts</label><select id="rd-bg"><option value="auto">Automatic</option><option value="transparent">Transparent</option><option value="white">White</option><option value="second">Second color</option></select></div>
+        <p class="err" id="rd-err" hidden></p>
+        <div class="btns"><button type="button" id="rd-cancel">Cancel</button><button type="submit" id="rd-ok" class="primary">Rotate</button></div>
+    </form>
+</div>
 <div id="about" hidden></div>
 <script src="./src/main.js" type="module"></script>
 </body>

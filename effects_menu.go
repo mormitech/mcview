@@ -37,4 +37,6 @@ func effectsMenu(app *App, m *menu.Menu) {
 	add("Auto Levels", "auto-levels")
 	fx.AddSeparator()
 	add("Fill with Foreground Color", "fill-fg")
+	fx.AddSeparator()
+	add("Rotate by Angle…", "rotate-angle")
 }

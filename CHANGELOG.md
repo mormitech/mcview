@@ -3,6 +3,12 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.43.0 – 2026-10-27
+
+### Added
+- Fine rotation: Effects → Rotate by Angle… turns the picture by any angle (smooth, -360° to 360°; with a slider), either making the picture bigger so that nothing is cut off or keeping its size and cutting the corners; the empty parts are transparent (or white where the file type has no transparency), white, or the second color. (The chat's `rotate_image` had it already.)
+- A right click on the picture with no selection opens a menu of the whole picture: Copy, Select all, Save as…, Print… and Rotate by angle…. (Cut and Crop are only offered for a selection.)
+
 ## 0.42.1 – 2026-10-27
 
 ### Changed
