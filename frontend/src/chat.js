@@ -52,6 +52,7 @@ const scroll = () => { const l = $('chat-log'); l.scrollTop = l.scrollHeight; };
 function setBusy(b) {
   busy = b;
   $('chat-send').hidden = b; $('chat-stop').hidden = !b;
+  $('chat-toggle').classList.toggle('working', b); // (the button shows that Claude is busy while the window is minimized)
 }
 
 function showSetup(text, buttons = [], extra = '') {

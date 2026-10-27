@@ -3,6 +3,11 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.44.0 – 2026-10-27
+
+### Added
+- While Claude is working and the chat window is minimized, the chat button pulses with rings and its bubble bobs, so you can see that it is busy.
+
 ## 0.43.1 – 2026-10-27
 
 ### Fixed
