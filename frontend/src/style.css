@@ -44,7 +44,7 @@ button:hover { border-color:var(--accent); }
 #empty-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; margin-top:14px; } #empty-actions button { pointer-events:auto; margin-top:0; }
 #empty-actions .card { display:flex; flex-direction:column; align-items:center; gap:3px; width:156px; padding:18px 12px 12px; border-radius:12px; }
 #empty-actions .card[hidden] { display:none; }
-#empty-actions .card svg { width:40px; height:40px; margin-bottom:6px; fill:none; stroke:var(--accent); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+#empty-actions .card svg { width:44px; height:44px; padding:7px; border-radius:12px; margin-bottom:6px; fill:none; stroke:var(--ic, var(--accent)); background:color-mix(in srgb, var(--ic, var(--accent)) 13%, transparent); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 #empty-actions .card b { font-size:14px; } #empty-actions .card small { font-size:12px; color:var(--muted); }
 #empty-actions .card kbd { margin-top:8px; font:600 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 #newform { pointer-events:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--muted); } #newform[hidden] { display:none; } #newform input[type=number] { width:76px; } #newform label { display:flex; align-items:center; gap:4px; }
@@ -249,3 +249,6 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 
 #chat header #chat-new { background:rgba(47,109,246,.16); color:#2f6df6; } #chat header #chat-new:hover { background:rgba(47,109,246,.28); }
 #chat header #chat-close { background:rgba(240,160,30,.2); color:#d98a0b; } #chat header #chat-close:hover { background:rgba(240,160,30,.34); }
+
+/* each card has its own subtle color */
+#open { --ic:#d98a0b; } #open-clip { --ic:#8a5cf0; } #new-pic { --ic:#2f6df6; } #reopen-pic { --ic:#1fa37a; } #scan-pic { --ic:#e0507a; }
