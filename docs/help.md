@@ -51,7 +51,7 @@ The keys **1** to **6** set how the picture sits in the window, as in IrfanView.
 
 ### Turning, full screen
 
-- **R** turns the view a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file stays as it is until you save.
+- **R** turns the view a quarter clockwise, **Shift+R** counterclockwise. Only the view turns; the file stays as it is until you save. With a part selected, **R** turns only that part instead (see Image and Effects).
 - **F** or **Enter** is full screen. There is no title or bar then; the bar comes up when the pointer is at the bottom edge. **Esc** does not leave full screen (two Escs close the picture).
 
 ### Looking closely
@@ -90,7 +90,7 @@ The two **color wells** at the bottom of the rail are the first and the second c
 
 ### Image and Effects
 
-The **Image** menu turns and flips the whole picture: **Rotate Right**, **Rotate Left** (a quarter turn, like **R**), **Rotate by Angle…** (any angle from -360° to 360°, smooth; the corners either make the picture bigger or are cut off) and **Flip Horizontal/Vertical**. A right click on the picture (with nothing selected) offers the same turn, and Copy, Select all, Save as… and Print….
+The **Image** menu turns and flips the whole picture: **Rotate Right**, **Rotate Left** (a quarter turn, like **R**), **Rotate by Angle…** (any angle from -360° to 360°, smooth; the corners either make the picture bigger or are cut off) and **Flip Horizontal/Vertical**. A right click on the picture (with nothing selected) offers the same turn, an **Effects** submenu, and Copy, Select all, Save as… and Print…. With a part selected, the right-click menu also has Cut, Crop to selection and Clear, and **R**, Rotate Right/Left and Rotate by Angle… turn only the selected part: a quarter turn is stretched to fill the frame again, and any other angle is blown up just enough that no corner is empty. Turning the same part again and again starts from its pixels before the first turn, so it does not get blurrier, until you let the selection go. The whole picture is turned as it is.
 
 The **Effects** menu changes the picture, or only the part you selected (a rectangle or a free-hand polygon; with nothing selected, all of it). **Clear** (also **Delete** or **Backspace** while something is selected) fills the selected part with the second color, as Delete does in Paint; the selection stays, so you can undo and try another effect. The effects: **Blur**, **Pixelize**, **Emboss**, **Explosion** (a burst from the middle), **Censor** (a mosaic too coarse to read, for faces, plates and names), **Sharpen**, **Grayscale**, **Negative**, **Sepia**, **Brighter/Darker**, **More/Less Contrast**, **More/Less Color**, **Warmer/Cooler**, **Auto Levels**, and **Fill** with the foreground or background color. Each is one step of the history (Ctrl+Z takes it back); using one again makes it stronger. Claude can do the same, with settings, through the chat.
 
