@@ -139,7 +139,7 @@ func (a *App) saveTo(target string, rot int) (string, error) {
 	}
 	format, ok := saveFormats[ext]
 	if !ok {
-		return "", fmt.Errorf("mcView saves PNG, JPEG, GIF, BMP and TIFF; %s is none of them", ext)
+		return "", fmt.Errorf("mormiView saves PNG, JPEG, GIF, BMP and TIFF; %s is none of them", ext)
 	}
 	if a.floating() { // the lifted part is part of what is saved; the picture it makes is turned for good
 		if err := a.bakeFloat(false); err != nil {
@@ -156,7 +156,7 @@ func (a *App) saveTo(target string, rot int) (string, error) {
 		return cur.Name + " is this picture already", nil
 	}
 	transparent := a.HasTransparency() // asked now: the file that is saved is what is shown at this moment
-	tmp, err := os.CreateTemp(filepath.Dir(target), ".mcview-save-*")
+	tmp, err := os.CreateTemp(filepath.Dir(target), ".mormiview-save-*")
 	if err != nil {
 		return "", err
 	}
@@ -232,7 +232,7 @@ func (a *App) writePicture(f *os.File, cur ImageInfo, format string, rot int) er
 		return err
 	}
 	if source != "go" {
-		return fmt.Errorf("mcView cannot convert %s to another type", cur.Name)
+		return fmt.Errorf("mormiView cannot convert %s to another type", cur.Name)
 	}
 	a.mu.Lock()
 	q := a.saveQuality

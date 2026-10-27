@@ -55,11 +55,11 @@ func (a *App) SaveSelectionAs(rot, x, y, w, h int) (string, error) {
 	}
 	format, ok := saveFormats[ext]
 	if !ok {
-		return "", fmt.Errorf("mcView saves PNG, JPEG, GIF, BMP and TIFF; %s is none of them", ext)
+		return "", fmt.Errorf("mormiView saves PNG, JPEG, GIF, BMP and TIFF; %s is none of them", ext)
 	}
 	part := image.NewNRGBA(image.Rect(0, 0, w, h))
 	draw.Draw(part, part.Bounds(), base, image.Pt(x, y), draw.Src)
-	tmp, err := os.CreateTemp(filepath.Dir(target), ".mcview-save-*")
+	tmp, err := os.CreateTemp(filepath.Dir(target), ".mormiview-save-*")
 	if err != nil {
 		return "", err
 	}

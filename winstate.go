@@ -22,11 +22,10 @@ type winState struct {
 const minWinW, minWinH = 300, 200
 
 func winStatePath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
+	if dir := configDir(); dir != "" {
+		return filepath.Join(dir, "window.json")
 	}
-	return filepath.Join(dir, "mcview", "window.json")
+	return ""
 }
 
 // loadWinState is the window as it was left, and whether there is one.

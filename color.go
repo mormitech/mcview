@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// A picture that is edited is shown from a PNG that mcView makes of the decoded pixels. Pixels carry no color space of their own: a
+// A picture that is edited is shown from a PNG that mormiView makes of the decoded pixels. Pixels carry no color space of their own: a
 // file in Display P3 (most phone photos) is shown right because the web view reads its profile, and a PNG without that profile would be
 // shown as sRGB, a little different. So the color information of the file is copied into the PNG: the pixels stay as they were
 // decoded, and the screen shows the same colors before and after an edit.

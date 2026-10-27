@@ -112,8 +112,8 @@ func (a *App) ConfirmQuit() bool {
 		return true
 	}
 	res, err := wruntime.MessageDialog(a.ctx, wruntime.MessageDialogOptions{
-		Type: wruntime.QuestionDialog, Title: "Quit mcView?",
-		Message:       "Do you want to quit mcView? Nothing is open, so nothing is lost.",
+		Type: wruntime.QuestionDialog, Title: "Quit mormiView?",
+		Message:       "Do you want to quit mormiView? Nothing is open, so nothing is lost.",
 		Buttons:       []string{"Quit", "Cancel"},
 		DefaultButton: "Quit", CancelButton: "Cancel",
 	})

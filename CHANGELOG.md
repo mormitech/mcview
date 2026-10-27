@@ -3,6 +3,16 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.0 – 2026-10-27
+
+### Changed
+
+- **mcView is now mormiView.** The app, the files of the release (`mormiview-<version>-…`), the repository (`mormitech/mormiview`), the command and the
+  environment variables (`MORMIVIEW_CONTROL`, `MORMIVIEW_TRACE` …) carry the new name. Older entries of this list keep the name they were made under.
+- The settings (recent pictures, window, AI settings) of mcView are moved to the new folder the first time mormiView starts.
+- The Windows installer upgrades an mcView install and removes its entries; the Linux packages replace the `mcview` package.
+- macOS: the app has a new identity, so Open With and the default app for picture types have to be chosen again, and the first start asks again to be opened.
+
 ## 0.50.3 – 2026-10-27
 
 ### Changed

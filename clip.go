@@ -166,7 +166,7 @@ func (a *App) shownPixels(rot int) (*image.NRGBA, error) {
 		return nil, err
 	}
 	if source != "go" {
-		return nil, fmt.Errorf("mcView cannot change %s: it can only paste into JPEG, PNG, GIF, BMP, WebP and TIFF pictures", a.current().Name)
+		return nil, fmt.Errorf("mormiView cannot change %s: it can only paste into JPEG, PNG, GIF, BMP, WebP and TIFF pictures", a.current().Name)
 	}
 	return turnImage(shownImage(pc), rot), nil
 }
@@ -207,7 +207,7 @@ var errNoClipboardPicture = errors.New("there is no picture on the clipboard")
 
 // readClipboardImage asks the system for the picture on its clipboard.
 func readClipboardImage() (image.Image, error) {
-	f, err := os.CreateTemp("", "mcview-*.img")
+	f, err := os.CreateTemp("", "mormiview-*.img")
 	if err != nil {
 		return nil, err
 	}

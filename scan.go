@@ -32,7 +32,7 @@ func scanCommand(goos, path string) *exec.Cmd {
 // ScanImage asks a scanner for a picture (Windows: the system scan dialog, Linux: SANE's scanimage) and opens it as a new, unsaved picture.
 // macOS has no scan command: Image Capture is opened and the first new picture file in the usual folders is opened.
 func (a *App) ScanImage() error {
-	if runtime.GOOS == "darwin" { // Image Capture saves the scan as a file: mcView opens the first new picture that turns up in the usual places
+	if runtime.GOOS == "darwin" { // Image Capture saves the scan as a file: mormiView opens the first new picture that turns up in the usual places
 		home, _ := os.UserHomeDir()
 		since := time.Now()
 		wasOpen := exec.Command("pgrep", "-x", "Image Capture").Run() == nil
@@ -44,7 +44,7 @@ func (a *App) ScanImage() error {
 			dirs[i] = filepath.Join(home, dirs[i])
 		}
 		if path := waitForScan(dirs, since, 10*time.Minute, time.Second); path != "" {
-			if !wasOpen { // the scan app was started for this: it goes away, and mcView has the focus again
+			if !wasOpen { // the scan app was started for this: it goes away, and mormiView has the focus again
 				_ = exec.Command("osascript", "-e", `tell application "Image Capture" to quit`).Run()
 			}
 			if a.ctx != nil {
@@ -61,7 +61,7 @@ func (a *App) ScanImage() error {
 		}
 		return nil
 	}
-	dir, err := os.MkdirTemp("", "mcview-scan")
+	dir, err := os.MkdirTemp("", "mormiview-scan")
 	if err != nil {
 		return err
 	}

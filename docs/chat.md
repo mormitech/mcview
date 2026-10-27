@@ -5,11 +5,11 @@ look at the picture, to draw on it, to change it; the changes appear in the wind
 
 ## How it works
 
-mcView starts the **Claude Code** that is installed on the computer (`claude -p`, with streamed JSON output) in the background and gives it the
+mormiView starts the **Claude Code** that is installed on the computer (`claude -p`, with streamed JSON output) in the background and gives it the
 picture tools of this window, and the web:
 
 - no terminal has to be open, and no API key is used: Claude Code works with the user's **Claude subscription**;
-- Claude can use the mcView tools (below) and web search and fetch, and nothing else: no files, no shell (`--tools "WebSearch,WebFetch"`, only `mcp__mcview` and those two allowed). **AI → Web search and fetch** turns the web off (it is on by default, and the choice is kept in `ai.json` in the settings folder). A page it reads is untrusted text, so it can be asked to look things up, but it is not given anything that reaches outside the picture except the web;
+- Claude can use the mormiView tools (below) and web search and fetch, and nothing else: no files, no shell (`--tools "WebSearch,WebFetch"`, only `mcp__mormiview` and those two allowed). **AI → Web search and fetch** turns the web off (it is on by default, and the choice is kept in `ai.json` in the settings folder). A page it reads is untrusted text, so it can be asked to look things up, but it is not given anything that reaches outside the picture except the web;
 - the tools come from a **private MCP server** of the window: it listens on `127.0.0.1` on a free port, only while the panel has been used, and only
   answers requests with a token that exists in this program and, for the length of one answer, in a temporary file (mode 0600) that Claude Code
   reads. It refuses requests with an `Origin` header (a web page) or another host. There is no setting for it and no other program is given access;
@@ -19,7 +19,7 @@ picture tools of this window, and the web:
 ## Signing in
 
 The panel asks `claude auth status`. When the user is not signed in it offers **Sign in with Claude**, which runs `claude auth login --claudeai`:
-Claude Code opens a browser tab, and keeps the token it gets there in its own storage. mcView never sees the password or the token. If the
+Claude Code opens a browser tab, and keeps the token it gets there in its own storage. mormiView never sees the password or the token. If the
 browser does not open, the address is shown in the panel. When the sign-in is over the panel checks again by itself.
 
 The panel shows the account and the plan in its header. A sign-in that is not a Claude subscription (an API key or Console login) is marked

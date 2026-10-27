@@ -19,8 +19,8 @@ import (
 	"time"
 )
 
-// The chat panel (the side panel of the viewer window): the user's own Claude Code, started as a program in the background, with mcView's AI connection as
-// its only tool. It signs in the way Claude Code does (`claude auth login` opens the browser; the token is kept by Claude Code, mcView never sees it), and
+// The chat panel (the side panel of the viewer window): the user's own Claude Code, started as a program in the background, with mormiView's AI connection as
+// its only tool. It signs in the way Claude Code does (`claude auth login` opens the browser; the token is kept by Claude Code, mormiView never sees it), and
 // it uses the user's subscription, not an API key. Every answer is sent to the page as the event "chat" (see chatEvents).
 
 type chatState struct {
@@ -36,22 +36,22 @@ type chatState struct {
 
 // chatDir is the folder Claude Code runs in: nothing of the user's projects is there, and the connection file is.
 func chatDir() (string, error) {
-	d := filepath.Join(os.TempDir(), "mcview-chat")
+	d := filepath.Join(os.TempDir(), "mormiview-chat")
 	if err := os.MkdirAll(d, 0o700); err != nil {
 		return "", err
 	}
 	return d, nil
 }
 
-const chatSystemPrompt = `You are the assistant inside the picture editor mcView. The user is looking at the picture of the window you work on; the mcview tools change that picture. ` +
-	`Look at the picture (snapshot) before you change it and again afterwards to check. Use the mcview tools for every change to the picture. ` +
+const chatSystemPrompt = `You are the assistant inside the picture editor mormiView. The user is looking at the picture of the window you work on; the mormiview tools change that picture. ` +
+	`Look at the picture (snapshot) before you change it and again afterwards to check. Use the mormiview tools for every change to the picture. ` +
 	`To remove something from a photo, work in rounds as a retoucher: make a mask of it (select_by_color when it has its own color, else create_mask with a polygon; snapshot with mask and zoom shows it tinted), cover it with clone_region from clean places that look like what belongs there (different places, vary scale and angle, blend seamless, feather the edge), check each round with snapshot (zoom, compare) and seam_score, fix seams with blend_edges, and fill small leftovers with fill_region (give source_mask so it copies only from the right material). Stop when it looks natural. ` +
 	`When the user speaks of a selection ("the selected part", "this region", "what I selected", "remove this" with something selected in the window), call selection_mask first: it shows you the selection and gives you its mask; look at what is inside it (a label, a pattern, text, an object) and decide whether the selection is the thing itself or has more around it, and then work on the thing: when it has its own color, make a mask of that color with select_by_color and keep only the part inside the selection (edit_mask with intersect_mask). ` +
 	`Polygons may be as complicated as the shape needs: tens or hundreds of points along an outline are fine, and polygons joins many separate pieces (all the labels, all the berries) into one mask; do not settle for a rectangle or a rough triangle when the shape is not one. Zoom in with snapshot (zoom, outline) to read coordinates precisely and check the outline before you use it. ` +
 	`To remove text: trace the letters themselves. Zoom in on the text (snapshot with zoom), then either use select_by_color on the ink (tolerance and a little grow; usually the most exact) or outline the letters with polygons, and work letter by letter or word by word: one mask for each, then fill_region on it with method smooth and grain true so that each letter is filled from the paper right around it, then look again (snapshot with zoom), fix what is left, and move to the next. Small pieces filled from their own surroundings look natural; one big patch over a whole line does not. The same goes for any small detail (a scratch, a wire, a speck, a logo, a strand of hair, a reflection): outline it exactly and fill it from its own surroundings, one piece at a time, and never remove several things with one big shape. ` +
 	`To remove writing, a label, a print or a spot: never cover it with a rectangle. Make a mask that hugs only the thing (select_by_color on its color with a few pixels of grow, or create_mask with a polygon along its outline, or selection_mask when the user selected it), check it with snapshot (mask), then call fill_region on that mask: method smooth with grain true for flat or slowly changing surfaces (paper, post-its, walls, skin, sky), method patch for textures (fabric, grass, water, food), nearest for hard edges between colors. ` +
 	`To make an animated GIF: draw the first frame, then add_frame (a copy of the last frame; the answer gives its number) and change only what moves in it (set_pixels, clone_region with to_x/to_y or an angle, draw tools), again and again; always pass the frame number as the frame parameter of the tools, which then work on that frame whatever the user has on the screen (animation_info tells which frame the user looks at, for "this frame"), duplicate_frame, move_frame and delete_frame reorder, set_frame_delay sets the speed, frames_sheet shows all frames at once so you can check the motion. Plan the motion first (how many frames, how far each part moves per frame, and that the last frame leads back to the first). Leave the animation ready in the window: the user plays it in the frame player and saves it themselves. ` +
-	`The user may mark a part of the picture with a highlight drawn in mcView (a rectangle, circle, arrow, scribble or the like, usually in a strong color) and then ask you to change, remove or fix "this", "what I marked" or "the highlighted part", with or without saying how it is marked. ` +
+	`The user may mark a part of the picture with a highlight drawn in mormiView (a rectangle, circle, arrow, scribble or the like, usually in a strong color) and then ask you to change, remove or fix "this", "what I marked" or "the highlighted part", with or without saying how it is marked. ` +
 	`Then: first take a snapshot and find the marking (say which shape you found if the user did not), and note exactly which area it points at, its box and what is inside it, before anything changes. ` +
 	`The marking is not part of the picture the user wants to keep: if it was the last step in the window, call undo once to take it away, take another snapshot, and check that only the marking is gone; if the undo took away something else, call redo. ` +
 	`If the marking is not the last step, do not undo; leave the earlier edits alone and cover the marking as part of your change. Then make the change on the area you noted. If you cannot tell what is marked, ask the user instead of guessing. ` +
@@ -301,7 +301,7 @@ func (l *limitedWriter) Write(p []byte) (int, error) {
 //	{kind: "start"}                       a new answer begins
 //	{kind: "delta", text}                 a piece of the text, as it is written
 //	{kind: "text", text}                  the whole text of a block (for when no pieces came)
-//	{kind: "tool", name, input}           a tool of mcView that is used
+//	{kind: "tool", name, input}           a tool of mormiView that is used
 //	{kind: "toolerror", text}             a tool that failed
 //	{kind: "done", error, text, cost}     the answer is over
 func chatEvents(line []byte) []map[string]any {

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>mcView</title>
+    <title>mormiView</title>
 </head>
 <body>
 <main id="viewer">
     <div id="stage"><img id="pic" alt="" hidden draggable="false"><div id="hole" hidden></div><img id="float" alt="" hidden draggable="false"><canvas id="ink" hidden></canvas><textarea id="textbox" hidden spellcheck="false" autocomplete="off" autocapitalize="off" rows="1" aria-label="Text"></textarea><div id="sel" hidden><svg class="ants" aria-hidden="true"><rect class="k" x=".5" y=".5" width="100%" height="100%"/><rect class="w" x=".5" y=".5" width="100%" height="100%"/></svg><i class="edge t"></i><i class="edge b"></i><i class="edge l"></i><i class="edge r"></i><b class="dims"></b><svg class="movemark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12"/><path d="M12 5v14M5 12h14M12 5l-2.5 2.5M12 5l2.5 2.5M12 19l-2.5-2.5M12 19l2.5-2.5M5 12l2.5-2.5M5 12l2.5 2.5M19 12l-2.5-2.5M19 12l-2.5 2.5"/></svg><svg class="clipmark" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><rect x="8.5" y="2.5" width="7" height="4" rx="1.2"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4"/></svg></div><svg id="poly" hidden aria-hidden="true"></svg></div>
     <div id="empty">
         <img class="logo" src="./src/assets/mormitech-mark.svg" alt="" width="120">
-        <h1>mcView</h1>
+        <h1>mormiView</h1>
         <p class="muted" id="hint"></p>
         <div id="empty-actions">
             <button id="open" class="card"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6H9l2 2.5h8.5A1.5 1.5 0 0 1 21 10v8a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18z"/></svg><b>Open file…</b><small>Browse for a picture</small><kbd>O</kbd></button>
@@ -23,7 +23,7 @@
     </div>
     <div id="tools" aria-label="Edit tools">
         <button class="tool on" id="tool-select" title="Select" aria-label="Select"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="5.5" width="15" height="13" rx="1" stroke-dasharray="3 2.5"/></svg></button>
-        <button class="tool" id="tool-poly" title="Polygon select: draw round the part with the mouse; when you let go, the end joins the start and mcView makes it a polygon. Delete fills it with the second color, Ctrl+C copies it, Esc lets it go" aria-label="Polygon select"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7.5l9-3 4.5 5.5-3.5 8.5-10-1.5z" stroke-dasharray="3 2.5"/><circle cx="5.5" cy="7.5" r="1.3" class="dot"/><circle cx="14.5" cy="4.5" r="1.3" class="dot"/><circle cx="19" cy="10" r="1.3" class="dot"/><circle cx="15.5" cy="18.5" r="1.3" class="dot"/><circle cx="5.5" cy="17" r="1.3" class="dot"/></svg></button>
+        <button class="tool" id="tool-poly" title="Polygon select: draw round the part with the mouse; when you let go, the end joins the start and mormiView makes it a polygon. Delete fills it with the second color, Ctrl+C copies it, Esc lets it go" aria-label="Polygon select"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.5 7.5l9-3 4.5 5.5-3.5 8.5-10-1.5z" stroke-dasharray="3 2.5"/><circle cx="5.5" cy="7.5" r="1.3" class="dot"/><circle cx="14.5" cy="4.5" r="1.3" class="dot"/><circle cx="19" cy="10" r="1.3" class="dot"/><circle cx="15.5" cy="18.5" r="1.3" class="dot"/><circle cx="5.5" cy="17" r="1.3" class="dot"/></svg></button>
         <button class="tool" id="tool-pen" title="Pencil" aria-label="Pencil"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.4L16.5 4.3a1.8 1.8 0 0 1 2.5 0l.7.7a1.8 1.8 0 0 1 0 2.5L8.4 18.8z"/><path d="M14.5 6.3l3.2 3.2"/></svg></button>
         <button class="tool" id="tool-line" title="Line" aria-label="Line"><svg viewBox="0 0 24 24" aria-hidden="true"><line x1="5" y1="19" x2="19" y2="5"/></svg></button>
         <button class="tool" id="tool-rect" title="Rectangle" aria-label="Rectangle"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="6.5" width="15" height="11" rx="1"/></svg></button>

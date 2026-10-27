@@ -21,11 +21,10 @@ type RecentFile struct {
 }
 
 func recentPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
+	if dir := configDir(); dir != "" {
+		return filepath.Join(dir, "recent.json")
 	}
-	return filepath.Join(dir, "mcview", "recent.json")
+	return ""
 }
 
 // loadRecent reads the list; files that are gone are left out.

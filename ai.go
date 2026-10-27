@@ -16,11 +16,10 @@ type aiSettings struct {
 }
 
 func aiSettingsPath() string {
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return ""
+	if dir := configDir(); dir != "" {
+		return filepath.Join(dir, "ai.json")
 	}
-	return filepath.Join(dir, "mcview", "ai.json")
+	return ""
 }
 
 // loadAI is read for every message, so that a change made in another window counts at once.

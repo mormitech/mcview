@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""Makes the screenshots of the manual with mcView in control mode (macOS; docs/control.md).
+"""Makes the screenshots of the manual with mormiView in control mode (macOS; docs/control.md).
 
     scripts/demo_screenshots.py SAMPLES_DIR [OUT_DIR] [APP]
 
 SAMPLES_DIR holds berries.jpg, coast.jpg and lake.jpg (free pictures, no people in them); OUT_DIR defaults to docs/screenshots (WebP when Pillow is installed, else PNG), APP to
-build/bin/mcview.app. The window is a fixed size, so the pictures look alike from one run to the next.
+build/bin/mormiview.app. The window is a fixed size, so the pictures look alike from one run to the next.
 """
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mcview_ctl import McView  # noqa: E402
+from mormiview_ctl import MormiView  # noqa: E402
 
 
-def main(samples, out="docs/screenshots", app="build/bin/mcview.app"):
-    mc = McView.start(app, os.path.join(samples, "berries.jpg"))
+def main(samples, out="docs/screenshots", app="build/bin/mormiview.app"):
+    mc = MormiView.start(app, os.path.join(samples, "berries.jpg"))
 
     def shot(name):
         png = os.path.join(out, name + ".png")

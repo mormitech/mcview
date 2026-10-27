@@ -14,9 +14,9 @@ import (
 	"golang.org/x/image/tiff"
 )
 
-// imageTypes are the file types mcView opens, with the type each is served as. The web view shows all of them itself,
+// imageTypes are the file types mormiView opens, with the type each is served as. The web view shows all of them itself,
 // except TIFF, which Go decodes and hands over as PNG (WebKit shows TIFF, WebView2 and WebKitGTK do not). The same list is in
-// wails.json (macOS), packaging/windows/installer.iss and packaging/linux/mcview.desktop; a test keeps them equal.
+// wails.json (macOS), packaging/windows/installer.iss and packaging/linux/mormiview.desktop; a test keeps them equal.
 var imageTypes = map[string]string{
 	".jpg":  "image/jpeg",
 	".jpeg": "image/jpeg",
@@ -48,7 +48,7 @@ func isImage(path string) bool {
 }
 
 // fileArg is the file the system asked us to open: the first argument that is not a flag. Explorer, the Linux file managers
-// and `mcview picture.jpg` pass it this way; macOS sends an open-file event instead (see onFileOpen).
+// and `mormiview picture.jpg` pass it this way; macOS sends an open-file event instead (see onFileOpen).
 func fileArg(args []string) string {
 	if len(args) == 0 {
 		return ""
@@ -112,7 +112,7 @@ func (a *App) setImage(path string) error {
 		return err
 	}
 	if !isImage(abs) {
-		return fmt.Errorf("%s is not a picture type mcView opens", filepath.Base(abs))
+		return fmt.Errorf("%s is not a picture type mormiView opens", filepath.Base(abs))
 	}
 	if fi, err := os.Stat(abs); err != nil || fi.IsDir() {
 		return fmt.Errorf("cannot open %s", filepath.Base(abs))
@@ -144,7 +144,7 @@ func (a *App) OpenImage(path string) error { return a.setImage(path) }
 // comes to the running copy of the app, so the first picture goes into its window and every other one into a window of its own.
 //
 // Care is needed: macOS also reports a file given on the command line as an open-file event, so a window started with
-// `mcview picture.jpg` hears about picture.jpg again. That must neither open the same picture a second time nor start yet
+// `mormiview picture.jpg` hears about picture.jpg again. That must neither open the same picture a second time nor start yet
 // another window (it did, without end). A window that was started for a picture never starts windows itself.
 func (a *App) onFileOpen(path string) {
 	trace("open-file event %s", path)

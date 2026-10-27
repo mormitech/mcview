@@ -1,13 +1,13 @@
 # Control mode
 
-mcView can be driven from another program, so that every feature can be triggered without a mouse or a keyboard: for demo
+mormiView can be driven from another program, so that every feature can be triggered without a mouse or a keyboard: for demo
 screenshots, for the manual in pictures, for scripted tests. It is off unless you ask for it.
 
 ```
-mcview --control 0 picture.jpg          # 0 takes a free port; or MCVIEW_CONTROL=0 in the environment
+mormiview --control 0 picture.jpg          # 0 takes a free port; or MORMIVIEW_CONTROL=0 in the environment
 ```
 
-On start the app writes `mcview-control.json` (in the temporary folder, or where `MCVIEW_CONTROL_FILE` says; readable by you only):
+On start the app writes `mormiview-control.json` (in the temporary folder, or where `MORMIVIEW_CONTROL_FILE` says; readable by you only):
 
 ```json
 {"url": "http://127.0.0.1:53211", "token": "…", "pid": 4711}
@@ -24,7 +24,7 @@ the server only listens on 127.0.0.1.
 | `POST /batch` | a JSON list of commands, done one after the other; stops at the first error (`?continue=1` goes on) |
 | `GET /info` | version, pid, and the window: `windowId` (macOS: for `screencapture -l`), `x`, `y`, `w`, `h` |
 
-`scripts/mcview_ctl.py` is a small client (and a library) for it; `scripts/demo_screenshots.py` makes the screenshots of the manual with it.
+`scripts/mormiview_ctl.py` is a small client (and a library) for it; `scripts/demo_screenshots.py` makes the screenshots of the manual with it.
 
 ## Positions
 
@@ -81,8 +81,8 @@ question that has no answer queued is answered with the safe one (Cancel, No, no
 ## Example
 
 ```python
-from mcview_ctl import McView
-mc = McView.start("build/bin/mcview.app", "/tmp/Pictures/coast.jpg")
+from mormiview_ctl import MormiView
+mc = MormiView.start("build/bin/mormiview.app", "/tmp/Pictures/coast.jpg")
 mc.cmd("window", w=1500, h=960)
 mc.cmd("shape", kind="path", pts=[[3200, 900], [3300, 850], [3400, 920]], color="#ED1C24", width=14)
 mc.cmd("zoom", scale=4, x=3300, y=900)

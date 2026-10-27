@@ -1,4 +1,4 @@
-module mcview
+module mormiview
 
 go 1.26.0
 

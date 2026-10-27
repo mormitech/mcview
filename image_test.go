@@ -202,10 +202,10 @@ func TestFileTypeListsAgree(t *testing.T) {
 	check(t, "installer.iss Capabilities", pick(iss, `FileAssociations"; ValueType: string; ValueName: "(\.[a-z0-9]+)"`), want)
 
 	// Linux: every type we serve has its MIME type in the desktop file
-	desktop := readFile(t, "packaging/linux/mcview.desktop")
+	desktop := readFile(t, "packaging/linux/mormiview.desktop")
 	for _, typ := range imageTypes {
 		if !strings.Contains(desktop, typ+";") {
-			t.Errorf("mcview.desktop has no MimeType %s", typ)
+			t.Errorf("mormiview.desktop has no MimeType %s", typ)
 		}
 	}
 }

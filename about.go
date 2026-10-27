@@ -8,7 +8,7 @@ import (
 	wruntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-// helpURL is the page of the manual; Help → mcView Help opens it in the browser of the system.
+// helpURL is the page of the manual; Help → mormiView Help opens it in the browser of the system.
 const helpURL = "https://mormitech.com/tools/mcview/docs"
 
 func (a *App) openHelp() {
@@ -18,24 +18,24 @@ func (a *App) openHelp() {
 }
 
 // appMenu is the menu of the main window, the way each system does it. On macOS that is the application menu (About,
-// Hide, Quit) plus File, Edit and Window. On Windows and Linux there are File, Edit and Help menus (mcView Help, with F1, and About mcView are in Help; macOS has a Help menu of its own after Window). About opens a
+// Hide, Quit) plus File, Edit and Window. On Windows and Linux there are File, Edit and Help menus (mormiView Help, with F1, and About mormiView are in Help; macOS has a Help menu of its own after Window). About opens a
 // window of its own, so that it can have real links (the system's message boxes cannot).
 func appMenu(app *App) *menu.Menu {
 	m := menu.NewMenu()
 	if runtime.GOOS == "darwin" {
-		appMenu := m.AddSubmenu("mcView")
-		appMenu.AddText("About mcView", nil, func(*menu.CallbackData) { app.showAbout() })
+		appMenu := m.AddSubmenu("mormiView")
+		appMenu.AddText("About mormiView", nil, func(*menu.CallbackData) { app.showAbout() })
 		appMenu.AddSeparator()
-		appMenu.AddText("Hide mcView", keys.CmdOrCtrl("h"), func(*menu.CallbackData) { wruntime.Hide(app.ctx) })
+		appMenu.AddText("Hide mormiView", keys.CmdOrCtrl("h"), func(*menu.CallbackData) { wruntime.Hide(app.ctx) })
 		appMenu.AddSeparator()
-		appMenu.AddText("Quit mcView", keys.CmdOrCtrl("q"), func(*menu.CallbackData) { wruntime.Quit(app.ctx) })
+		appMenu.AddText("Quit mormiView", keys.CmdOrCtrl("q"), func(*menu.CallbackData) { wruntime.Quit(app.ctx) })
 		fileMenu(app, m)
 		editMenu(app, m)
 		imageMenu(app, m)
 		effectsMenu(app, m)
 		aiMenu(m)
 		m.Append(menu.WindowMenu())
-		m.AddSubmenu("Help").AddText("mcView Help", nil, func(*menu.CallbackData) { app.openHelp() }) // the last menu, where macOS has it
+		m.AddSubmenu("Help").AddText("mormiView Help", nil, func(*menu.CallbackData) { app.openHelp() }) // the last menu, where macOS has it
 		return m
 	}
 	fileMenu(app, m)
@@ -44,9 +44,9 @@ func appMenu(app *App) *menu.Menu {
 	effectsMenu(app, m)
 	aiMenu(m)
 	help := m.AddSubmenu("Help")
-	help.AddText("mcView Help", keys.Key("f1"), func(*menu.CallbackData) { app.openHelp() })
+	help.AddText("mormiView Help", keys.Key("f1"), func(*menu.CallbackData) { app.openHelp() })
 	help.AddSeparator()
-	help.AddText("About mcView", nil, func(*menu.CallbackData) { app.showAbout() })
+	help.AddText("About mormiView", nil, func(*menu.CallbackData) { app.showAbout() })
 	return m
 }
 
@@ -70,7 +70,7 @@ func fileMenu(app *App, m *menu.Menu) {
 	}
 }
 
-// The Edit menu is mcView's own, not the system's: the system's Copy and Paste work on text in the page, and a picture is not that.
+// The Edit menu is mormiView's own, not the system's: the system's Copy and Paste work on text in the page, and a picture is not that.
 func editMenu(app *App, m *menu.Menu) {
 	edit := m.AddSubmenu("Edit")
 	edit.AddText("Undo", keys.CmdOrCtrl("z"), func(*menu.CallbackData) { app.emit("menu-undo") })

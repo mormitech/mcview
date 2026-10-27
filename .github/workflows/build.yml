@@ -15,11 +15,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            artifact: mcview-macos
+            artifact: mormiview-macos
           - os: ubuntu-latest
-            artifact: mcview-linux
+            artifact: mormiview-linux
           - os: windows-latest
-            artifact: mcview-windows
+            artifact: mormiview-windows
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -58,60 +58,60 @@ jobs:
         run: |
           mkdir dist
           # ad-hoc signature, so the bundle is at least internally consistent; it is not notarized
-          codesign --force --deep -s - build/bin/mcview.app
+          codesign --force --deep -s - build/bin/mormiview.app
           # the picture types in Info.plist are what makes Open With offer the app
-          n=$(plutil -extract CFBundleDocumentTypes raw build/bin/mcview.app/Contents/Info.plist)
+          n=$(plutil -extract CFBundleDocumentTypes raw build/bin/mormiview.app/Contents/Info.plist)
           [ "$n" -ge 13 ] || { echo "Info.plist lists only $n picture types"; exit 1; }
-          ditto -c -k --keepParent build/bin/mcview.app "dist/mcview-${{ steps.version.outputs.version }}-macos-arm64.zip"
+          ditto -c -k --keepParent build/bin/mormiview.app "dist/mormiview-${{ steps.version.outputs.version }}-macos-arm64.zip"
           # the disk image: the app and a link to Applications to drag it to
           mkdir dmg
-          cp -R build/bin/mcview.app dmg/
+          cp -R build/bin/mormiview.app dmg/
           ln -s /Applications dmg/Applications
-          hdiutil create -volname "mcView" -srcfolder dmg -fs HFS+ -format UDZO -ov "dist/mcview-${{ steps.version.outputs.version }}-macos-arm64.dmg"
+          hdiutil create -volname "mormiView" -srcfolder dmg -fs HFS+ -format UDZO -ov "dist/mormiview-${{ steps.version.outputs.version }}-macos-arm64.dmg"
       # The disk image has to open, with the signed app and the link in it.
       - name: Test the macOS disk image
         if: runner.os == 'macOS'
         run: |
-          dmg=$(ls dist/mcview-*.dmg)
+          dmg=$(ls dist/mormiview-*.dmg)
           mnt=$(mktemp -d)
           hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg"
-          [ -d "$mnt/mcview.app" ] || { echo "no app in the disk image"; exit 1; }
+          [ -d "$mnt/mormiview.app" ] || { echo "no app in the disk image"; exit 1; }
           [ -L "$mnt/Applications" ] || { echo "no Applications link in the disk image"; exit 1; }
-          codesign --verify --deep --strict "$mnt/mcview.app"
+          codesign --verify --deep --strict "$mnt/mormiview.app"
           hdiutil detach "$mnt"
           echo "the disk image opens and holds the app"
       - name: Package (Linux)
         if: runner.os == 'Linux'
         run: |
           mkdir dist
-          # install.sh makes mcView appear in Open With (see packaging/linux)
+          # install.sh makes mormiView appear in Open With (see packaging/linux)
           mkdir stage
-          cp build/bin/mcview LICENSE packaging/linux/install.sh packaging/linux/mcview.desktop stage/
+          cp build/bin/mormiview LICENSE packaging/linux/install.sh packaging/linux/mormiview.desktop stage/
           cp build/appicon.png stage/
-          tar -czf "dist/mcview-${{ steps.version.outputs.version }}-linux-x64.tar.gz" -C stage .
+          tar -czf "dist/mormiview-${{ steps.version.outputs.version }}-linux-x64.tar.gz" -C stage .
           # .deb (Debian, Ubuntu) and .rpm (Fedora, openSUSE): the program, the desktop entry (Open With, the application menu) and the icon
           sudo apt-get install -y rpm
           sudo gem install --no-document fpm
           v='${{ steps.version.outputs.version }}'
-          files=(build/bin/mcview=/usr/bin/mcview packaging/linux/mcview.desktop=/usr/share/applications/mcview.desktop build/appicon.png=/usr/share/pixmaps/mcview.png LICENSE=/usr/share/doc/mcview/LICENSE)
-          common=(-s dir -n mcview -v "$v" --architecture x86_64 --license MIT --maintainer "Peter Jenei <peter.jenei@mormitech.com>" --vendor Mormitech --url https://github.com/mormitech/mcview --category graphics --description "Picture viewer for macOS, Windows and Linux")
-          fpm "${common[@]}" -t deb --architecture amd64 -d libgtk-3-0 -d libwebkit2gtk-4.1-0 -p "dist/mcview-$v-linux-amd64.deb" "${files[@]}"
-          fpm "${common[@]}" -t rpm -d gtk3 -d webkit2gtk4.1 -p "dist/mcview-$v-linux-x86_64.rpm" "${files[@]}"
+          files=(build/bin/mormiview=/usr/bin/mormiview packaging/linux/mormiview.desktop=/usr/share/applications/mormiview.desktop build/appicon.png=/usr/share/pixmaps/mormiview.png LICENSE=/usr/share/doc/mormiview/LICENSE)
+          common=(-s dir -n mormiview --replaces mcview --conflicts mcview -v "$v" --architecture x86_64 --license MIT --maintainer "Peter Jenei <peter.jenei@mormitech.com>" --vendor Mormitech --url https://github.com/mormitech/mormiview --category graphics --description "Picture viewer for macOS, Windows and Linux")
+          fpm "${common[@]}" -t deb --architecture amd64 -d libgtk-3-0 -d libwebkit2gtk-4.1-0 -p "dist/mormiview-$v-linux-amd64.deb" "${files[@]}"
+          fpm "${common[@]}" -t rpm -d gtk3 -d webkit2gtk4.1 -p "dist/mormiview-$v-linux-x86_64.rpm" "${files[@]}"
       # The packages have to install: the .deb is installed for real (its dependencies must be found), the program must have all its libraries,
       # and removing the package takes everything away; the .rpm is checked for its files and requirements.
       - name: Test the Linux packages
         if: runner.os == 'Linux'
         run: |
-          sudo apt-get install -y ./dist/mcview-*.deb
-          for f in /usr/bin/mcview /usr/share/applications/mcview.desktop /usr/share/pixmaps/mcview.png /usr/share/doc/mcview/LICENSE; do
+          sudo apt-get install -y ./dist/mormiview-*.deb
+          for f in /usr/bin/mormiview /usr/share/applications/mormiview.desktop /usr/share/pixmaps/mormiview.png /usr/share/doc/mormiview/LICENSE; do
             [ -e "$f" ] || { echo "missing $f after install"; exit 1; }
           done
-          if ldd /usr/bin/mcview | grep "not found"; then echo "libraries are missing"; exit 1; fi
-          rpm -qpl dist/mcview-*.rpm | tee rpm-files.txt
-          for f in /usr/bin/mcview /usr/share/applications/mcview.desktop; do grep -qx "$f" rpm-files.txt || { echo "$f is not in the rpm"; exit 1; }; done
-          rpm -qpR dist/mcview-*.rpm | grep -q webkit2gtk4.1 || { echo "the rpm does not ask for webkit2gtk4.1"; exit 1; }
-          sudo apt-get remove -y mcview
-          [ ! -e /usr/bin/mcview ] || { echo "files left after removal"; exit 1; }
+          if ldd /usr/bin/mormiview | grep "not found"; then echo "libraries are missing"; exit 1; fi
+          rpm -qpl dist/mormiview-*.rpm | tee rpm-files.txt
+          for f in /usr/bin/mormiview /usr/share/applications/mormiview.desktop; do grep -qx "$f" rpm-files.txt || { echo "$f is not in the rpm"; exit 1; }; done
+          rpm -qpR dist/mormiview-*.rpm | grep -q webkit2gtk4.1 || { echo "the rpm does not ask for webkit2gtk4.1"; exit 1; }
+          sudo apt-get remove -y mormiview
+          [ ! -e /usr/bin/mormiview ] || { echo "files left after removal"; exit 1; }
           echo "the packages install and remove"
       - name: Package (Windows)
         if: runner.os == 'Windows'
@@ -119,7 +119,7 @@ jobs:
         run: |
           $v = '${{ steps.version.outputs.version }}'
           New-Item -ItemType Directory dist | Out-Null
-          Compress-Archive -Path build\bin\mcview.exe, LICENSE -DestinationPath "dist\mcview-$v-windows-x64.zip"
+          Compress-Archive -Path build\bin\mormiview.exe, LICENSE -DestinationPath "dist\mormiview-$v-windows-x64.zip"
           choco install innosetup -y --no-progress
           (Get-Content packaging\windows\installer.iss -Raw).Replace('__VERSION__', $v) | Set-Content packaging\windows\installer.generated.iss
           & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Q packaging\windows\installer.generated.iss
@@ -131,29 +131,29 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $setup = Get-ChildItem dist\mcview-setup-*.exe | Select-Object -First 1
+          $setup = Get-ChildItem dist\mormiview-setup-*.exe | Select-Object -First 1
           if (-not $setup) { throw 'no installer in dist' }
           $p = Start-Process $setup.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
           if (-not $p.WaitForExit(180000)) { throw 'installer did not finish in 3 minutes' }
           if ($p.ExitCode -ne 0) { throw "installer exit code $($p.ExitCode)" }
-          $dir = Join-Path $env:LOCALAPPDATA 'Programs\mcview'
-          $exe = Join-Path $dir 'mcview.exe'
-          foreach ($f in 'mcview.exe', 'LICENSE') {
+          $dir = Join-Path $env:LOCALAPPDATA 'Programs\mormiview'
+          $exe = Join-Path $dir 'mormiview.exe'
+          foreach ($f in 'mormiview.exe', 'LICENSE') {
             if (-not (Test-Path (Join-Path $dir $f))) { throw "missing $f after install" }
           }
-          $lnk = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\mcView.lnk'
+          $lnk = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\mormiView.lnk'
           if (-not (Test-Path $lnk)) { throw 'no Start menu entry' }
           Write-Host 'installed: files and Start menu entry are there'
           # Open with... needs these keys
-          $open = 'HKCU:\Software\Classes\Applications\mcview.exe\shell\open\command'
+          $open = 'HKCU:\Software\Classes\Applications\mormiview.exe\shell\open\command'
           if (-not (Test-Path $open)) { throw 'no Open with entry' }
-          if ((Get-Item 'HKCU:\Software\Classes\.jpg\OpenWithProgids').GetValueNames() -notcontains 'mcview.Picture') { throw 'jpg is not offered' }
+          if ((Get-Item 'HKCU:\Software\Classes\.jpg\OpenWithProgids').GetValueNames() -notcontains 'mormiview.Picture') { throw 'jpg is not offered' }
           Write-Host 'Open with entries are there'
           # The app has to start and keep running (a missing WebView2 runtime, for one, makes it exit at once).
           $app = Start-Process $exe -PassThru
           Start-Sleep -Seconds 10
-          if ($app.HasExited) { throw "mcview exited right after starting (exit code $($app.ExitCode))" }
-          Write-Host 'mcview is running'
+          if ($app.HasExited) { throw "mormiview exited right after starting (exit code $($app.ExitCode))" }
+          Write-Host 'mormiview is running'
           Stop-Process -Id $app.Id -Force
           $uninstaller = Get-ChildItem (Join-Path $dir 'unins*.exe') | Select-Object -First 1
           $u = Start-Process $uninstaller.FullName -ArgumentList '/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART' -PassThru
@@ -163,7 +163,7 @@ jobs:
           while ((Test-Path $exe) -and ((Get-Date) -lt $deadline)) { Start-Sleep -Seconds 2 }
           if (Test-Path $exe) { throw 'files left after uninstall' }
           if (Test-Path $lnk) { throw 'Start menu entry left after uninstall' }
-          if (Test-Path 'HKCU:\Software\Classes\Applications\mcview.exe') { throw 'Open with entry left after uninstall' }
+          if (Test-Path 'HKCU:\Software\Classes\Applications\mormiview.exe') { throw 'Open with entry left after uninstall' }
           Write-Host 'install, start and uninstall all work'
       - uses: actions/upload-artifact@v4
         with:

@@ -135,7 +135,7 @@ func TestHubProtocol(t *testing.T) {
 	h, _ := testHub(t, "aaaa")
 	_, res := rpc(t, h, "secret", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"t","version":"1"}}}`)
 	r, _ := res["result"].(map[string]any)
-	if r["protocolVersion"] != "2025-03-26" || r["serverInfo"].(map[string]any)["name"] != "mcview" || r["instructions"] == "" {
+	if r["protocolVersion"] != "2025-03-26" || r["serverInfo"].(map[string]any)["name"] != "mormiview" || r["instructions"] == "" {
 		t.Errorf("initialize = %v", res)
 	}
 	_, res = rpc(t, h, "secret", `{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion":"1999-01-01"}}`)

@@ -12,7 +12,7 @@ import (
 
 func TestControlModeNeedsTheTokenAndAnswersDialogs(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "control.json")
-	t.Setenv("MCVIEW_CONTROL_FILE", file)
+	t.Setenv("MORMIVIEW_CONTROL_FILE", file)
 	a := NewApp()
 	addr, err := a.startControl("0")
 	if err != nil {
