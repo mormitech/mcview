@@ -181,6 +181,21 @@ start, in Go and in the UI, is written to that file with a time in milliseconds.
 properties, the window title and the About window. A release is cut by pushing a `v*` tag that matches it; CI checks that, builds the
 packages and attaches them to a GitHub release.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+Only Windows builds made by GitHub Actions from this repository are signed, and each release is approved by hand. Signing starts
+once the SignPath application is accepted; until then the Windows builds are unsigned.
+
+- Committers and reviewers: [Peter Jenei](https://github.com/mormitech)
+- Approvers: [Peter Jenei](https://github.com/mormitech)
+
+mormiView sends nothing anywhere on its own. The chat panel is the one exception: when you use it, the picture and your
+messages go to Anthropic through your own Claude Code and Claude account.
+
+Privacy policy: [mormitech.com/privacy](https://mormitech.com/privacy/#mormitools). This program will not transfer any information
+to other networked systems unless specifically requested by the user or the person installing or operating it.
+
 ## License
 
 [MIT](LICENSE): use it, change it, ship it, forever.
