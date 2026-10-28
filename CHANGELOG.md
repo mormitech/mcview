@@ -3,6 +3,16 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.51.12 – 2026-10-28
+
+### Changed
+
+- The title on the home screen and in the About box is the two-tone wordmark, "mormi" + "View", in the colors of mormiPrint and mormiDiskFree.
+
+### Fixed
+
+- Under `wails dev` every picture said "Cannot show": the Vite dev server answered the picture's request with the page itself. Vite now answers 404, so the request goes to the app. The built app was not affected.
+
 ## 0.51.11 – 2026-10-27
 
 ### Added

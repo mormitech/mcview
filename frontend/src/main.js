@@ -25,7 +25,7 @@ async function showAbout() {
   });
   $('about').hidden = false;
   $('about').innerHTML = `<img class="logo" src="${logo}" alt="" width="132">
-    <h1>mormiView</h1>
+    <h1><span class="wordmark"><span class="wm-mormi">mormi</span><span class="wm-product">View</span></span></h1>
     <p class="muted">Version ${esc(await Version())}</p>
     <p>A picture viewer for macOS, Windows and Linux. Open a picture from your file manager (Open with…) or with File → Open.</p>
     <p class="muted">Free and open source, MIT license. No accounts, no ads, no telemetry.</p>

@@ -2,16 +2,19 @@
   color-scheme: light dark;
   --bg:#f3f5f9; --panel:#ffffff; --line:#d3dae6; --text:#1b2636; --muted:#5f7391; --accent:#1f7aea; --accent-text:#ffffff; --btn:#eef2f8; --bad:#d63b3b;
   --view:#e4e8ef; --bar:rgba(255,255,255,.85);
+  --wm-mormi:#171a1c; --wm-product:#6253ba;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg:#1b2636; --panel:#233247; --line:#344761; --text:#e6ecf5; --muted:#8fa3bf; --accent:#4da3ff; --accent-text:#06223d; --btn:#2c3f58; --bad:#ff6b6b;
     --view:#10161f; --bar:rgba(20,30,45,.85);
+    --wm-mormi:var(--text); --wm-product:#9a8ff0;
   }
 }
 * { box-sizing: border-box; }
 html, body { margin:0; height:100%; background:var(--bg); color:var(--text); font:14px system-ui, sans-serif; overflow:hidden; }
 h1 { margin:0 0 12px; font-size:20px; }
+.wm-mormi { color:var(--wm-mormi); } .wm-product { color:var(--wm-product); } /* the two-tone wordmark: mormi + View */
 .muted { color:var(--muted); font-size:12px; margin:0; }
 a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
 button { font:inherit; color:var(--text); background:var(--btn); border:1px solid var(--line); border-radius:6px; padding:6px 14px; cursor:pointer; }
@@ -57,7 +60,7 @@ button:hover { border-color:var(--accent); }
 /* full screen: the bar is there while Shift is held (and for a message); it slides and fades in and out, quickly */
 #status { transition: transform .12s ease-out, opacity .12s ease-out; }
 body.full, body.full #viewer { background:#000; }
-body.full #empty h1 { color:#e6ecf5; } body.full #empty .muted { color:#9fb2cc; } body.full #empty .logo { filter:invert(1); } /* the home screen on the black of full screen, in either theme */
+body.full #empty h1 { color:#e6ecf5; --wm-mormi:#e6ecf5; --wm-product:#9a8ff0; } body.full #empty .muted { color:#9fb2cc; } body.full #empty .logo { filter:invert(1); } /* the home screen on the black of full screen, in either theme */
 #status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
 body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status, body.full.arrive #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
 #name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
