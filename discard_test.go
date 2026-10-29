@@ -59,8 +59,8 @@ func TestPastedPictureIsNotAskedAboutWhenStepping(t *testing.T) {
 	asked := 0
 	a.confirmDiscard = func(string, string) discardChoice { asked++; return choiceDiscard }
 	a.setClip(solid(2, 2, blue))
-	if note, _ := a.Step(1); note == "" || asked != 0 {
-		t.Errorf("a picture without a file keeps its note (%q) and asks nothing (%d)", note, asked)
+	if note, _ := a.Step(1); note != "" || asked != 0 {
+		t.Errorf("stepping from a picture without a file says nothing (%q) and asks nothing (%d)", note, asked)
 	}
 	// nothing was done to it, so closing asks nothing either (the clipboard still has the picture)
 	if a.current().Modified || !a.discardOK("close the window") || asked != 0 {

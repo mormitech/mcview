@@ -44,10 +44,7 @@ func indexOf(names []string, name string) int {
 // picture comes the first, and before the first the last. The returned note is for the UI to show (there is none at the moment).
 func (a *App) Step(delta int) (string, error) {
 	cur := a.current()
-	if cur.Path == "" {
-		if cur.URL != "" { // a pasted picture is in no folder: going on would lose it
-			return "Save this picture first (S) to go through the pictures of a folder", nil
-		}
+	if cur.Path == "" { // a pasted or a new picture is in no folder: there is nothing to go to, and nothing is said
 		return "", nil
 	}
 	if !a.discardOK("go to " + map[bool]string{true: "the next", false: "the previous"}[delta > 0] + " picture") {

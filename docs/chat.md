@@ -38,7 +38,7 @@ and nothing is written to a file until `save_image`. The tools change the pictur
 |---|---|
 | `window_info` | the picture's name and size, unsaved changes, tool, selection, zoom |
 | `image_info` | the file name (not the folder), type and size, the EXIF data of a photo (camera, time, exposure, ISO; only *whether* there is a GPS place), and how the colors are used: the number of colors, the main colors with their share, average color, brightness, transparency |
-| `apply_effect` | an effect on a box, a polygon, a mask or the user's selection (or all of the picture): blur, pixelize, emboss, explosion, grayscale, negative, sepia, censor (mosaic or bar), fill, gradient, sharpen, and the adjustments brightness, contrast, saturation, temperature, hue, gamma, levels, auto levels; with a soft edge (`feather`) if wanted |
+| `apply_effect` | an effect on a box, a polygon, a mask or the user's selection (or all of the picture): blur, pixelize, emboss, explosion, grayscale, negative, sepia, censor (mosaic or bar), highlight, fill, gradient, sharpen, and the adjustments brightness, contrast, saturation, temperature, hue, gamma, levels, auto levels; with a soft edge (`feather`) if wanted |
 | `resize_image`, `rotate_image`, `flip_image` | scale the picture (smooth, sharp or whole pixels), turn it by any angle, mirror it |
 | `place_image` | lay a picture from a file over this one, scaled and see-through if wanted |
 | `draw_polygon`, `draw_callout` | a closed polygon (outline and/or fill), a speech bubble with a tail; `draw_rect` has rounded corners, and the shapes can be see-through and have a shadow |

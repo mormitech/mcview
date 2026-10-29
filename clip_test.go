@@ -52,9 +52,9 @@ func TestPastedPicture(t *testing.T) {
 	if b64, err := a.SelectionPNG(1, 1, 2, 2, 5, 3); err != nil || decodePNG(t, b64).Bounds().Dx() != 2 {
 		t.Errorf("SelectionPNG: %v", err)
 	}
-	// going on through a folder would lose it
-	if note, err := a.Step(1); note == "" || err != nil {
-		t.Errorf("Step on a pasted picture = %q, %v; want a note", note, err)
+	// it is in no folder: stepping does nothing and says nothing
+	if note, err := a.Step(1); note != "" || err != nil || a.current().URL == "" {
+		t.Errorf("Step on a pasted picture = %q, %v; want nothing done", note, err)
 	}
 	// a file opened in the window replaces it, and the old URL is gone
 	pic := filepath.Join(t.TempDir(), "p.png")

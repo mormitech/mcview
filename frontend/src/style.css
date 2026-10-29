@@ -52,26 +52,48 @@ button:hover { border-color:var(--accent); }
 #empty-actions .card kbd { margin-top:8px; font:600 11px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:var(--muted); border:1px solid var(--line); border-radius:5px; padding:1px 6px; }
 #newform { pointer-events:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; font-size:13px; color:var(--muted); } #newform[hidden] { display:none; } #newform input[type=number] { width:76px; } #newform label { display:flex; align-items:center; gap:4px; }
 #empty[hidden] { display:none; } #empty button { pointer-events:auto; margin-top:8px; } #empty h1 { font-size:28px; margin:8px 0 0; }
-#status { position:absolute; left:0; right:0; bottom:0; min-height:34px; box-sizing:border-box; padding:3px 12px; /* one height, with the pixel readout or without; when the width is short the items wrap into more rows */ font-size:12px; color:var(--muted); background:var(--bar); border-top:1px solid var(--line); display:flex; flex-wrap:wrap; align-items:center; gap:0 16px; }
-#status .sl, #status .sr { display:flex; align-items:center; gap:16px; min-height:26px; min-width:0; } /* two groups: the file on the left, the readout and the buttons on the right; when the width is short the right one goes to a row of its own */
-#status .sl { flex:1 1 300px; }
-#status .sr { flex:0 0 auto; margin-left:auto; }
+/* The status bar is a capsule that floats over the bottom of the picture, in the middle of the room the rail, the chat button and the docks leave
+   (--dockh: the height of an open dock, which sits at the bottom edge under it). It wraps into more rows when the window is narrow. */
+#status { position:absolute; left:50%; bottom:calc(var(--dockh, 0px) + 20px); max-width:calc(100% - 168px); min-height:38px; box-sizing:border-box; padding:4px 6px 4px 12px;
+  font-size:12px; color:var(--text); background:var(--bar); backdrop-filter:blur(10px); border:1px solid var(--line); border-radius:19px; box-shadow:0 6px 22px rgba(20,35,60,.22);
+  display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2px 0; }
+body.edit #status { border:1.5px solid var(--accent); left:calc(50% + 28px); max-width:calc(100% - 56px - 168px); } /* edit mode: an accent rim, and the middle of what the rail leaves */
+#status .sl, #status .sr { display:flex; align-items:center; gap:10px; min-height:28px; min-width:0; }
+#status .sr:has(> :not([hidden]):not(:empty):not(button)) { border-left:1px solid var(--line); margin-left:10px; padding-left:10px; } /* a thin line between the file and the readout */
+#status .sl:not(:has(> :not([hidden]):not(:empty):not(#clipflag))) + .sr { border-left:0; margin-left:0; padding-left:0; }
 #status[hidden] { display:none; }
+body.captop #status { bottom:auto; top:14px; } /* the pointer came over it: at the top of the window (see capsuleDodge) */
 /* full screen: the bar is there while Shift is held (and for a message); it slides and fades in and out, quickly */
 #status { transition: transform .12s ease-out, opacity .12s ease-out; }
 body.full, body.full #viewer { background:#000; }
 body.full #empty h1 { color:#e6ecf5; --wm-mormi:#e6ecf5; --wm-product:#9a8ff0; } body.full #empty .muted { color:#9fb2cc; } body.full #empty .logo { filter:invert(1); } /* the home screen on the black of full screen, in either theme */
-#status { transform:translateY(100%); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
-body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status, body.full.arrive #status { transform:none; opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
-#name { display:none; max-width:45%; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
-#folder { flex:0 1 auto; min-width:0; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-#clipflag { flex:1 0 0; display:flex; align-items:center; } /* takes the rest of the bar, and holds the clipboard right after the folder */
-#info { white-space:nowrap; }
-#close-img, #discard-img { display:none; flex:none; width:22px; height:22px; padding:0; align-items:center; justify-content:center; border:1px solid transparent; background:none; color:var(--muted); border-radius:4px; pointer-events:auto; }
+#status { transform:translate(-50%, calc(100% + 40px)); opacity:0; pointer-events:none; } /* the bar is there in edit mode, with a selection, for a message, and in full screen while Shift is held or the pointer is at the bottom */
+body.edit #status, body.sel #status, body.peek #status, body.full.nearbottom #status, body.full.shift #status, body.full.arrive #status { transform:translate(-50%, 0); opacity:1; } /* the bar never takes the pointer: the picture under it keeps getting it (and the pixel readout) */ #status.bad { color:var(--bad); }
+:root body #status.swap { opacity:0; transition:opacity .09s ease-out; } /* (the crossfade between its two places; above the rules that show it) */
+#name { display:none; max-width:240px; flex:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--text); font-weight:600; } body.full #name:not(:empty) { display:block; } /* full screen has no title bar: the file name is here */
+#folder { flex:0 1 auto; min-width:0; max-width:220px; display:flex; align-items:center; gap:6px; white-space:nowrap; } #folder:empty { display:none; }
+#status.msg #folder { max-width:none; white-space:normal; } #status.bad #folder { color:var(--bad); } /* a message: all of it, in more lines if it must */
+/* the small icons of the bar are masks in the color of the text: a folder, a crosshair (the pixel under the pointer), the two corners of a selection, a pencil */
+.ico { display:inline-block; flex:none; width:14px; height:14px; background:currentColor; -webkit-mask:var(--i) center / contain no-repeat; mask:var(--i) center / contain no-repeat; }
+#folder::before { content:''; display:inline-block; flex:none; width:14px; height:14px; background:var(--muted); -webkit-mask:var(--i-folder) center / contain no-repeat; mask:var(--i-folder) center / contain no-repeat; }
+#status.msg #folder::before, #status.msg #pixel { display:none; } /* (a message stands alone: the readout comes back with the next move of the pointer after it) */
+:root { --i-folder:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round'%3E%3Cpath d='M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/%3E%3C/svg%3E");
+  --i-cross:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round'%3E%3Ccircle cx='12' cy='12' r='7'/%3E%3Cpath d='M12 2v4M12 18v4M2 12h4M18 12h4'/%3E%3C/svg%3E");
+  --i-tl:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 15V5h10'/%3E%3C/svg%3E");
+  --i-br:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M19 9v10H9'/%3E%3C/svg%3E");
+  --i-pen:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.2' stroke-linejoin='round'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z'/%3E%3C/svg%3E"); }
+#clipflag { flex:none; display:flex; align-items:center; } /* the clipboard, for a moment after a copy, right after the folder */
+#info { white-space:nowrap; color:var(--muted); }
+#info:empty, #selinfo:empty { display:none; }
+#selinfo { display:flex; align-items:center; gap:5px; white-space:nowrap; font:12px ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric:tabular-nums; }
+#selinfo .ico { color:var(--muted); } #selinfo .ico.br { margin-left:6px; }
+#selinfo b { margin-left:8px; color:var(--accent); font-weight:700; } /* the size */
+#close-img, #discard-img { display:none; flex:none; width:28px; height:28px; padding:0; align-items:center; justify-content:center; border:1px solid transparent; background:none; color:var(--muted); border-radius:14px; pointer-events:auto; }
 #close-img svg, #discard-img svg { width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
 #close-img:hover, #discard-img:not(:disabled):hover { color:var(--text); background:var(--btn); border-color:var(--line); }
 body.edit #close-img, body.edit #discard-img { display:flex; } #discard-img:disabled { opacity:.35; cursor:default; } /* edit mode: the image is closed from here (any image, also one opened from a file) */
-#editmark { flex:none; font-weight:700; color:var(--accent); }
+#editmark { flex:none; display:flex; align-items:center; gap:5px; height:24px; padding:0 10px 0 8px; border-radius:12px; background:var(--accent); color:var(--accent-text); font-weight:700; font-size:11.5px; }
+#editmark::before { content:''; width:13px; height:13px; background:currentColor; -webkit-mask:var(--i-pen) center / contain no-repeat; mask:var(--i-pen) center / contain no-repeat; } #editmark[hidden] { display:none; }
 #pixel { display:flex; align-items:center; gap:8px; white-space:nowrap; color:var(--text); font-variant-numeric:tabular-nums; } #pixel[hidden] { display:none; }
 #pixel .sw { width:14px; height:14px; border:1px solid var(--line); border-radius:3px; flex:none; background-image:linear-gradient(45deg,#9aa 25%,transparent 25%,transparent 75%,#9aa 75%),linear-gradient(45deg,#9aa 25%,#eee 25%,#eee 75%,#9aa 75%); background-size:8px 8px; background-position:0 0,4px 4px; position:relative; overflow:hidden; } #pixel .sw b { position:absolute; inset:0; }
 body.about-mode #viewer { display:none; }
@@ -95,7 +117,6 @@ body.edit #tools { transform:none; opacity:1; pointer-events:auto; }
 #tools .tool.on { background:var(--accent); border-color:var(--accent); color:var(--accent-text); }
 #ink { position:absolute; image-rendering:pixelated; pointer-events:none; }
 #status { z-index:5; }
-body.edit #status { left:56px; } /* the edit bar is as tall as the window: the status bar starts where it ends */
 /* the two colors at the bottom of the edit bar, and the palette that slides up from the status bar when one is clicked */
 #wells { position:relative; width:42px; height:42px; margin-top:auto; flex:none; }
 .well { position:absolute; padding:0; border-radius:4px; border:1px solid var(--line); overflow:hidden; background-image:linear-gradient(45deg,#9aa 25%,transparent 25%,transparent 75%,#9aa 75%),linear-gradient(45deg,#9aa 25%,#eee 25%,#eee 75%,#9aa 75%); background-size:8px 8px; background-position:0 0,4px 4px; }
@@ -130,24 +151,30 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #dock-native { position:absolute; width:0; height:0; opacity:0; pointer-events:none; }
 /* the pixel readout: x, y | a meter for each color channel | the hex code in a pill with the swatch */
 #pixel { gap:0; font-family:ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-#pixel .pos { display:flex; gap:10px; } #pixel .pos i { font-style:normal; color:var(--muted); margin-right:3px; }
-#pixel .sep { width:1px; height:14px; background:var(--line); margin:0 12px; flex:none; }
-#pixel .chans { display:flex; gap:12px; }
+#pixel .pos { display:flex; align-items:center; gap:6px; } #pixel .pos::before { content:''; width:14px; height:14px; background:var(--muted); -webkit-mask:var(--i-cross) center / contain no-repeat; mask:var(--i-cross) center / contain no-repeat; }
+#pixel .pos i { display:none; } #pixel .pos span:first-of-type::after { content:','; } /* 332, 685 */
+#pixel .sep { width:0; margin:0 6px; flex:none; }
+#pixel .chans { display:flex; gap:8px; order:2; margin-left:8px; } /* the channels after the color, as numbers (the meters are left out in the capsule) */
 #pixel .ch { display:flex; align-items:center; gap:5px; }
 #pixel .ch em { font-style:normal; font-weight:600; width:1ch; }
-#pixel .ch .m { width:44px; height:5px; border-radius:3px; background:var(--line); overflow:hidden; } #pixel .ch .m s { display:block; height:100%; }
-#pixel .ch .n { width:3ch; text-align:right; }
+#pixel .ch .m { display:none; }
+#pixel .ch .n { width:3ch; text-align:left; color:var(--muted); }
 #pixel .ch.r em { color:#d94a4a; } #pixel .ch.r s { background:#d94a4a; }
 #pixel .ch.g em { color:#3aa45a; } #pixel .ch.g s { background:#3aa45a; }
 #pixel .ch.b em { color:#3d83e0; } #pixel .ch.b s { background:#3d83e0; }
 #pixel .ch.a em { color:var(--muted); } #pixel .ch.a s { background:var(--muted); }
-#pixel .chip { display:flex; align-items:center; gap:8px; padding:2px 8px 2px 4px; border:1px solid var(--line); border-radius:999px; background:var(--btn); font-weight:600; }
-#pixel .chip .sw { width:16px; height:16px; order:-1; }
+#pixel .chip { display:flex; align-items:center; gap:6px; order:1; font-weight:600; }
+#pixel .chip .sw { width:14px; height:14px; border-radius:7px; order:-1; }
 #pixel .from { margin-left:12px; color:var(--muted); }
 /* the size of the selection, in it, while it is drawn or resized: white with a black outline, to be read on any picture */
 #sel .dims { display:none; position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); white-space:nowrap; font:700 14px ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   color:#fff; -webkit-text-stroke:4px #000; paint-order:stroke fill; letter-spacing:.02em; }
 #sel.drawing .dims { display:block; }
+/* the pixels of the top left and the bottom right corner: above the top edge from the left side, below the bottom edge up to the right side (inside the frame where the window has no room), while the frame is dragged */
+#sel .corner { display:none; position:absolute; white-space:nowrap; font:700 10px ui-monospace, "SF Mono", Menlo, Consolas, monospace; color:#fff; -webkit-text-stroke:3px #000; paint-order:stroke fill; letter-spacing:.02em; }
+#sel.drawing .corner { display:block; }
+#sel .corner.tl { left:0; bottom:calc(100% + 3px); } #sel .corner.br { right:0; top:calc(100% + 3px); }
+#sel .corner.tl.in-y { bottom:auto; top:4px; left:30px; } /* (30px: past the move sign) */ #sel .corner.br.in-y { top:auto; bottom:4px; right:4px; }
 /* a copy to the clipboard: the border fades to orange and white and back, and a clipboard fades in and out in the middle */
 #sel.flash .ants .k { animation:ants .6s linear infinite, kflash 1.6s ease-in-out; }
 #sel.flash .ants .w { animation:ants-w .6s linear infinite, wflash 1.6s ease-in-out; }
@@ -158,7 +185,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #sel.flash .clipmark { display:block; animation:clipfade 1.6s ease-in-out; }
 @keyframes clipfade { 0% { opacity:0; transform:scale(.8); } 22% { opacity:.95; transform:scale(1); } 65% { opacity:.95; } 100% { opacity:0; transform:scale(1); } }
 /* the same clipboard, orange, at the end of the folder label in the status bar */
-#clipflag svg { display:none; width:16px; height:16px; fill:none; stroke:#ffa31a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
+#clipflag svg { display:none; width:15px; height:15px; fill:none; stroke:#ffa31a; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; opacity:0; }
 #clipflag.on svg { display:block; animation:clipfade 1.6s ease-in-out; }
 @media (prefers-reduced-motion: reduce) { #chat, #chat.open, #chat-toggle { transition:none; } }
 
@@ -192,7 +219,7 @@ body.edit #status { left:56px; } /* the edit bar is as tall as the window: the s
 #chat-toggle { transition:opacity .2s ease, transform .25s cubic-bezier(.3,.7,.2,1); } #chat-toggle:hover { transform:scale(1.06); }
 body.chat-open #chat-toggle { opacity:0; transform:scale(.6); pointer-events:none; } body.full:not(.edit) #chat-toggle { display:none; } /* full screen has the button in edit mode only */
 /* above the status bar when there is one */
-body:has(#status:not([hidden])) #chat-toggle { bottom:50px; } body:has(#status:not([hidden])) #chat { bottom:50px; }
+#chat-toggle { bottom:calc(var(--dockh, 0px) + 16px); } /* (the capsule of the status bar leaves room for it; an open dock lifts both) */
 #chat { position:fixed; right:16px; bottom:16px; top:44px; width:var(--chat-w, 460px); z-index:20; display:flex; flex-direction:column; background:var(--panel); border:1px solid var(--line); border-radius:14px; box-shadow:0 10px 40px rgba(0,0,0,.3); overflow:visible; transform-origin:bottom right; transform:translateY(24px) scale(.2); opacity:0; visibility:hidden; transition:transform .3s cubic-bezier(.4,0,.2,1), opacity .22s ease, visibility 0s linear .3s; } #chat > header { border-radius:14px 14px 0 0; } #chat-form { border-radius:0 0 14px 14px; }
 #chat.open { transform:none; opacity:1; visibility:visible; transition:transform .3s cubic-bezier(.2,.9,.25,1.05), opacity .2s ease, visibility 0s; }
 @media (prefers-reduced-motion: reduce) { #chat, #chat.open, #chat-toggle { transition:none; } }
@@ -262,6 +289,7 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 #recent-list { display:flex; flex-direction:column; gap:2px; }
 #recent-list button { display:flex; align-items:baseline; gap:10px; width:100%; padding:6px 10px; border:0; border-radius:8px; background:transparent; text-align:left; font:inherit; color:var(--text); }
 #recent-list button:hover { background:rgba(127,127,127,.16); }
+body.full #recent { --text:#e6ecf5; --muted:#9fb2cc; } /* full screen is black in either theme: the list in light colors, like the title */
 #recent-list b { font-weight:600; flex:none; max-width:55%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } #recent-list span { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
 /* each card has its own subtle color */
 #open { --ic:#d98a0b; } #open-clip { --ic:#8a5cf0; } #new-pic { --ic:#2f6df6; } #reopen-pic { --ic:#1fa37a; } #scan-pic { --ic:#e0507a; }
@@ -277,9 +305,9 @@ body.chat-resizing { user-select:none; cursor:col-resize; } body.chat-resizing #
 @media (prefers-reduced-motion: reduce) { #chat-toggle.working::before, #chat-toggle.working::after, #chat-toggle.working svg { animation:none; } #chat-toggle.working { box-shadow:0 0 0 4px rgba(47,109,246,.35); } }
 
 /* The frame player of an animated GIF (edit mode); the tools are hidden (and off) while it plays: one draws on a frame, not on an animation */
-body.edit.gif-playing #tools { opacity:0; pointer-events:none; } body.edit.gif-playing #status { left:0; } /* (no rail: the bar reaches the left edge) */
+body.edit.gif-playing #tools { opacity:0; pointer-events:none; } body.edit.gif-playing #status { left:50%; max-width:calc(100% - 168px); } /* (no rail: the capsule is in the middle of the window) */
 
-#gifbar { position:fixed; left:50%; bottom:50px; transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:4px; padding:4px 10px 4px 4px; border-radius:999px; background:var(--bar); border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.2); }
+#gifbar { position:fixed; left:50%; bottom:calc(var(--dockh, 0px) + 70px); transform:translateX(-50%); z-index:6; display:flex; align-items:center; gap:4px; padding:4px 10px 4px 4px; border-radius:999px; background:var(--bar); border:1px solid var(--line); box-shadow:0 4px 16px rgba(0,0,0,.2); }
 #gifbar { transition:opacity .15s ease; } #gifbar.fade { opacity:0; pointer-events:none; transition:opacity .8s ease; } /* running outside edit mode: the controls fade away slowly */
 #gifbar[hidden], body:not(.edit) #gifbar:not(.edited) { display:none; }
 #gifbar button { width:32px; height:32px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; border:0; background:transparent; color:var(--text); }
