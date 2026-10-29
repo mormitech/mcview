@@ -9,7 +9,7 @@ import (
 // against the file, the folder and the fonts, and going back in the history. They are told to the model in mcpTools (see moreTools) and run from callTool.
 
 var (
-	pEffects = []string{"blur", "pixelize", "emboss", "explosion", "grayscale", "negative", "sepia", "censor", "fill", "gradient",
+	pEffects = []string{"blur", "pixelize", "emboss", "explosion", "grayscale", "negative", "sepia", "censor", "highlight", "fill", "gradient",
 		"brightness", "contrast", "saturation", "hue", "temperature", "gamma", "levels", "auto_levels", "sharpen", "rotate"}
 	pFeather = prop("integer", "Pixels over which the edge of the part fades into the rest (0 = hard edge)")
 	pShadow  = map[string]any{"type": "object", "description": "A soft shadow under the shape: {dx, dy, blur, color} (default 3, 3, 4, black)", "properties": map[string]any{
@@ -19,7 +19,7 @@ var (
 
 func moreTools() []toolDef {
 	return []toolDef{
-		{"apply_effect", "Applies an effect or a color adjustment to part of the picture: a box (x, y, w, h), a polygon (any number of points), a mask, what the user selected (selection: true), or, when none of these is given, all of the picture. Effects: blur (radius), pixelize (size = the side of a block), emboss (angle = where the light comes from, amount), explosion (a burst from cx, cy, amount 0 to 100), grayscale, negative, sepia, censor (a mosaic too coarse to read, or bar: true for a solid bar; use it to hide faces, plates, names, screens), fill (color, opacity), gradient (color to color2, angle, kind linear or radial, opacity), sharpen (amount 0 to 500, radius), and the adjustments brightness, contrast, saturation, temperature (amount -100 to 100; temperature above 0 is warmer), hue (angle in degrees), gamma (gamma, 1 = no change), levels (black, white, gamma), auto_levels. One step of the history, so undo takes it back; use feather for a soft edge. For a polygon of the outline of a thing use create_mask or select_by_color first and pass the mask.", schema([]string{"effect"}, map[string]any{
+		{"apply_effect", "Applies an effect or a color adjustment to part of the picture: a box (x, y, w, h), a polygon (any number of points), a mask, what the user selected (selection: true), or, when none of these is given, all of the picture. Effects: blur (radius), pixelize (size = the side of a block), emboss (angle = where the light comes from, amount), explosion (a burst from cx, cy, amount 0 to 100), grayscale, negative, sepia, censor (a mosaic too coarse to read, or bar: true for a solid bar; use it to hide faces, plates, names, screens), highlight (the part stays as it is and gets a thin border; the rest is pushed back by level: light = a faint shade, medium = dimmed and paler but still readable, with a soft shadow round the part, full (default) = also blurred; amount 0 to 100 scales it, default 60; color is the border, white by default), fill (color, opacity), gradient (color to color2, angle, kind linear or radial, opacity), sharpen (amount 0 to 500, radius), and the adjustments brightness, contrast, saturation, temperature (amount -100 to 100; temperature above 0 is warmer), hue (angle in degrees), gamma (gamma, 1 = no change), levels (black, white, gamma), auto_levels. One step of the history, so undo takes it back; use feather for a soft edge. For a polygon of the outline of a thing use create_mask or select_by_color first and pass the mask.", schema([]string{"effect"}, map[string]any{
 			"effect": map[string]any{"type": "string", "enum": pEffects},
 			"x":      pX, "y": pY, "w": prop("integer", "width of the box in pixels"), "h": prop("integer", "height of the box in pixels"), "polygon": pPoly, "mask": pMask,
 			"selection": prop("boolean", "Work on what the user selected in the window (the polygon, else the box)"), "feather": pFeather,
@@ -30,6 +30,7 @@ func moreTools() []toolDef {
 			"color": prop("string", "fill, gradient (start) and the bar of censor: a color (#rrggbb, #rrggbbaa, a name)"), "color2": prop("string", "gradient: the end color"),
 			"kind": map[string]any{"type": "string", "enum": []string{"linear", "radial"}, "description": "gradient"}, "opacity": pOpacity,
 			"bar": prop("boolean", "censor: a solid bar (color, black by default) instead of a mosaic"), "gamma": prop("number", "gamma and levels: above 1 lightens the middle tones"),
+			"level": map[string]any{"type": "string", "enum": []string{"light", "medium", "full"}, "description": "highlight: how far the rest is pushed back (default full)"},
 			"black": prop("integer", "levels: the value (0 to 254) that becomes black"), "white": prop("integer", "levels: the value (1 to 255) that becomes white"), "snapshot": pSnap})},
 		{"resize_image", "Scales the picture to a new size (resampling the pixels, unlike resize_canvas which adds or cuts room). Give w and h, or only one of them to keep the proportions, or scale (2 = twice as big). One step of the history.", schema(nil, map[string]any{
 			"w": prop("integer", "new width in pixels"), "h": prop("integer", "new height in pixels"), "scale": prop("number", "factor instead of w and h (0.5 = half)"),
@@ -164,7 +165,7 @@ func (h *chatHub) effectTool(args map[string]any) ([]any, error) {
 		return nil, fmt.Errorf("\"effect\" is missing")
 	}
 	cmd := map[string]any{"cmd": "effect", "op": op}
-	for _, k := range []string{"x", "y", "w", "h", "feather", "radius", "size", "amount", "angle", "cx", "cy", "kind", "opacity", "bar", "gamma", "black", "white", "mask", "selection"} {
+	for _, k := range []string{"x", "y", "w", "h", "feather", "radius", "size", "amount", "angle", "cx", "cy", "kind", "opacity", "bar", "gamma", "black", "white", "level", "mask", "selection"} {
 		if v, ok := args[k]; ok {
 			cmd[k] = v
 		}

@@ -139,7 +139,8 @@ function constrain() {
 // window may be moved that far past its edge, so that the whole of its left and bottom edge can be brought into the open.
 function insets() {
   if (!document.body.classList.contains('edit')) return {l: 0, b: 0};
-  return {l: $('tools').offsetWidth, b: $('status').hidden ? 0 : $('status').offsetHeight};
+  const s = $('status');
+  return {l: $('tools').offsetWidth, b: (s.hidden ? 0 : s.offsetHeight + 20) + (parseFloat(document.body.style.getPropertyValue('--dockh')) || 0)}; // (the capsule floats 20px above the dock)
 }
 
 // ---- Bounce at the edge ----------------------------------------------------------------------------------
@@ -219,7 +220,7 @@ function draw() {
   // the window title has the size, place and zoom; the bar repeats them only in full screen, where there is no title
   const full = document.body.classList.contains('full');
   const info = `${place}${dispW()} × ${dispH()}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}`;
-  setStatus(view.dir, full ? `${info}${sel ? `  ·  selection ${sel.w} × ${sel.h}` : ''}` : sel ? `selection ${sel.w} × ${sel.h}` : '', view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''));
+  setStatus(view.dir, full ? info : '', view.name + (view.modified || floatChanges(view.fl) ? ' ●' : ''), sel);
   document.body.classList.toggle('sel', !!(sel || view.fl)); // in full screen the bar stays for as long as there is a selection
   tellInfo(pic.naturalWidth ? `${dispW()} × ${dispH()}${view.count ? `  ·  ${view.index} / ${view.count}` : ''}  ·  ${zoom}${view.pixelated ? '  ·  pixels' : ''}` : '');
   renderFloat();
@@ -239,12 +240,18 @@ function tellInfo(text) {
   SetTitleInfo(text).catch(() => {});
 }
 
-function setStatus(folder, info = '', name = '') {
-  $('status').hidden = !folder && !info;
+// The capsule at the bottom: the folder (its last part; all of it in the tooltip), what is said about the picture, and the selection: its first and
+// last pixel (both in it) and its size.
+function setStatus(folder, info = '', name = '', sel = null) {
+  $('status').hidden = !folder && !info && !sel;
   $('name').textContent = name; $('name').title = name;
-  $('folder').textContent = folder; $('folder').title = folder;
+  $('folder').textContent = folder.replace(/[\\/]+$/, '').split(/[\\/]/).pop() || folder; $('folder').title = folder;
   $('info').textContent = info;
-  $('status').classList.remove('bad');
+  const corner = (k) => { const i = document.createElement('i'); i.className = `ico ${k}`; i.style.setProperty('--i', `var(--i-${k})`); return i; };
+  const size = document.createElement('b'); if (sel) size.textContent = `${sel.w} × ${sel.h}`;
+  $('selinfo').replaceChildren(...(sel ? [corner('tl'), `${sel.x}, ${sel.y}`, corner('br'), `${sel.x + sel.w - 1}, ${sel.y + sel.h - 1}`, size] : []));
+  $('selinfo').title = sel ? 'Selection: the top left and the bottom right pixel, and the size' : '';
+  $('status').classList.remove('bad', 'msg');
 }
 
 // The keys 1 to 6: choose a mode, and keep it.
@@ -270,7 +277,7 @@ function offerRecent() { // the pictures opened last, on the home screen
     const box = $('recent-list');
     box.replaceChildren(...(list || []).slice(0, 5).map((f) => {
       const b = document.createElement('button'), n = document.createElement('b'), d = document.createElement('span');
-      n.textContent = f.name; d.textContent = f.dir.replace(/^\/(Users|home)\/[^/]+/, '~');
+      n.textContent = f.name; d.textContent = `\u200E${f.dir.replace(/^\/(Users|home)\/[^/]+/, '~')}\u200E`; // (the marks keep "~/" in front in the right-to-left box, which cuts a long path at its start)
       b.append(n, d); b.title = f.path;
       b.onclick = () => OpenRecent(f.path).catch((e) => problem(errText(e)));
       return b;
@@ -463,8 +470,8 @@ function showImage(info, opts = {}) {
 
 function problem(text, bad = true, ms = 4000) {
   $('status').hidden = false;
-  $('name').textContent = ''; $('folder').textContent = text; $('folder').title = ''; $('info').textContent = '';
-  $('status').classList.toggle('bad', bad);
+  $('name').textContent = ''; $('folder').textContent = text; $('folder').title = ''; $('info').textContent = ''; $('selinfo').replaceChildren();
+  $('status').classList.toggle('bad', bad); $('status').classList.add('msg');
   clearTimeout(problemTimer);
   document.body.classList.add('peek');
   problemTimer = setTimeout(() => { document.body.classList.remove('peek'); draw(); }, ms);
@@ -478,15 +485,24 @@ let rotSession = null;
 let recentEffects = [];
 try { recentEffects = JSON.parse(localStorage.getItem('recentEffects') || '[]').filter((n) => typeof n === 'string').slice(0, 3); } catch {}
 function noteRecentEffect(name) {
-  if (!EFFECT_LABELS.some((e) => e && e[1] === name)) return;
+  if (!effectLabel(name)) return;
   recentEffects = [name, ...recentEffects.filter((n) => n !== name)].slice(0, 3);
   try { localStorage.setItem('recentEffects', JSON.stringify(recentEffects)); } catch {}
 }
-const EFFECT_LABELS = [['Blur', 'blur'], ['Pixelize', 'pixelize'], ['Emboss', 'emboss'], ['Explosion', 'explosion'], ['Censor', 'censor'], ['Sharpen', 'sharpen'], null,
+// effectLabel is the label of an effect for the Recent list (an item of a submenu says which one: "Highlight: light").
+function effectLabel(name) {
+  for (const e of EFFECT_LABELS) {
+    if (e && e[1] === name) return e[0];
+    const s = e && e[2] && e[2].find((x) => x[1] === name);
+    if (s) return `${e[0]}: ${s[0].toLowerCase()}`;
+  }
+  return '';
+}
+const EFFECT_LABELS = [['Blur', 'blur'], ['Pixelize', 'pixelize'], ['Emboss', 'emboss'], ['Explosion', 'explosion'], ['Censor', 'censor'], ['Highlight', null, [['Light', 'highlight-light'], ['Medium', 'highlight-medium'], ['Full', 'highlight-full']]], ['Sharpen', 'sharpen'], null,
   ['Grayscale', 'grayscale'], ['Negative', 'negative'], ['Sepia', 'sepia'], null, ['Brighter', 'brightness+'], ['Darker', 'brightness-'], ['More contrast', 'contrast+'], ['Less contrast', 'contrast-'],
   ['More color', 'saturation+'], ['Less color', 'saturation-'], ['Warmer', 'warmer'], ['Cooler', 'cooler'], ['Auto levels', 'auto-levels'], null, ['Fill with foreground color', 'fill-fg']];
 const EFFECT_MENU = {
-  blur: {op: 'blur', radius: 6}, pixelize: {op: 'pixelize', size: 12}, emboss: {op: 'emboss'}, explosion: {op: 'explosion'}, censor: {op: 'censor'},
+  blur: {op: 'blur', radius: 6}, pixelize: {op: 'pixelize', size: 12}, emboss: {op: 'emboss'}, explosion: {op: 'explosion'}, censor: {op: 'censor'}, 'highlight-light': {op: 'highlight', level: 'light'}, 'highlight-medium': {op: 'highlight', level: 'medium'}, 'highlight-full': {op: 'highlight', level: 'full'},
   grayscale: {op: 'grayscale'}, negative: {op: 'negative'}, sepia: {op: 'sepia'}, sharpen: {op: 'sharpen'}, 'auto-levels': {op: 'auto_levels'},
   'brightness+': {op: 'brightness', amount: 15}, 'brightness-': {op: 'brightness', amount: -15}, 'contrast+': {op: 'contrast', amount: 15}, 'contrast-': {op: 'contrast', amount: -15},
   'saturation+': {op: 'saturation', amount: 25}, 'saturation-': {op: 'saturation', amount: -25}, warmer: {op: 'temperature', amount: 20}, cooler: {op: 'temperature', amount: -20},
@@ -755,10 +771,10 @@ function showSelectionMenu(x, y) {
   if (!pic.naturalWidth) return;
   const run = (f) => () => { closeSelectionMenu(); f().catch((e) => problem(errText(e))); };
   const recentItems = () => { // the last effects used, the latest first (nothing, until one was used)
-    const list = recentEffects.map((n) => EFFECT_LABELS.find((e) => e && e[1] === n)).filter(Boolean).map((e) => [e[0], () => applyEffectMenu(e[1])]);
+    const list = recentEffects.filter((n) => effectLabel(n)).map((n) => [effectLabel(n), () => applyEffectMenu(n)]);
     return list.length ? [['Recent', null, '', null, true], ...list, null] : [];
   };
-  const effectItems = () => EFFECT_LABELS.map((e) => e && [e[0], () => applyEffectMenu(e[1])]); // (on the selection, or on all of the picture)
+  const effectItems = () => EFFECT_LABELS.map((e) => e && (e[2] ? [e[0], null, '', e[2].map((s) => [s[0], () => applyEffectMenu(s[1])])] : [e[0], () => applyEffectMenu(e[1])])); // (on the selection, or on all of the picture)
   const items = part ? [
     ['Cut', async () => { await (isPoly ? polyCopy() : copySelection()); await clearSelectedPart(); }],
     ['Copy', () => (isPoly ? polyCopy() : copySelection()), `${MAC ? '⌘' : 'Ctrl+'}C`],
@@ -1157,8 +1173,14 @@ const paint = {fg: '#ED1C24', bg: '#FFFFFF', target: 'fg', changed: false, nativ
 function syncPenDock() {
   const open = editOn() && view.tool !== 'select' && !$('dock').classList.contains('open');
   for (const g of $('pendock').querySelectorAll('.grp')) g.hidden = !g.dataset.for.split(' ').includes(view.tool);
-  if (open) $('pendock').style.bottom = `${$('status').hidden ? 0 : $('status').offsetHeight}px`;
   $('pendock').classList.toggle('open', open);
+  dockSpace();
+}
+
+// An open dock sits at the bottom edge; the status capsule, the chat button and the frame player float above it (--dockh).
+function dockSpace() {
+  const h = Math.max(...['dock', 'pendock'].map((id) => ($(id).classList.contains('open') ? $(id).offsetHeight : 0)));
+  document.body.style.setProperty('--dockh', `${h}px`);
 }
 
 function showPenWidth() {
@@ -1177,9 +1199,9 @@ function showColors() {
 
 function openDock(target) {
   paint.target = target; paint.changed = false;
-  $('dock').style.bottom = `${$('status').hidden ? 0 : $('status').offsetHeight}px`;
   $('dock-native').value = paint[target].toLowerCase();
   $('dock').classList.add('open');
+  dockSpace();
   syncPenDock();
   showColors();
 }
@@ -1348,22 +1370,39 @@ function selectionBox() {
 // What was put on the clipboard last, as the frame it was (null: the whole picture, or something that is not here any more). The frame
 // of that part is drawn with marching ants for as long as it is the frame that is there; clearing the selection does not touch the clipboard.
 let copiedKey = null;
-const boxKey = (b) => `${view.state}:${view.rot}:${b.x0},${b.x1},${b.y0},${b.y1}`;
+// (by the pixels it takes: a frame moved by less than a pixel is the same part)
+const selKey = () => { const r = view.sel && selectionRect(); return r ? `${view.state}:${view.rot}:${r.x},${r.y},${r.w},${r.h}` : null; };
 
 function renderSelection() {
   const el = $('sel'), box = selectionBox();
   if (!box) { el.hidden = true; return; }
   el.classList.toggle('drawing', !!(view.selDrag || view.tdrag)); // while the button is down the dashes stand still; set, they move
-  el.classList.toggle('copied', copiedKey === boxKey(box));
+  el.classList.toggle('copied', copiedKey !== null && copiedKey === selKey());
   el.classList.toggle('content', view.hlMode === 'content');
   el.classList.toggle('movable', !!view.fl || document.body.classList.contains('shift')); // blue dashes and a move sign: a floating part moves with a plain drag, the picture under a selection with Shift
   const dr = selectionRect(); el.querySelector('.dims').textContent = dr ? `${dr.w} × ${dr.h}` : '';
   const {x0, x1, y0, y1} = box;
+  const tl = el.querySelector('.corner.tl'), br = el.querySelector('.corner.br'); // the first and the last pixel of the frame (both in it)
+  tl.textContent = dr ? `[${dr.x}, ${dr.y}]` : ''; br.textContent = dr ? `[${dr.x + dr.w - 1}, ${dr.y + dr.h - 1}]` : '';
   for (const e of ['t', 'b', 'l', 'r']) el.querySelector(`.edge.${e}`).classList.toggle('on', !!view.hl?.[e]);
   el.style.left = `${view.x + view.ox + x0 * view.sx}px`; el.style.top = `${view.y + view.oy + y0 * view.sy}px`;
   const w = Math.max(3, Math.round((x1 - x0) * view.sx)), h = Math.max(3, Math.round((y1 - y0) * view.sy));
   el.style.width = `${w}px`; el.style.height = `${h}px`;
   el.classList.toggle('tiny', w < 48 || h < 48); // (the move sign would cover all of it)
+  { // the corner labels go above and below the frame; where the window has no room for one, it goes inside. Zoomed in, a corner (or the middle)
+    // may be out of the window: its label then goes inside the part of the frame that shows, at that corner of it (the size: in its middle)
+    const L = view.x + view.ox + x0 * view.sx, T = view.y + view.oy + y0 * view.sy, st = $('stage'), cap = $('status');
+    const vx0 = editOn() ? $('tools').offsetWidth : 0, vy0 = 0, vx1 = st.clientWidth, vy1 = st.clientHeight - (cap.hidden ? 0 : cap.offsetHeight + 28);
+    const ix0 = Math.max(L, vx0), ix1 = Math.min(L + w, vx1), iy0 = Math.max(T, vy0), iy1 = Math.min(T + h, vy1); // what shows of the frame
+    const seen = (x, y) => x >= vx0 && x <= vx1 && y >= vy0 && y <= vy1;
+    const pinTl = !seen(L, T), pinBr = !seen(L + w, T + h), M = 8;
+    Object.assign(tl.style, pinTl ? {left: `${ix0 - L + M}px`, top: `${iy0 - T + M}px`, right: 'auto', bottom: 'auto'} : {left: '', top: '', right: '', bottom: ''});
+    Object.assign(br.style, pinBr ? {right: `${L + w - ix1 + M}px`, bottom: `${T + h - iy1 + M}px`, left: 'auto', top: 'auto'} : {left: '', top: '', right: '', bottom: ''});
+    tl.classList.toggle('in-y', !pinTl && T < 16); br.classList.toggle('in-y', !pinBr && T + h + 16 > st.clientHeight);
+    const dims = el.querySelector('.dims');
+    if (seen(L + w / 2, T + h / 2)) dims.style.left = dims.style.top = '';
+    else { dims.style.left = `${(ix0 + ix1) / 2 - L}px`; dims.style.top = `${(iy0 + iy1) / 2 - T}px`; }
+  }
   const svg = el.querySelector('.ants'); // the dashes: a rectangle of numbers, so that nothing of an earlier size is left on the screen
   svg.setAttribute('width', w); svg.setAttribute('height', h);
   for (const r of svg.querySelectorAll('rect')) { r.setAttribute('x', 1); r.setAttribute('y', 1); r.setAttribute('width', w - 2); r.setAttribute('height', h - 2); }
@@ -1607,6 +1646,9 @@ function flashClipboard() {
 
 async function copySelection(auto = false) {
   if (!pic.naturalWidth) return;
+  // a click inside or on the edge of a selection that is on the clipboard already, and that left it as it was to the pixel: nothing to copy again
+  // (Ctrl+C and Copy still copy; checked before the guard below, so that a Ctrl+C right after is not swallowed)
+  if (auto && !view.fl && copiedKey !== null && copiedKey === selKey()) return;
   const now = performance.now();
   if (now - lastCopy < 400) return; // the key and the system's copy command can both come for one press
   lastCopy = now;
@@ -1617,7 +1659,7 @@ async function copySelection(auto = false) {
     try { // the web view's own clipboard, and the system's way when it does not take the picture
       await navigator.clipboard.write([new ClipboardItem({'image/png': base64ToBlob(b64, 'image/png')})]);
     } catch { await CopyImageNative(b64); }
-    copiedKey = view.sel && selectionBox() ? boxKey(selectionBox()) : null;
+    copiedKey = selKey();
     renderSelection();
     flashClipboard();
     if (view.sel) flashSelection();
@@ -1821,7 +1863,28 @@ window.addEventListener('mousemove', (ev) => {
   if (ev.clientY <= 1) showMenuBar(true); else if (ev.clientY > 40) showMenuBar(false);
 });
 
-document.documentElement.addEventListener('mouseleave', () => document.body.classList.remove('nearbottom'));
+document.documentElement.addEventListener('mouseleave', () => { document.body.classList.remove('nearbottom'); capsuleDodge(null); });
+
+// The status capsule gets out of the way of the pointer, in any mode it shows in: when the pointer comes over it at the bottom, it fades over to the
+// top of the window, and back as soon as the pointer leaves the place where it was at the bottom (its height there, and its width as it is now).
+// Not in full screen outside edit mode, where the pointer at the bottom is what calls the bar up.
+let capsuleUp = false, capsuleLow = null, capsuleTimer = 0;
+function capsuleDodge(ev) {
+  const s = $('status'), r = s.getBoundingClientRect(), pad = 6, b = document.body.classList;
+  const shown = !s.hidden && (capsuleUp || getComputedStyle(s).opacity > 0.5) && !(b.contains('full') && !editOn());
+  if (!ev || !shown) { if (capsuleUp) capsuleMove(false); return; }
+  const overX = ev.clientX >= r.left - pad && ev.clientX <= r.right + pad;
+  if (!capsuleUp) { if (overX && ev.clientY >= r.top - pad && ev.clientY <= r.bottom + pad) { capsuleLow = {top: r.top, bottom: r.bottom}; capsuleMove(true); } }
+  else if (!(overX && ev.clientY >= capsuleLow.top - pad && ev.clientY <= capsuleLow.bottom + pad)) capsuleMove(false);
+}
+function capsuleMove(up) { // a quick crossfade: out, over, in
+  capsuleUp = up;
+  const s = $('status');
+  s.classList.add('swap');
+  clearTimeout(capsuleTimer);
+  capsuleTimer = setTimeout(() => { document.body.classList.toggle('captop', up); s.classList.remove('swap'); }, 90);
+}
+window.addEventListener('pointermove', capsuleDodge, true); // (pointer events: the mouse ones stop while a drag holds the pointer, as when a selection is drawn)
 
 // The system takes a moment to get in and out of full screen; ask again until it is done.
 function settleFullscreen() { for (const ms of [100, 400, 1000, 1800]) setTimeout(refreshFullscreen, ms); }

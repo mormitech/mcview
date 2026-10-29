@@ -6,13 +6,7 @@ import "github.com/wailsapp/wails/v2/pkg/menu"
 // selected (a polygon or a box), or to all of the picture. The items are off while there is no picture.
 func effectsMenu(app *App, m *menu.Menu) {
 	fx := m.AddSubmenu("Effects")
-	add := func(label, name string) {
-		item := fx.AddText(label, nil, func(*menu.CallbackData) { app.emit("menu-effect", name) })
-		item.Disabled = true
-		app.mu.Lock()
-		app.effectItems = append(app.effectItems, item)
-		app.mu.Unlock()
-	}
+	add := func(label, name string) { addEffectItem(app, fx, label, name) }
 	add("Clear", "clear") // the selected part is filled with the second color (Delete or Backspace do the same)
 	fx.AddSeparator()
 	add("Blur", "blur")
@@ -20,6 +14,10 @@ func effectsMenu(app *App, m *menu.Menu) {
 	add("Emboss", "emboss")
 	add("Explosion", "explosion")
 	add("Censor", "censor")
+	hl := fx.AddSubmenu("Highlight") // the selected part stays; the rest is pushed back, a little (light) to a lot (full: blurred and dimmed, with a shadow)
+	addEffectItem(app, hl, "Light", "highlight-light")
+	addEffectItem(app, hl, "Medium", "highlight-medium")
+	addEffectItem(app, hl, "Full", "highlight-full")
 	add("Sharpen", "sharpen")
 	fx.AddSeparator()
 	add("Grayscale", "grayscale")
@@ -37,7 +35,15 @@ func effectsMenu(app *App, m *menu.Menu) {
 	add("Auto Levels", "auto-levels")
 	fx.AddSeparator()
 	add("Fill with Foreground Color", "fill-fg")
+}
 
+// addEffectItem adds an item of the Effects menu (off while there is no picture).
+func addEffectItem(app *App, m *menu.Menu, label, name string) {
+	item := m.AddText(label, nil, func(*menu.CallbackData) { app.emit("menu-effect", name) })
+	item.Disabled = true
+	app.mu.Lock()
+	app.effectItems = append(app.effectItems, item)
+	app.mu.Unlock()
 }
 
 // The Image menu: turning and flipping the whole picture (menu-image, with the name that the page knows). Off while there is no picture, like the Effects menu.

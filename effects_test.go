@@ -121,3 +121,44 @@ func TestEffectResults(t *testing.T) {
 		t.Errorf("explosion: middle %v corner %v", img.NRGBAAt(10, 10), img.NRGBAAt(0, 0))
 	}
 }
+
+func TestHighlightKeepsThePartAndPushesBackTheRest(t *testing.T) {
+	img := testPic(60, 60, func(x, y int) color.NRGBA { return color.NRGBA{uint8(x * 4), uint8(y * 4), 200, 255} })
+	orig := testPic(60, 60, func(x, y int) color.NRGBA { return img.NRGBAAt(x, y) })
+	if _, err := applyEffect(img, boxShape(20, 20, 15, 15), effectSpec{Op: "highlight"}); err != nil {
+		t.Fatal(err)
+	}
+	for y := 20; y < 35; y++ {
+		for x := 20; x < 35; x++ {
+			if img.NRGBAAt(x, y) != orig.NRGBAAt(x, y) {
+				t.Fatalf("the part changed at %d,%d", x, y)
+			}
+		}
+	}
+	far, was := img.NRGBAAt(2, 50), orig.NRGBAAt(2, 50)
+	if lum(float64(far.R), float64(far.G), float64(far.B)) >= lum(float64(was.R), float64(was.G), float64(was.B)) {
+		t.Fatalf("the rest is not darker: %v, was %v", far, was)
+	}
+	if _, err := applyEffect(img, boxShape(0, 0, 60, 60), effectSpec{Op: "highlight"}); err == nil {
+		t.Fatal("highlighting all of the picture should say to select a part")
+	}
+}
+
+func TestHighlightLevelsPushBackMoreAndMore(t *testing.T) {
+	var prev float64 = 256
+	for _, level := range []string{"light", "medium", "full"} {
+		img := testPic(60, 60, func(x, y int) color.NRGBA { return color.NRGBA{200, 120, 60, 255} })
+		if _, err := applyEffect(img, boxShape(20, 20, 15, 15), effectSpec{Op: "highlight", Level: level}); err != nil {
+			t.Fatal(err)
+		}
+		c := img.NRGBAAt(2, 50)
+		l := lum(float64(c.R), float64(c.G), float64(c.B))
+		if l >= prev {
+			t.Fatalf("%s is not darker than the level before: %v", level, c)
+		}
+		prev = l
+	}
+	if _, err := applyEffect(testPic(10, 10, func(x, y int) color.NRGBA { return color.NRGBA{A: 255} }), boxShape(2, 2, 3, 3), effectSpec{Op: "highlight", Level: "loud"}); err == nil {
+		t.Fatal("an unknown level should be refused")
+	}
+}

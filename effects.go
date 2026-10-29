@@ -38,6 +38,7 @@ type effectSpec struct {
 	Gamma   float64  `json:"gamma"`   // gamma, levels
 	Black   *int     `json:"black"`   // levels: the value that becomes black (0 to 254)
 	White   *int     `json:"white"`   // levels: the value that becomes white (1 to 255)
+	Level   string   `json:"level"`   // highlight: light, medium or full (the default)
 }
 
 var effectOps = []string{"blur", "pixelize", "emboss", "explosion", "grayscale", "negative", "sepia", "censor", "fill", "gradient",
@@ -117,6 +118,9 @@ func (a *App) Effect(rot int, spec string) (ImageInfo, error) {
 // applyEffect changes base inside the shape. The effect is worked out on a copy of the box of the shape (and a margin for a soft edge) and put back
 // where the shape is.
 func applyEffect(base *image.NRGBA, sh *shape, sp effectSpec) (string, error) {
+	if sp.Op == "highlight" { // (it works outside the part: see highlight.go)
+		return highlight(base, sh, sp)
+	}
 	known := false
 	for _, op := range effectOps {
 		known = known || op == sp.Op

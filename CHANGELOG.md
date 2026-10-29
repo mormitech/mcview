@@ -3,6 +3,25 @@
 All notable changes to mcView are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the versions are the [releases](https://github.com/mormitech/mcview/releases).
 
+## 0.54.0 – 2026-10-29
+
+### Added
+
+- **Effects → Highlight**, with three levels (also in the right-click menu): the selected part (a box or a polygon) stays as it is and gets a thin light border with a faint dark edge, and the rest of the picture is pushed back. **Light** only shades the rest a little, **Medium** makes it darker and paler with a soft shadow round the part but keeps it readable, **Full** also blurs it. One step of the history, like the other effects. Claude can use it too (`apply_effect` highlight, with `level`, the strength and the border color).
+- While a selection is drawn, moved or resized, the pixel coordinates of its top left and bottom right corners show as `[x, y]` above its top left and below its bottom right corner, next to the size in the middle. Zoomed in, a label whose place is out of the window goes inside the part of the selection that is seen (the size: in its middle).
+
+### Changed
+
+- The status bar is a floating capsule over the bottom of the picture instead of a bar across the window, with icons: the folder (its last part), an **Edit** label and an accent rim in edit mode, the pixel under the pointer (crosshair, color dot, hex code and the R, G, B numbers), and the selection as its two corners and its size. It stays clear of the tool rail and the chat button; an open dock (the palette, the options of a tool) sits at the bottom edge with the capsule above it, and the chat button no longer moves up when the bar shows.
+- The capsule gets out of the way: when the pointer comes over it (also while dragging a selection), it fades over to the top of the window, and back as soon as the pointer leaves that place. Not in full screen outside edit mode, where the pointer at the bottom is what calls the bar up.
+- A click inside a selection or on its edge that leaves it as it was (to the pixel) no longer copies it to the clipboard again when that very part is on the clipboard already. Ctrl+C (Cmd+C) and Copy in the menus still copy it every time.
+
+### Fixed
+
+- The previous and next picture keys do nothing on a pasted or a new picture (which is in no folder), instead of saying to save it first.
+- A message in the status capsule shows in full and stands alone, instead of running out of the capsule.
+- The recent pictures on the home screen are readable in full screen (light text on the black, in the light theme too), and their folder reads `~/Pictures` instead of `Pictures/~`.
+
 ## 0.51.12 – 2026-10-28
 
 ### Changed
